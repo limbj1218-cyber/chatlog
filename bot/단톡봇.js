@@ -118,6 +118,7 @@ function handleCommand(room, text, sender, replier) {
         case "관리자":  replier.reply(listAdmins(room)); break;
         case "등록":    replier.reply(addCmd(room, sender, p.arg)); break;
         case "삭제":    replier.reply(delCmd(room, sender, p.arg)); break;
+        case "공지":    replier.reply(setNotice(room, sender, p.arg)); break;
         case "목록":    replier.reply(listCmds(room)); break;
         case "벽타기":  replier.reply(wallClimb(room)); break;
         case "통계":    replier.reply(statsText(room)); break;
@@ -137,7 +138,8 @@ function helpText(room, sender) {
     if (isAdmin(room, sender)) {
         out += "\n\n관리자:\n" +
             PREFIX + "등록 명령어 내용 — 자동응답 등록\n" +
-            PREFIX + "삭제 명령어 — 자동응답 삭제";
+            PREFIX + "삭제 명령어 — 자동응답 삭제\n" +
+            PREFIX + "공지 내용 — 페이지 고정 공지 등록";
     }
     if (isSuper(sender)) {
         out += "\n\n최고 관리자:\n" +
@@ -221,6 +223,20 @@ function listCmds(room) {
     if (keys.length === 0) return "등록된 자동응답이 없어요.\n" + PREFIX + "등록 명령어 내용 (관리자)";
     keys.sort();
     return "📋 이 방의 자동응답 (" + keys.length + "개)\n─────────────\n" + keys.join("\n");
+}
+
+// ─── 고정 공지 (방별) ───
+
+/**
+ * 페이지 상단 고정 공지 등록: 로그에 [공지등록] 마커를 남기면
+ * 다음 정리(벽타기/자동정리) 때 Claude가 그 내용을 고정 공지로 반영한다.
+ */
+function setNotice(room, sender, arg) {
+    if (!isAdmin(room, sender)) return "⛔ 관리자/부관리자만 공지를 등록할 수 있어요.";
+    if (!arg) return "사용법: " + PREFIX + "공지 내용\n(페이지 상단 고정 공지로 올라갑니다)";
+    logMessage(room, sender, "[공지등록] " + arg);
+    return "📌 공지 접수!\n「" + arg + "」\n\n다음 정리 때 페이지 상단 고정 공지로 반영됩니다.\n" +
+        "(바로 반영하려면 " + PREFIX + "벽타기)";
 }
 
 // ─── 벽타기: 오늘 대화 → GitHub → Actions가 요약·게시 ───
