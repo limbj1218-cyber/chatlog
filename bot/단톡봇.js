@@ -13,7 +13,7 @@
  *    - /삭제 명령어          → 자동응답 삭제 (관리자만)
  *    - 등록된 명령어와 메시지가 정확히 일치하면 봇이 내용으로 응답
  *    - /벽타기 → 오늘 대화를 GitHub에 올려 Actions가 요약·게시 (방별 6시간에 1번)
- *    - /목록 /통계 /날씨 /봇 /도움말 /방이름(진단)
+ *    - /리스트 /통계 /날씨 /봇 /도움말 /방이름(진단)
  *
  *  ◆ 자동 스케줄 (수동 /벽타기와 별개, 같은 페이지를 갱신)
  *    - 02:50/08:50/14:50/20:50 → 새 대화가 있으면 자동 벽타기
@@ -81,7 +81,7 @@ function pickBaseDir() {
     }
     return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0714-4";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0714-5";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
@@ -163,7 +163,7 @@ function handleCommand(room, text, sender, replier) {
         case "등록":    replier.reply(addCmd(room, sender, p.arg)); break;
         case "삭제":    replier.reply(delCmd(room, sender, p.arg)); break;
         case "공지":    replier.reply(setNotice(room, sender, p.arg)); break;
-        case "목록":    replier.reply(listCmds(room)); break;
+        case "리스트":    replier.reply(listCmds(room)); break;
         case "벽타기":  replier.reply(wallClimb(room)); break;
         case "통계":    replier.reply(statsText(room)); break;
         case "날씨":    replier.reply(weatherText(p.arg || "서울")); break;
@@ -175,7 +175,7 @@ function helpText(room, sender) {
     var out = "🤖 단톡봇 명령어\n─────────────\n" +
         "누구나:\n" +
         PREFIX + "벽타기 — 오늘 대화 정리해서 페이지 게시 (" + WALL_COOLDOWN_HOURS + "시간에 1번)\n" +
-        PREFIX + "목록 — 등록된 자동응답 보기\n" +
+        PREFIX + "리스트 — 등록된 자동응답 보기\n" +
         PREFIX + "통계 — 오늘 대화 통계\n" +
         PREFIX + "날씨 지역 — 현재 날씨\n" +
         PREFIX + "봇 — 봇 상태";
@@ -591,7 +591,12 @@ function autoUploadYesterday(room) {
 // ═══════════════ 권한 ═══════════════
 
 function isSuper(sender) {
-    return String(sender).indexOf(SUPER_ADMIN) !== -1;
+    // SUPER_ADMIN 은 문자열 하나("후파") 또는 배열(["후파","임병진"]) 모두 가능
+    var list = (SUPER_ADMIN instanceof Array) ? SUPER_ADMIN : [SUPER_ADMIN];
+    for (var i = 0; i < list.length; i++) {
+        if (String(sender).indexOf(list[i]) !== -1) return true;
+    }
+    return false;
 }
 
 function isAdmin(room, sender) {

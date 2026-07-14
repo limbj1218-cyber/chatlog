@@ -377,6 +377,8 @@ setTimeout(() => location.reload(), 10 * 60 * 1000);
 body.dark .mascot-bubble { background: #25262b; color: #fff; border-color: #fff; }
 body.dark .mascot-bubble::after { border-top-color: #fff; }
 @keyframes mascotBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.mascot.swing .mascot-sprite { animation: mascotSwing 0.9s ease-in-out infinite; transform-origin: 50% 85%; }
+@keyframes mascotSwing { 0%,100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(7deg) translateY(-3px); } }
 @media (max-width: 520px) {
   .mascot-corner { transform: scale(0.8); transform-origin: left bottom; gap: 52px; }
   .mascot-row { gap: 5px; }
@@ -385,11 +387,15 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
 </style>
 <script>
 (function () {
-  /* ── 마스코트가 나올 방 목록 (방 이름 추가하면 그 방 페이지에도 등장) ── */
-  var MASCOT_ROOMS = ["금광2"];
+  /* ── 방별 마스코트 구성: 방 이름 → 줄 배치(이름 배열). 여기에 방을 추가하면 그 방에도 등장 ── */
+  var ROOM_CREW = {
+    "금광2":  { rows: [["라옴", "마이폰"], ["시지지", "강성개미", "날다진"]], boss: "라옴" },
+    "삽자루": { rows: [["바다가좋아"]] }
+  };
 
   var roomName = (document.querySelector('.hero h1') || {}).textContent || "";
-  if (MASCOT_ROOMS.indexOf(roomName.trim()) === -1) return;
+  var crew = ROOM_CREW[roomName.trim()];
+  if (!crew) return;
 
   /* 방 주민 마스코트 (16칸 픽셀) — 왼쪽 아래 고정, 순서대로 정렬 */
   var MASCOTS = [
@@ -508,8 +514,36 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
         "....CC......CC.."
       ],
       phrases: ["삶이라는 여정..금광롱폼"]
+    },
+    {
+      name: "바다가좋아", // 삽자루 방 — 선글라스 + 파란 운동복 + 몽둥이 휘두르는 중
+      swing: true,
+      colors: { C:"#2a2118", F:"#f0c8a0", G:"#191b1f", m:"#c97b5a", B:"#2f7de1", W:"#ffffff", N:"#1f4f9e", b:"#8b6f4b" },
+      grid: [
+        "............bb..",
+        "...CCCCCC..bb...",
+        "...FFFFFF.bb....",
+        "...GGGGGG.BB....",
+        "...FFFFFF.B.....",
+        "...FFmmFF.B.....",
+        "...BBBBBBBB.....",
+        "..BBWBBBBWBB....",
+        "..BBWBBBBWBB....",
+        "..BBWBBBBWBB....",
+        "..BBBBBBBBBB....",
+        "...NNNNNNNN.....",
+        "...NNN..NNN.....",
+        "...NNN..NNN.....",
+        "...WW....WW....."
+      ],
+      phrases: ["썸네일 특강 보구와!!"]
     }
   ];
+
+  function byName(n) {
+    for (var i = 0; i < MASCOTS.length; i++) if (MASCOTS[i].name === n) return MASCOTS[i];
+    return null;
+  }
 
   function svgFor(m) {
     var cell = 3, cols = 16, rows = m.grid.length;
@@ -533,23 +567,26 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
     }, startDelay);
   }
 
-  /* 왼쪽 아래 2줄 배치 — 윗줄: ⭐라옴·마이폰 / 아랫줄: 시지지·강성개미·날다진
+  /* 왼쪽 아래 고정 배치 — 이 방(crew) 구성대로 줄 세움
      (줄 사이 간격을 넉넉히 두어 아랫줄 말풍선이 윗줄에 가리지 않게) */
   var corner = document.createElement('div');
   corner.className = 'mascot-corner';
-  var ROWS = [[0, 1], [2, 3, 4]];
-  ROWS.forEach(function (rowIdx) {
+  var idx = 0;
+  crew.rows.forEach(function (names) {
     var row = document.createElement('div');
     row.className = 'mascot-row';
-    rowIdx.forEach(function (i) {
-      var m = MASCOTS[i];
+    names.forEach(function (name) {
+      var m = byName(name);
+      if (!m) return;
+      var isBoss = (name === crew.boss);
       var d = document.createElement('div');
-      d.className = 'mascot' + (i === 0 ? ' boss' : '');
+      d.className = 'mascot' + (isBoss ? ' boss' : '') + (m.swing ? ' swing' : '');
       d.innerHTML = '<div class="mascot-bubble"></div><div class="mascot-sprite">' + svgFor(m) +
-        '</div><div class="mascot-name">' + (i === 0 ? '⭐ ' : '') + m.name + '</div>';
-      d.querySelector('.mascot-sprite').style.animationDelay = (i * 0.15) + 's';
+        '</div><div class="mascot-name">' + (isBoss ? '⭐ ' : '') + name + '</div>';
+      d.querySelector('.mascot-sprite').style.animationDelay = (idx * 0.15) + 's';
       row.appendChild(d);
-      cycle(d.querySelector('.mascot-bubble'), m.phrases, 2000 + i * 3600);
+      cycle(d.querySelector('.mascot-bubble'), m.phrases, 2000 + idx * 3600);
+      idx++;
     });
     corner.appendChild(row);
   });
