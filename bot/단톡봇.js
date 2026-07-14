@@ -17,7 +17,7 @@
  *
  *  ◆ 자동 스케줄 (수동 /벽타기와 별개, 같은 페이지를 갱신)
  *    - 02:50/08:50/14:50/20:50 → 새 대화가 있으면 자동 벽타기
- *    - 09:00/15:00/21:00 → 새 내용이 있으면 방에 정리 페이지 링크 공지
+ *    - 09:00/15:00/21:00 → 방에 정리 페이지 링크 공지 (무조건, 링크 1개)
  *
  *  ◆ 저장: 파일 저장을 시도하고, 실패하면 메모리로 자동 대체.
  *    (메모리 모드에서는 앱을 재시작하면 자동응답/부관리자/오늘 기록이 사라지므로
@@ -292,7 +292,7 @@ function wallClimb(room) {
 // ═══════════════ 자동 스케줄러 (자동 벽타기 + 링크 공지) ═══════════════
 //
 // - AUTO_UPLOAD_TIMES: 새 대화가 있을 때만 오늘 로그를 자동 업로드 (수동 /벽타기 쿨다운과 무관)
-// - ANNOUNCE_TIMES: 지난 공지 이후 새 대화가 있었을 때만 방에 페이지 링크를 공지
+// - ANNOUNCE_TIMES: 조건 없이 무조건 방에 페이지 링크를 공지 (링크 1개)
 // - 실행 여부는 방별 상태 파일에 날짜로 기록해 중복 실행을 막고,
 //   폰이 자느라 정각을 놓쳐도 CATCHUP_WINDOW_MIN 안이면 늦게라도 실행한다.
 // - /업데이트 로 코드를 다시 불러와도 타이머가 중복되지 않게 JVM 프로퍼티로 세대를 관리한다.
@@ -337,7 +337,7 @@ function schedulerTick() {
             key = "an_" + ANNOUNCE_TIMES[j];
             if (nowMin >= sMin && nowMin - sMin <= CATCHUP_WINDOW_MIN && st[key] !== t) {
                 st[key] = t; changed = true;
-                announcePage(room, st);
+                announcePage(room);
             }
         }
         if (changed) saveJson(schedPath(room), st);
@@ -356,28 +356,19 @@ function autoUpload(room, st) {
     }
 }
 
-/** 지난 공지 이후 새 대화가 있었을 때만 링크 공지 (도배 방지) */
-function announcePage(room, st) {
-    var log = readTodayLog(room);
-    if (!log) return;
-    if (st.anLen === log.length) return;
+/** 정시 링크 공지 — 조건 없이 무조건 발송 (링크는 메시지에 1개만) */
+function announcePage(room) {
     try {
-        var ok = Api.replyRoom(room,
-            "📄 단톡방 정리 페이지가 갱신됐어요!\n" +
+        Api.replyRoom(room,
+            "📄 단톡방 정리 페이지\n" +
             "오늘의 대화 요약·Q&A·타임라인 👇\n" + roomPageUrl(room));
-        if (ok) st.anLen = log.length;
     } catch (e) {}
 }
 
-/**
- * 수동 /벽타기 성공 시 기준점 갱신:
- * - upLen: 자동 벽타기가 같은 내용을 또 올리지 않게
- * - anLen: 방금 응답으로 링크가 이미 나갔으므로, 새 대화가 없는 한 정시 링크 공지는 건너뜀
- */
+/** 수동 /벽타기 성공 시 업로드 기준점 갱신 (자동 벽타기가 같은 내용을 또 올리지 않게) */
 function markUploaded(room, log) {
     var st = loadJson(schedPath(room), {});
     st.upLen = log.length;
-    st.anLen = log.length;
     saveJson(schedPath(room), st);
 }
 
