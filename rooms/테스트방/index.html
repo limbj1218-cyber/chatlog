@@ -441,7 +441,7 @@ setTimeout(() => location.reload(), 10 * 60 * 1000);
 .mascot-name { font-size: 10px; font-weight: 800; color: #fff; background: rgba(25,31,40,0.72); border-radius: 999px; padding: 1px 8px; display: inline-block; margin-top: 2px; }
 .mascot-bubble { position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%) translateY(6px) scale(0.9);
   background: #fff; color: #191f28; font-size: 12px; font-weight: 700; line-height: 1.3; padding: 7px 11px;
-  border-radius: 12px; white-space: nowrap; border: 2px solid #191f28; box-shadow: 0 3px 0 rgba(25,31,40,0.15);
+  border-radius: 12px; white-space: pre-line; width: max-content; max-width: 230px; border: 2px solid #191f28; box-shadow: 0 3px 0 rgba(25,31,40,0.15);
   opacity: 0; transition: opacity 0.3s, transform 0.3s cubic-bezier(0.16,1,0.3,1); }
 .mascot-bubble.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 .mascot-bubble::after { content: ''; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #191f28; }
@@ -481,10 +481,10 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
         "..RR.RR.RR..",
         "...R....R..."
       ],
-      phrases: ["괜찮아요, 다 잘될 거예요 🙏","모르면 물어보세요, 언제든지요","오늘도 평화로운 하루 되세요","제가 기도해 드릴게요…","화내지 마세요, 복 나가요"]
+      phrases: ["여러분이 멈추지만 않는다면\n저는 끝까지 여러분 곁에 함께합니다."]
     },
     {
-      name: "마이본", // 인형극의 대가
+      name: "마이폰", // 인형극의 대가
       colors: { C:"#3a2c22", F:"#f0c8a0", E:"#222222", D:"#5b3e8f", s:"#9aa1ad", p:"#ff8fb3" },
       grid: [
         "....CCCC....",
@@ -499,7 +499,7 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
         "pp.DD..DD...",
         "p..D....D..."
       ],
-      phrases: ["이 방의 진짜 주인공은 인형입니다","(인형이 대신 말합니다) 안녕하세요~","줄은 보이지 않을 뿐, 늘 있습니다","오늘의 공연은 오후 9시입니다","박수는 인형에게 주세요 👏"]
+      phrases: ["꼬챙이는 거들뿐"]
     },
     {
       name: "시지지", // 유마고치
@@ -516,7 +516,7 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
         "..GGGGGGGG..",
         "...GGGGGG..."
       ],
-      phrases: ["밥 줘… 배고파…","삐빅. 시지지가 진화하고 싶어합니다","관심을 주지 않으면 가출합니다","레벨업까지 앞으로 3일","삐리릭. 오늘의 기분: 시무룩"]
+      phrases: ["밥 줘… 배고파…"]
     },
     {
       name: "강성개미", // 기술조교
@@ -533,10 +533,10 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
         "..AAAAAAAA..",
         "..A..AA..A.."
       ],
-      phrases: ["일단 재부팅부터 해보셨나요?","로그 먼저 보여주세요","그건 버그가 아니라 기능입니다","개미는 오늘도 일한다 🐜","질문 전에 검색 한 번, 약속~"]
+      phrases: ["기술문의는 저에게.."]
     },
     {
-      name: "날다인", // 영원한 금광의 1황
+      name: "날다진", // 영원한 금광의 1황
       colors: { K:"#ffd34d", F:"#f0c8a0", E:"#222222", M:"#7a5230", P:"#9aa1ad", G:"#ffd34d" },
       grid: [
         "..K.K.K.K...",
@@ -551,7 +551,7 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
         "...MM..MM...",
         "...M....M..."
       ],
-      phrases: ["금광은 배신하지 않는다 ⛏️","오늘도 채굴 완료. 1황은 쉬지 않는다","금이 안 나온다고? 더 파라","영원한 1황… 그것이 나","곡괭이는 거들 뿐"]
+      phrases: ["삶이라는 여정..인생나날"]
     }
   ];
 
