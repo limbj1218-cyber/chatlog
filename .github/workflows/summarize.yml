@@ -19,42 +19,44 @@ permissions:
 jobs:
   summarize:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
 
-      - name: 변경된 대화 파일 찾기
-        id: changed
+      # 커밋 diff가 아니라 "지금 chats/ 에 남아 있는 파일 전부"를 처리한다.
+      # 요약이 끝난 파일은 삭제되므로, 남아 있다 = 아직 처리 안 됨.
+      # (동시 push로 실행이 실패/누락돼도 다음 실행이 알아서 주워 처리)
+      - name: 처리할 대화 파일 확인
+        id: pending
         run: |
-          # core.quotepath=false: 한글 파일명이 8진수 이스케이프로 깨지지 않게
-          # --diff-filter=AM: 추가/수정만 감지 (원본 삭제 커밋이 다시 트리거되지 않게)
-          FILE=$(git -c core.quotepath=false diff --diff-filter=AM --name-only HEAD^ HEAD -- 'chats/*.txt' | head -n 1)
-          echo "file=$FILE" >> "$GITHUB_OUTPUT"
-          echo "변경 파일: $FILE"
+          COUNT=$(ls chats/*.txt 2>/dev/null | wc -l)
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "대기 중인 로그: $COUNT개"
+          ls chats/*.txt 2>/dev/null || true
 
       - name: Claude Code 설치
-        if: steps.changed.outputs.file != ''
+        if: steps.pending.outputs.count != '0'
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Claude로 정리
-        if: steps.changed.outputs.file != ''
+        if: steps.pending.outputs.count != '0'
         env:
           # Claude Pro/Max 구독 토큰 (시크릿: CLAUDE_CODE_OAUTH_TOKEN)
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
-          claude -p "${{ steps.changed.outputs.file }} 파일이 방금 업로드됐어 (벽타기 요청). CLAUDE.md 의 '방별 페이지 규칙'에 따라 이 방의 페이지를 생성하거나 갱신해줘. git 커밋/푸시는 하지 마 (다음 스텝이 처리함)." \
+          claude -p "chats/ 폴더에 대화 로그 txt 파일들이 업로드됐어 (벽타기 요청). 각 파일마다 CLAUDE.md 의 '방별 페이지 규칙'에 따라 해당 방의 페이지를 생성하거나 갱신해줘. 파일명 형식은 '방이름-YYYY-MM-DD.txt'야. git 커밋/푸시는 하지 마 (다음 스텝이 처리함)." \
             --allowedTools "Read,Write,Edit,Glob,Grep" \
             --permission-mode acceptEdits
 
       - name: 커밋 & 푸시 (원본 로그는 삭제)
-        if: steps.changed.outputs.file != ''
+        if: steps.pending.outputs.count != '0'
         run: |
           git config user.name "wall-bot"
           git config user.email "wall-bot@users.noreply.github.com"
           # 요약이 끝난 원본 대화 로그는 공개 저장소에 남기지 않는다
-          git rm -f --ignore-unmatch -- "${{ steps.changed.outputs.file }}"
+          git rm -f --ignore-unmatch -- chats/*.txt
           git add -A
-          git diff --cached --quiet || git commit -m "벽타기 정리: ${{ steps.changed.outputs.file }}"
+          git diff --cached --quiet || git commit -m "벽타기 정리: $(date +%m/%d) $(TZ=Asia/Seoul date +%H:%M)"
+          # 실행 중 다른 push가 있었어도 충돌하지 않게 rebase 후 push
+          git pull --rebase origin main
           git push

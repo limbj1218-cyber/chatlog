@@ -38,7 +38,7 @@ var ROOMS = [
 
 // ─────────────── 기본 설정 ───────────────
 var PREFIX = "/";              // 명령어 접두사
-var SUPER_ADMIN = "후파";      // 대화명에 이 문자열이 포함되면 최고 관리자
+var SUPER_ADMIN = ["후파","임병진"];      // 대화명에 이 문자열이 포함되면 최고 관리자
 var WALL_COOLDOWN_HOURS = 6;   // /벽타기 방별 쿨다운 (시간)
 
 // 자동 스케줄 (24시간 기준 "HH:MM")
@@ -508,7 +508,10 @@ function weatherText(city) {
 
 // ═══════════════ 대화 기록 (파일 + 메모리 이중화) ═══════════════
 
-var MEMLOG = {};   // room → { date, lines[] }  (파일 저장 실패 대비)
+// room → { date, lines[] }  (파일 저장 실패 대비)
+// /업데이트(코드 재로드) 후에도 기록이 날아가지 않도록 전역(로더 스코프)에 보관
+if (typeof __DANTALK_MEMLOG__ === "undefined") __DANTALK_MEMLOG__ = {};
+var MEMLOG = __DANTALK_MEMLOG__;
 
 /** 카톡 내보내기와 같은 형식: [이름] [오후 3:24] 내용 */
 function logMessage(room, sender, msg) {
@@ -571,7 +574,9 @@ function isAdmin(room, sender) {
 
 // ═══════════════ 저장소 (파일 + 메모리 이중화) ═══════════════
 
-var MEM = {};   // 파일 저장 실패 시 대체 저장소 (앱 재시작 전까지 유지)
+// 파일 저장 실패 시 대체 저장소 — /업데이트 후에도 유지 (앱 재시작 시에만 소실)
+if (typeof __DANTALK_MEM__ === "undefined") __DANTALK_MEM__ = {};
+var MEM = __DANTALK_MEM__;
 
 function loadJson(path, def) {
     try {
