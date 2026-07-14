@@ -28,7 +28,8 @@ jobs:
       - name: 변경된 대화 파일 찾기
         id: changed
         run: |
-          FILE=$(git diff --name-only HEAD^ HEAD -- 'chats/*.txt' | head -n 1)
+          # core.quotepath=false: 한글 파일명이 8진수 이스케이프로 깨지지 않게
+          FILE=$(git -c core.quotepath=false diff --name-only HEAD^ HEAD -- 'chats/*.txt' | head -n 1)
           echo "file=$FILE" >> "$GITHUB_OUTPUT"
           echo "변경 파일: $FILE"
 
