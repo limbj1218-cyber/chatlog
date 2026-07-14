@@ -78,18 +78,15 @@ function pickBaseDir() {
     }
     return "/sdcard/msgbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BASE_DIR = pickBaseDir();
-var DIRS = {
-    LOG: BASE_DIR + "/chatlogs",   // 대화 기록
-    DATA: BASE_DIR + "/botdata"    // 봇 데이터 (부관리자/자동응답/쿨다운)
-};
+var BOT_VER = "0714-3";   // /방이름 으로 업데이트 적용 여부 확인용
 
-// 하위 폴더를 직접 생성 (FileStream이 폴더를 자동으로 만들어주지 않는 앱 대비)
-function ensureDir(path) {
-    try { new java.io.File(path).mkdirs(); } catch (e) {}
-}
-ensureDir(DIRS.LOG);
-ensureDir(DIRS.DATA);
+var BASE_DIR = pickBaseDir();
+// 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
+// 바로 그 폴더를 쓰므로 "폴더 생성 실패"로 저장이 깨질 여지가 없다.
+var DIRS = {
+    LOG: BASE_DIR,    // 대화 기록 (방이름-날짜.txt)
+    DATA: BASE_DIR    // 봇 데이터 (cmds_/subs_/wall_/state_/sched_ 접두사로 구분)
+};
 // ────────────────────────────────────────
 
 var BOT_START = new Date();
@@ -141,9 +138,9 @@ function diagText(room, sender) {
     try {
         FileStream.write(DIRS.DATA + "/write_test.txt", "ok");
         saved += (String(FileStream.read(DIRS.DATA + "/write_test.txt")) === "ok")
-            ? "정상 ✅" : "실패 ❌ (메모리 모드로 동작)";
-    } catch (e) { saved += "실패 ❌ (메모리 모드로 동작)"; }
-    return "🔍 봇이 보는 정보\n" +
+            ? "정상 ✅" : "실패 ❌ (읽기 불일치, 메모리 모드)";
+    } catch (e) { saved += "실패 ❌ (" + e + ")"; }
+    return "🔍 봇이 보는 정보 (봇버전 " + BOT_VER + ")\n" +
         "방 이름: [" + room + "]\n" +
         "보낸 사람: [" + sender + "]\n" +
         "이 방 활성화됨: " + (ROOMS.indexOf(room) !== -1 ? "예 ✅" : "아니오 ❌ (코드의 ROOMS 목록에 추가하세요)") + "\n" +
@@ -199,7 +196,7 @@ function statusText(room) {
     var h = Math.floor(up / 60), m = up % 60;
     var cmds = loadJson(cmdsPath(room), {});
     var n = 0; for (var k in cmds) n++;
-    return "🤖 봇 정상 동작 중\n" +
+    return "🤖 봇 정상 동작 중 (봇버전 " + BOT_VER + ")\n" +
         "방: " + room + "\n" +
         "자동응답: " + n + "개\n" +
         "가동 시간: " + (h > 0 ? h + "시간 " : "") + m + "분\n" +
