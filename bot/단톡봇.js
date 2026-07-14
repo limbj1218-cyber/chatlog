@@ -31,11 +31,11 @@ var WALL_COOLDOWN_HOURS = 6;   // /벽타기 방별 쿨다운 (시간)
 
 // GitHub 연동 (벽타기용) — 배포 후 채우세요
 var GITHUB = {
-    OWNER: "",       // GitHub 아이디            예: "hoopa123"
-    REPO: "",        // 저장소 이름              예: "chatlog"
+    OWNER: "limbj1218-cyber",
+    REPO: "chatlog",
     BRANCH: "main",
-    TOKEN: "",       // Personal Access Token (이 저장소 Contents 읽기/쓰기 권한만)
-    PAGE_BASE: ""    // GitHub Pages 주소        예: "https://hoopa123.github.io/chatlog/"
+    TOKEN: "",       // ← 여기에 Personal Access Token 입력 (이 저장소 Contents 읽기/쓰기 권한만)
+    PAGE_BASE: "https://limbj1218-cyber.github.io/chatlog/"
 };
 
 var DIRS = {
