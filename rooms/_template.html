@@ -342,6 +342,8 @@ setTimeout(() => location.reload(), 10 * 60 * 1000);
 .mascot-sprite { width: 48px; margin: 0 auto; animation: mascotBob 1s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25)); }
 .mascot-sprite svg { display: block; width: 100%; height: auto; image-rendering: pixelated; shape-rendering: crispEdges; }
 .mascot-name { font-size: 10px; font-weight: 800; color: #fff; background: rgba(25,31,40,0.72); border-radius: 999px; padding: 1px 8px; display: inline-block; margin-top: 2px; }
+.mascot.boss .mascot-sprite { width: 56px; }
+.mascot.boss .mascot-name { background: linear-gradient(135deg, #f6c945, #f0a020); color: #3a2c00; }
 .mascot-bubble { position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%) translateY(6px) scale(0.9);
   background: #fff; color: #191f28; font-size: 12px; font-weight: 700; line-height: 1.3; padding: 7px 11px;
   border-radius: 12px; white-space: pre-line; width: max-content; max-width: 230px; border: 2px solid #191f28; box-shadow: 0 3px 0 rgba(25,31,40,0.15);
@@ -480,12 +482,14 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
     }, startDelay);
   }
 
-  var picks = MASCOTS.slice().sort(function () { return Math.random() - 0.5; }).slice(0, 2);
+  /* 라옴(강사님·대장)은 항상 등장, 나머지 4명 중 1명이 랜덤 동행 */
+  var rest = MASCOTS.slice(1);
+  var picks = [MASCOTS[0], rest[Math.floor(Math.random() * rest.length)]];
   picks.forEach(function (m, i) {
     var d = document.createElement('div');
-    d.className = 'mascot ' + (i === 0 ? 'roam-a' : 'roam-b');
+    d.className = 'mascot ' + (i === 0 ? 'roam-a boss' : 'roam-b');
     d.innerHTML = '<div class="mascot-bubble"></div><div class="mascot-sprite">' + svgFor(m) +
-      '</div><div class="mascot-name">' + m.name + '</div>';
+      '</div><div class="mascot-name">' + (i === 0 ? '⭐ ' : '') + m.name + '</div>';
     document.body.appendChild(d);
     cycle(d.querySelector('.mascot-bubble'), m.phrases, 1800 + i * 2200);
   });
