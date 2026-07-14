@@ -15,6 +15,10 @@
  *    - /벽타기 → 오늘 대화를 GitHub에 올려 Actions가 요약·게시 (방별 6시간에 1번)
  *    - /목록 /통계 /날씨 /봇 /도움말 /방이름(진단)
  *
+ *  ◆ 자동 스케줄 (수동 /벽타기와 별개, 같은 페이지를 갱신)
+ *    - 02:50/08:50/14:50/20:50 → 새 대화가 있으면 자동 벽타기
+ *    - 09:00/15:00/21:00 → 새 내용이 있으면 방에 정리 페이지 링크 공지
+ *
  *  ◆ 저장: 파일 저장을 시도하고, 실패하면 메모리로 자동 대체.
  *    (메모리 모드에서는 앱을 재시작하면 자동응답/부관리자/오늘 기록이 사라지므로
  *     가능하면 메신저봇R에 "모든 파일 접근" 권한을 주는 것을 권장)
@@ -36,6 +40,11 @@ var ROOMS = [
 var PREFIX = "/";              // 명령어 접두사
 var SUPER_ADMIN = "후파";      // 대화명에 이 문자열이 포함되면 최고 관리자
 var WALL_COOLDOWN_HOURS = 6;   // /벽타기 방별 쿨다운 (시간)
+
+// 자동 스케줄 (24시간 기준 "HH:MM")
+var AUTO_UPLOAD_TIMES = ["02:50", "08:50", "14:50", "20:50"];  // 6시간마다 자동 벽타기
+var ANNOUNCE_TIMES    = ["09:00", "15:00", "21:00"];           // 방에 정리 페이지 링크 공지
+var CATCHUP_WINDOW_MIN = 180;  // 폰이 자느라 시간을 놓쳤을 때 이 시간(분) 안이면 늦게라도 실행
 
 // GitHub 연동 (벽타기용)
 var GITHUB = {
@@ -71,6 +80,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         // ② 날짜가 바뀌었으면 어제 로그를 자동 업로드 → 매일 빠짐없이 정리됨
         //    (logMessage가 메모리 버퍼를 오늘 것으로 교체하기 전에 실행해야 함)
         autoUploadYesterday(room);
+
+        // ②-1 스케줄 확인 (타이머가 도즈모드로 잠들었어도 메시지가 오면 밀린 일 처리)
+        try { schedulerTick(); } catch (e) {}
 
         // ③ 대화 기록 (벽타기/통계의 원본)
         logMessage(room, sender, msg);
@@ -158,7 +170,9 @@ function statusText(room) {
     return "🤖 봇 정상 동작 중\n" +
         "방: " + room + "\n" +
         "자동응답: " + n + "개\n" +
-        "가동 시간: " + (h > 0 ? h + "시간 " : "") + m + "분";
+        "가동 시간: " + (h > 0 ? h + "시간 " : "") + m + "분\n" +
+        "자동 벽타기: " + AUTO_UPLOAD_TIMES.join(", ") + "\n" +
+        "링크 공지: " + ANNOUNCE_TIMES.join(", ");
 }
 
 // ─── 부관리자 (방별) ───
@@ -270,8 +284,106 @@ function wallClimb(room) {
     if (!ok) return "⚠️ GitHub 업로드에 실패했어요. 토큰/저장소 설정을 확인해주세요.";
 
     saveJson(wallPath(room), { t: now });
+    markUploaded(room, log);   // 자동 벽타기가 같은 내용을 또 올리지 않게
     return "🧗 벽타기 시작! 오늘 대화를 정리하고 있어요.\n" +
         "약 2~5분 후 페이지가 갱신됩니다:\n" + pageUrl;
+}
+
+// ═══════════════ 자동 스케줄러 (자동 벽타기 + 링크 공지) ═══════════════
+//
+// - AUTO_UPLOAD_TIMES: 새 대화가 있을 때만 오늘 로그를 자동 업로드 (수동 /벽타기 쿨다운과 무관)
+// - ANNOUNCE_TIMES: 지난 공지 이후 새 대화가 있었을 때만 방에 페이지 링크를 공지
+// - 실행 여부는 방별 상태 파일에 날짜로 기록해 중복 실행을 막고,
+//   폰이 자느라 정각을 놓쳐도 CATCHUP_WINDOW_MIN 안이면 늦게라도 실행한다.
+// - /업데이트 로 코드를 다시 불러와도 타이머가 중복되지 않게 JVM 프로퍼티로 세대를 관리한다.
+
+var TIMER_GEN = String(new Date().getTime());
+java.lang.System.setProperty("dantalk.timer.gen", TIMER_GEN);
+
+(function startScheduler() {
+    var timer = new java.util.Timer("dantalk-scheduler", true);
+    timer.schedule(new JavaAdapter(java.util.TimerTask, {
+        run: function () {
+            try {
+                // 새 코드가 로드됐으면 이 (옛) 타이머는 스스로 멈춤
+                if (String(java.lang.System.getProperty("dantalk.timer.gen")) !== TIMER_GEN) {
+                    this.cancel();
+                    return;
+                }
+                schedulerTick();
+            } catch (e) {}
+        }
+    }), 20000, 60000);   // 20초 후 시작, 1분마다
+})();
+
+function schedulerTick() {
+    var nowMin = minutesOfDay();
+    var t = today();
+    for (var i = 0; i < ROOMS.length; i++) {
+        var room = ROOMS[i];
+        var st = loadJson(schedPath(room), {});
+        var changed = false;
+        var j, key, sMin;
+        for (j = 0; j < AUTO_UPLOAD_TIMES.length; j++) {
+            sMin = toMinutes(AUTO_UPLOAD_TIMES[j]);
+            key = "up_" + AUTO_UPLOAD_TIMES[j];
+            if (nowMin >= sMin && nowMin - sMin <= CATCHUP_WINDOW_MIN && st[key] !== t) {
+                st[key] = t; changed = true;
+                autoUpload(room, st);
+            }
+        }
+        for (j = 0; j < ANNOUNCE_TIMES.length; j++) {
+            sMin = toMinutes(ANNOUNCE_TIMES[j]);
+            key = "an_" + ANNOUNCE_TIMES[j];
+            if (nowMin >= sMin && nowMin - sMin <= CATCHUP_WINDOW_MIN && st[key] !== t) {
+                st[key] = t; changed = true;
+                announcePage(room, st);
+            }
+        }
+        if (changed) saveJson(schedPath(room), st);
+    }
+}
+
+/** 새 대화가 있을 때만 오늘 로그를 자동 업로드 */
+function autoUpload(room, st) {
+    if (!GITHUB.TOKEN) return;
+    var log = readTodayLog(room);
+    if (!log) return;
+    if (st.upLen === log.length) return;   // 지난 업로드 이후 변화 없음
+    var path = "chats/" + safeName(room) + "-" + today() + ".txt";
+    if (githubPutFile(path, log, "자동 벽타기: " + room + " " + today())) {
+        st.upLen = log.length;
+    }
+}
+
+/** 지난 공지 이후 새 대화가 있었을 때만 링크 공지 (도배 방지) */
+function announcePage(room, st) {
+    var log = readTodayLog(room);
+    if (!log) return;
+    if (st.anLen === log.length) return;
+    try {
+        var ok = Api.replyRoom(room,
+            "📄 단톡방 정리 페이지가 갱신됐어요!\n" +
+            "오늘의 대화 요약·Q&A·타임라인 👇\n" + roomPageUrl(room));
+        if (ok) st.anLen = log.length;
+    } catch (e) {}
+}
+
+/** 수동 /벽타기 성공 시에도 업로드 기준점 갱신 */
+function markUploaded(room, log) {
+    var st = loadJson(schedPath(room), {});
+    st.upLen = log.length;
+    saveJson(schedPath(room), st);
+}
+
+function minutesOfDay() {
+    var d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+}
+
+function toMinutes(hm) {
+    var p = hm.split(":");
+    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
 }
 
 function roomPageUrl(room) {
@@ -503,6 +615,7 @@ function safeName(room) {
 
 function cmdsPath(room)   { return DIRS.DATA + "/cmds_" + safeName(room) + ".json"; }
 function statePath(room)  { return DIRS.DATA + "/state_" + safeName(room) + ".json"; }
+function schedPath(room)  { return DIRS.DATA + "/sched_" + safeName(room) + ".json"; }
 function subsPath(room)   { return DIRS.DATA + "/subs_" + safeName(room) + ".json"; }
 function wallPath(room)   { return DIRS.DATA + "/wall_" + safeName(room) + ".json"; }
 function logPath(room)    { return DIRS.LOG + "/" + safeName(room) + "-" + today() + ".txt"; }
