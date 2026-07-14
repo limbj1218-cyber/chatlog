@@ -236,16 +236,115 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/14 (화)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 0 · 대화 없음</div>
+    <div class="day-accordion-summary">전체 메시지 68 · 주요 Q&amp;A 5 · 인사이트 4</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">0</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">68</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">5</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">4</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
     </div>
-    <div class="empty-hint">이날은 /벽타기 명령 외에 특별한 대화가 없었습니다.</div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">박@원(행복토끼토끼)</div>
+          <div class="mvp-desc">사연채널의 허위 수익창출 정지가 아무 조치 없이 90일 만에 자동으로 풀렸다는 소식을 전해 오늘 대화의 중심이 됐습니다. 영상을 어떻게 정리했는지, 언제 풀렸는지 등 자신의 경험을 구체적으로 공유하며 다른 멤버들의 질문에 성실히 답했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">양@국 (바다가좋아)</div>
+          <div class="mvp-desc">아직 정지가 풀리지 않은 자신의 상황을 공유하면서도, 90일 경과 후 누르는 재신청 버튼이 항소와는 다른 절차라는 점과 관련채널 연동 여부 등 재심사 관련 정보를 정확하게 설명해 다른 멤버들의 궁금증을 풀어줬습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">김@현 (전지적마눌시점)</div>
+          <div class="mvp-desc">기존 영상을 모두 지우고 4000시간을 새로 채워 신청했던 자신의 경험과, 관련채널로 엮이면 심사가 더 늦어지는 것 같다는 관찰을 나누며 아직 결과를 기다리는 멤버들을 다독였습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">허위 정지가 풀리기 전에 기존 영상을 많이 지우셨나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">박@원(행복토끼토끼)</span></div>
+          <p>10개 중 7개를 지우고 쇼츠는 전부 삭제했으며, 이후 확인해보니 예전에 쌓였던 수익이 0원으로 초기화되어 있었다고 답했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">허위 처리 이후 새로운 영상도 안 올리셨는데 버튼이 활성화된 건가요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">박@원(행복토끼토끼)</span></div>
+          <p>새 영상은 올리지 않았고, 90일이 지나니 재신청 버튼이 자동으로 활성화된 것 같다고 답했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">재신청 버튼을 누르신 건가요, 항소를 하신 건가요?</div>
+          <span class="qa-count">2회</span>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">양@국 (바다가좋아)</span></div>
+          <p>항소가 아니라 90일이 지난 뒤 다시 신청할 수 있는 재신청 버튼을 눌렀다고 설명했습니다. 자신은 사연 채널을 야담 형식으로 운영 중이며 현재 이의제기 결과를 기다리고 있다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">허위 채널에 엮인 관련채널이 있고, 그 채널들도 정지된 적이 있나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">양@국 (바다가좋아)</span></div>
+          <p>관련채널로 허위 처리를 받은 것은 없다고 답했습니다. 이에 김@현(전지적마눌시점)은 관련채널로 엮인 경우 심사가 더 늦게 풀리는 것 같다며 자신은 6월에 신청한 뒤 아직 무소식이라고 덧붙였습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">영상을 새로 올리고 재신청하신 건가요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">김@현 (전지적마눌시점)</span></div>
+          <p>기존 영상을 모두 지우고 새로 4000시간을 채워서 신청했다고 답했습니다. 이에 대해 새로 영상을 올려 신청한 경우가 오히려 결과가 더 늦게 나오는 것 같다는 이야기가 이어졌습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>양@국 (바다가좋아)</h3><p>허위 수익창출 정지는 90일이 지나야 재신청이 가능하며, 이 재신청은 항소와는 별개의 절차라고 설명했습니다. 늦더라도 통과만 되면 이후로는 영상 업로드가 훨씬 편해질 거라며 기다리는 멤버들을 응원했습니다.</p>
+        <span class="insight-tag tag-tip">재신청</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>박@원(행복토끼토끼)</h3><p>정지 기간 동안 10개 영상 중 7개와 쇼츠 전체를 삭제해뒀고, 정지가 풀린 뒤에도 위험 요소가 있다고 판단한 나머지 영상 일부를 추가로 정리할 계획이라고 밝혔습니다.</p>
+        <span class="insight-tag tag-tip">영상정리</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>김@현 (전지적마눌시점)</h3><p>주변 사례를 보면 관련채널로 엮인 채널은 허위 정지가 잘 풀리지 않는 경향이 있다고 전했습니다. 자신은 기존 영상을 전부 삭제하고 4000시간을 새로 채워 신청했지만 6월 신청 이후 아직 결과를 받지 못했다고 밝혔습니다.</p>
+        <span class="insight-tag tag-tip">관련채널</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>양@국 (바다가좋아)</h3><p>재신청이 계속 받아들여지지 않을 경우 새 채널과 새 애드센스를 만드는 것도 현실적인 대안이라는 의견을 냈고, 다른 멤버들도 승인이 안 되면 새 채널을 준비하겠다는 데 공감했습니다.</p>
+        <span class="insight-tag tag-info">대안</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오후 5:39~오후 5:44</div><div class="tl-text">후파(임@진)가 /벽타기 명령으로 정리를 요청했고, 라옴과 서로 감사 인사를 나눴습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 7:37~오후 7:41</div><div class="tl-text">박@원(행복토끼토끼)이 사연채널의 허위 정지가 아무것도 하지 않았는데 90일 만에 풀렸다고 알렸고, 방 멤버들이 이모지와 함께 축하 인사를 쏟아냈습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 7:41~오후 7:52</div><div class="tl-text">최@라(릴리온)와 이@수(월천자스민) 등이 영상 삭제 개수와 활성화 시점을 물었고, 박원이 10개 중 7개 삭제·90일 경과 후 자동 활성화라고 답하며 남은 영상도 추가로 정리하겠다고 밝혔습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 7:45~오후 7:58</div><div class="tl-text">아직 정지가 풀리지 않은 양@국(바다가좋아)이 자신의 상황(이의제기, 7/6 90일 도달)을 공유하며 재신청과 항소의 차이, 관련채널 여부 등 절차를 상세히 설명했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 8:00~오후 8:16</div><div class="tl-text">하이진, 릴리온, 전지적마눌시점 등이 각자의 신청 경험(영상 전량 삭제 후 4000시간 재적립, 관련채널로 인한 지연 등)을 나누며 서로를 다독였습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 8:34~오후 8:48</div><div class="tl-text">나츠, 벼랑위에감자 등이 뒤늦게 축하 인사를 전했고, 세오리가 자신도 이번 주 금요일이 90일째라며 기대를 밝히면서 대화가 마무리됐습니다.</div></div>
+      </div>
+    </div>
   </div></div>
 </div>
 <!-- ═══ 날짜 블록 끝 ═══ -->
@@ -255,11 +354,46 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <div class="section-header"><div class="section-icon">📊</div><div class="section-title">누적 질문 랭킹</div></div>
   <ul class="faq-bar-list">
     <!-- ═══ FAQ 랭킹: 정리 때마다 갱신 ═══ -->
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>재신청·재심사 절차</span><span class="cnt">2</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>버튼 활성화 시점</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>새 영상 올리고 신청 여부</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
   <!-- ═══ FAQ 베스트 답변(.qa-card 재사용): 정리 때마다 갱신 ═══ -->
-  <div class="empty-hint">아직 쌓인 질문이 없어요. 대화가 정리되면 자동으로 채워집니다.</div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">재신청 버튼을 누르신 건가요, 항소를 하신 건가요?</div>
+      <span class="qa-count">2회</span>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">양@국 (바다가좋아)</span></div>
+      <p>항소가 아니라 90일이 지난 뒤 다시 신청할 수 있는 재신청 버튼을 눌렀다고 설명했습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">허위 정지가 풀리기 전에 기존 영상을 많이 지우셨나요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">박@원(행복토끼토끼)</span></div>
+      <p>10개 중 7개를 지우고 쇼츠는 전부 삭제했다고 답했습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">허위 처리 이후 새로운 영상도 안 올리셨는데 버튼이 활성화된 건가요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">박@원(행복토끼토끼)</span></div>
+      <p>새 영상은 올리지 않았고, 90일이 지나니 자동으로 활성화된 것 같다고 답했습니다.</p>
+    </div></div>
+  </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
 </div>
 
@@ -267,6 +401,11 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <input type="text" class="glossary-search" id="glossarySearch" placeholder="🔍 용어 검색...">
   <div class="glossary-grid" id="glossaryGrid">
     <!-- ═══ 용어사전(.glossary-card): 새 용어가 나올 때마다 추가 (가나다순) ═══ -->
+    <div class="glossary-card"><div class="glossary-term">🔗 관련채널</div><div class="glossary-def">유튜브가 동일 운영자가 관리한다고 판단해 서로 묶어 취급하는 채널들. 한 채널이 허위 처리되면 함께 영향을 받을 수 있습니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🎙️ 사연채널</div><div class="glossary-def">실제 사연이나 이야기를 낭독·재구성해 올리는 유형의 유튜브 채널.</div></div>
+    <div class="glossary-card"><div class="glossary-term">💰 애드센스</div><div class="glossary-def">유튜브 영상 수익을 정산받기 위해 연결하는 구글의 광고 수익화 계정.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🔁 재신청</div><div class="glossary-def">허위 등의 사유로 수익창출이 정지된 뒤 90일이 지나면 누를 수 있는 버튼으로, 항소와는 별개의 절차입니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🚫 허위</div><div class="glossary-def">유튜브가 스팸성·기만적 콘텐츠 등으로 판단해 채널의 수익창출을 정지시키는 제재. 90일이 지나야 재신청이 가능합니다.</div></div>
     <!-- ═══ 용어사전 끝 ═══ -->
   </div>
   <div class="empty-hint" id="glossaryEmpty">아직 등록된 용어가 없어요. 대화에서 용어가 나오면 자동으로 채워집니다.</div>
