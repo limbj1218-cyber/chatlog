@@ -55,9 +55,33 @@ var GITHUB = {
     PAGE_BASE: "https://limbj1218-cyber.github.io/chatlog/"
 };
 
+/**
+ * 저장 폴더 자동 선택 — 쓰기 가능한 곳을 순서대로 시도:
+ * ① /sdcard/msgbot (저장 권한 있을 때)
+ * ② 앱 전용 외부 폴더 (Android/data/... — 권한 불필요)
+ * ③ 앱 내부 저장소 (권한 불필요, 항상 가능)
+ * 전부 실패하면 기존처럼 메모리 모드로 동작.
+ */
+function pickBaseDir() {
+    var cands = ["/sdcard/msgbot"];
+    try {
+        var app = android.app.ActivityThread.currentApplication();
+        var ext = app.getExternalFilesDir(null);
+        if (ext) cands.push(String(ext.getAbsolutePath()));
+        cands.push(String(app.getFilesDir().getAbsolutePath()) + "/dantalk");
+    } catch (e) {}
+    for (var i = 0; i < cands.length; i++) {
+        try {
+            FileStream.write(cands[i] + "/write_test.txt", "ok");
+            if (String(FileStream.read(cands[i] + "/write_test.txt")) === "ok") return cands[i];
+        } catch (e) {}
+    }
+    return "/sdcard/msgbot";   // 전부 실패 → 어차피 메모리 모드
+}
+var BASE_DIR = pickBaseDir();
 var DIRS = {
-    LOG: "/sdcard/msgbot/chatlogs",   // 대화 기록
-    DATA: "/sdcard/msgbot/botdata"    // 봇 데이터 (부관리자/자동응답/쿨다운)
+    LOG: BASE_DIR + "/chatlogs",   // 대화 기록
+    DATA: BASE_DIR + "/botdata"    // 봇 데이터 (부관리자/자동응답/쿨다운)
 };
 // ────────────────────────────────────────
 
@@ -116,7 +140,7 @@ function diagText(room, sender) {
         "방 이름: [" + room + "]\n" +
         "보낸 사람: [" + sender + "]\n" +
         "이 방 활성화됨: " + (ROOMS.indexOf(room) !== -1 ? "예 ✅" : "아니오 ❌ (코드의 ROOMS 목록에 추가하세요)") + "\n" +
-        saved;
+        saved + "\n저장 위치: " + BASE_DIR;
 }
 
 // ═══════════════ 방 명령어 ═══════════════
