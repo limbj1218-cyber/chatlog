@@ -51,6 +51,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     try {
         var text = String(msg).trim();
 
+        // ⓪ 진단용 — 등록 여부와 무관하게 모든 방에서 동작
+        if (text === PREFIX + "방이름") {
+            var saved = "저장 테스트: ";
+            try {
+                FileStream.write(DIRS.DATA + "/write_test.txt", "ok");
+                saved += (String(FileStream.read(DIRS.DATA + "/write_test.txt")) === "ok") ? "정상 ✅" : "실패 ❌";
+            } catch (e) { saved += "실패 ❌ (" + e + ")"; }
+            replier.reply("🔍 봇이 보는 정보\n" +
+                "방 이름: [" + room + "]\n" +
+                "보낸 사람: [" + sender + "]\n" +
+                "제어실 설정값: [" + CONTROL_ROOM + "]\n" +
+                "제어실 일치: " + (room === CONTROL_ROOM ? "예 ✅" : "아니오 ❌") + "\n" +
+                "이 방 활성화됨: " + (activeRooms().indexOf(room) !== -1 ? "예 ✅" : "아니오 ❌") + "\n" +
+                saved);
+            return;
+        }
+
         // ① 제어실
         if (room === CONTROL_ROOM) {
             controlRoom(text, replier);
