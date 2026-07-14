@@ -83,6 +83,13 @@ var DIRS = {
     LOG: BASE_DIR + "/chatlogs",   // 대화 기록
     DATA: BASE_DIR + "/botdata"    // 봇 데이터 (부관리자/자동응답/쿨다운)
 };
+
+// 하위 폴더를 직접 생성 (FileStream이 폴더를 자동으로 만들어주지 않는 앱 대비)
+function ensureDir(path) {
+    try { new java.io.File(path).mkdirs(); } catch (e) {}
+}
+ensureDir(DIRS.LOG);
+ensureDir(DIRS.DATA);
 // ────────────────────────────────────────
 
 var BOT_START = new Date();
