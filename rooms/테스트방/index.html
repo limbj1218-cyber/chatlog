@@ -441,7 +441,7 @@ setTimeout(() => location.reload(), 10 * 60 * 1000);
 .mascot-name { font-size: 10px; font-weight: 800; color: #fff; background: rgba(25,31,40,0.72); border-radius: 999px; padding: 1px 8px; display: inline-block; margin-top: 2px; }
 .mascot.boss .mascot-sprite { width: 56px; }
 .mascot.boss .mascot-name { background: linear-gradient(135deg, #f6c945, #f0a020); color: #3a2c00; }
-.mascot-bubble { position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%) translateY(6px) scale(0.9);
+.mascot-bubble { position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%) translateY(6px) scale(0.9);
   background: #fff; color: #191f28; font-size: 12px; font-weight: 700; line-height: 1.3; padding: 7px 11px;
   border-radius: 12px; white-space: pre-line; width: max-content; max-width: 230px; border: 2px solid #191f28; box-shadow: 0 3px 0 rgba(25,31,40,0.15);
   opacity: 0; transition: opacity 0.3s, transform 0.3s cubic-bezier(0.16,1,0.3,1); }
@@ -456,109 +456,135 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
 @keyframes mascotRoamB {
   0% { left: 72vw; bottom: 40vh; } 25% { left: 48vw; bottom: 54vh; } 50% { left: 20vw; bottom: 38vh; }
   75% { left: 36vw; bottom: 55vh; } 100% { left: 72vw; bottom: 40vh; } }
-@media (max-width: 520px) { .mascot { width: 48px; } .mascot-sprite { width: 40px; } .mascot-bubble { font-size: 11px; bottom: 66px; } }
+@media (max-width: 520px) { .mascot { width: 48px; } .mascot-sprite { width: 40px; } .mascot.boss .mascot-sprite { width: 46px; } .mascot-bubble { font-size: 11px; bottom: 68px; } }
 @media (prefers-reduced-motion: reduce) {
   .mascot, .mascot-sprite { animation: none !important; }
   .mascot.roam-a { left: 72vw; bottom: 16vh; } .mascot.roam-b { left: 10vw; bottom: 34vh; } }
 </style>
 <script>
 (function () {
-  /* 방 주민 마스코트 — 접속할 때마다 랜덤 2명이 돌아다닙니다 */
+  /* 방 주민 마스코트 (16칸 픽셀) — 라옴(강사님)은 항상, 나머지 중 1명이 랜덤 동행 */
   var MASCOTS = [
     {
-      name: "라옴", // 마더 테레사
-      colors: { h:"#f6c945", W:"#f4f4f0", B:"#3b6fd4", F:"#f0c8a0", E:"#222222", R:"#e8e8e2" },
+      name: "라옴", // 마더 테레사 · 강사님 · 대장
+      colors: { h:"#f6c945", W:"#f7f7f2", B:"#3b6fd4", F:"#f0c8a0", E:"#222222", m:"#c97b5a", R:"#ecebe4" },
       grid: [
-        "..hhhhhhh...",
-        "............",
-        "...WWWWWW...",
-        "..WWWWWWWW..",
-        "..WFFFFFFW..",
-        "..WFEFFEFW..",
-        "..WFFFFFFW..",
-        "..BWWWWWWB..",
-        "...RRRRRR...",
-        "..RRRRRRRR..",
-        "..RRRRRRRR..",
-        "..RR.RR.RR..",
-        "...R....R..."
+        "....hhhhhhhh....",
+        "...hh......hh...",
+        "....hhhhhhhh....",
+        ".....WWWWWW.....",
+        "....WWWWWWWW....",
+        "...WWWWWWWWWW...",
+        "...WWFFFFFFWW...",
+        "...WWFEFFEFWW...",
+        "...WWFFFFFFWW...",
+        "...WWFFmmFFWW...",
+        "...BWWWWWWWWB...",
+        "....RRRRRRRR....",
+        "...RRRRFFRRRR...",
+        "..RRRRRFFRRRRR..",
+        "..RRRRRRRRRRRR..",
+        "..RRRRRRRRRRRR..",
+        "..RRRRRRRRRRRR.."
       ],
       phrases: ["여러분이 멈추지만 않는다면\n저는 끝까지 여러분 곁에 함께합니다."]
     },
     {
       name: "마이폰", // 인형극의 대가
-      colors: { C:"#3a2c22", F:"#f0c8a0", E:"#222222", D:"#5b3e8f", s:"#9aa1ad", p:"#ff8fb3" },
+      colors: { C:"#3a2c22", F:"#f0c8a0", E:"#222222", m:"#c97b5a", D:"#5b3e8f", s:"#b9bec7", p:"#ff8fb3" },
       grid: [
-        "....CCCC....",
-        "...FFFFFF...",
-        "...FEFFEF...",
-        "...FFFFFF...",
-        "..DDDDDDDD..",
-        "s.DDDDDDDD..",
-        "s.DDDDDDDD..",
-        "s.DDDDDDDD..",
-        "p..DD..DD...",
-        "pp.DD..DD...",
-        "p..D....D..."
+        ".....CCCCCC.....",
+        "....CCCCCCCC....",
+        "....CFFFFFFC....",
+        "....FFEFFEFF....",
+        "....FFFFFFFF....",
+        "....FFFmmFFF....",
+        "...DDDDDDDDDD...",
+        "..DDDDDDDDDDDD..",
+        "s.DDDDDDDDDDDD..",
+        "s.DDDDDDDDDDDD..",
+        "s.DDDDDDDDDDDD..",
+        "s..DDDDDDDDDD...",
+        "pp..DDD..DDD....",
+        "pp..DDD..DDD....",
+        ".p..DD....DD....",
+        "....CC....CC...."
       ],
       phrases: ["꼬챙이는 거들뿐"]
     },
     {
       name: "시지지", // 유마고치
-      colors: { G:"#7dd8c8", W:"#e9f2ef", E:"#222222", M:"#e05a7a", B:"#f6c945" },
+      colors: { G:"#7dd8c8", W:"#eef5f2", E:"#233344", m:"#e05a7a", B:"#f6c945" },
       grid: [
-        "...GGGGGG...",
-        "..GGGGGGGG..",
-        ".GGWWWWWWGG.",
-        ".GGWEWWEWGG.",
-        ".GGWWMMWWGG.",
-        ".GGWWWWWWGG.",
-        ".GGGGGGGGGG.",
-        "..GGBGBGGG..",
-        "..GGGGGGGG..",
-        "...GGGGGG..."
+        ".....GGGGGG.....",
+        "...GGGGGGGGGG...",
+        "..GGGGGGGGGGGG..",
+        ".GGGWWWWWWWWGGG.",
+        ".GGWWWWWWWWWWGG.",
+        ".GGWWEWWWWEWWGG.",
+        ".GGWWWWWWWWWWGG.",
+        ".GGWWWmmmmWWWGG.",
+        ".GGWWWWWWWWWWGG.",
+        ".GGGWWWWWWWWGGG.",
+        "..GGGGGGGGGGGG..",
+        "..GGBGGBGGBGGG..",
+        "...GGGGGGGGGG...",
+        ".....GGGGGG....."
       ],
       phrases: ["밥 줘… 배고파…"]
     },
     {
       name: "강성개미", // 기술조교
-      colors: { Y:"#f6c945", A:"#b5452e", E:"#ffffff", w:"#9aa1ad" },
+      colors: { a:"#4a2c1e", Y:"#f6c945", A:"#b5452e", E:"#ffffff", P:"#222222", w:"#9aa1ad" },
       grid: [
-        "...YYYYYY...",
-        "..YYYYYYYY..",
-        "..AAEAAEAA..",
-        "...AAAAAA...",
-        "ww.AAAAAA...",
-        ".w.AAAAAA...",
-        "...AAAAAA...",
-        "..AAAAAAAA..",
-        "..AAAAAAAA..",
-        "..A..AA..A.."
+        "..a..........a..",
+        "...a........a...",
+        "....YYYYYYYY....",
+        "...YYYYYYYYYY...",
+        "...YYYYYYYYYY...",
+        "...AAAAAAAAAA...",
+        "..AAEEAAAAEEAA..",
+        "..AAEPAAAAPEAA..",
+        "...AAAAAAAAAA...",
+        "....AAAAAAAA....",
+        "ww..AAAAAAAA....",
+        ".ww.AAAAAAAA....",
+        "..w.AAAAAAAA....",
+        "...AAAAAAAAAA...",
+        "..AAAAAAAAAAAA..",
+        "..AAAAAAAAAAAA..",
+        "..AA..AAAA..AA..",
+        "..A...A..A...A.."
       ],
       phrases: ["기술문의는 저에게.."]
     },
     {
       name: "날다진", // 영원한 금광의 1황
-      colors: { K:"#ffd34d", F:"#f0c8a0", E:"#222222", M:"#7a5230", P:"#9aa1ad", G:"#ffd34d" },
+      colors: { K:"#ffd34d", J:"#e0313f", F:"#f0c8a0", E:"#222222", m:"#c97b5a", O:"#7a5230", P:"#9aa1ad", H:"#8b6f4b", G:"#ffd34d", C:"#3a2c22" },
       grid: [
-        "..K.K.K.K...",
-        "..KKKKKKK...",
-        "...FFFFFF...",
-        "...FEFFEF...",
-        "...FFFFFF...",
-        "..MMMMMMMM..",
-        "PP.MMMMMM...",
-        ".P.MMMMMM...",
-        ".P.MMGGMM...",
-        "...MM..MM...",
-        "...M....M..."
+        "...K..K..K..K...",
+        "...KKKKKKKKKK...",
+        "...KKJKKJKKJK...",
+        "....FFFFFFFF....",
+        "....FFEFFEFF....",
+        "....FFFFFFFF....",
+        "....FFFmmFFF....",
+        "...OOOOOOOOOO...",
+        "PPP.OOOOOOOOOO..",
+        ".H..OOOOOOOOOO..",
+        ".H.OOOOGGOOOO...",
+        ".H.OOOGGGGOOO...",
+        ".H..OOOOOOOOOO..",
+        "....OOOO..OOOO..",
+        "....OOO....OOO..",
+        "....CC......CC.."
       ],
       phrases: ["삶이라는 여정..인생나날"]
     }
   ];
 
   function svgFor(m) {
-    var cell = 4, cols = 12, rows = m.grid.length;
+    var cell = 3, cols = 16, rows = m.grid.length;
     var out = '<svg viewBox="0 0 ' + (cols * cell) + ' ' + (rows * cell) + '" xmlns="http://www.w3.org/2000/svg">';
     for (var y = 0; y < rows; y++) {
       var row = m.grid[y];
