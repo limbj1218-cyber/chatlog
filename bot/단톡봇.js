@@ -266,11 +266,9 @@ function wallClimb(room) {
     var wall = loadJson(wallPath(room), { t: 0 });
     var now = new Date().getTime();
     var remain = WALL_COOLDOWN_HOURS * 3600000 - (now - (wall.t || 0));
+    // 쿨다운 중: 링크만 (카톡이 미리보기 카드를 자동으로 붙이므로 텍스트는 생략)
     if (remain > 0) {
-        var rh = Math.floor(remain / 3600000);
-        var rm = Math.ceil((remain % 3600000) / 60000);
-        return "📄 이 방의 정리 페이지\n" + pageUrl +
-            "\n\n(새 벽타기는 " + (rh > 0 ? rh + "시간 " : "") + rm + "분 후 가능)";
+        return pageUrl;
     }
 
     // 오늘 로그 확인 (파일 → 실패 시 메모리)
@@ -286,8 +284,8 @@ function wallClimb(room) {
 
     saveJson(wallPath(room), { t: now });
     markUploaded(room, log);   // 자동 벽타기가 같은 내용을 또 올리지 않게
-    return "🧗 벽타기 시작! 오늘 대화를 정리하고 있어요.\n" +
-        "약 2~5분 후 페이지가 갱신됩니다:\n" + pageUrl;
+    // 링크만 발송 (카톡 미리보기 카드가 제목·설명을 대신함 → 말풍선 하나로 보임)
+    return pageUrl;
 }
 
 // ═══════════════ 자동 스케줄러 (자동 벽타기 + 링크 공지) ═══════════════
@@ -369,10 +367,9 @@ function autoUpload(room, st) {
  */
 function announcePage(room) {
     if (!readTodayLog(room)) return;
+    // 링크만 발송 (카톡 미리보기 카드가 제목·설명을 대신함 → 말풍선 하나로 보임)
     try {
-        Api.replyRoom(room,
-            "📄 단톡방 정리 페이지\n" +
-            "오늘의 대화 요약·Q&A·타임라인 👇\n" + roomPageUrl(room));
+        Api.replyRoom(room, roomPageUrl(room));
     } catch (e) {}
 }
 
