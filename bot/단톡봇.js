@@ -234,9 +234,8 @@ function wallClimb(room) {
     if (remain > 0) {
         var rh = Math.floor(remain / 3600000);
         var rm = Math.ceil((remain % 3600000) / 60000);
-        return "⏳ 벽타기는 " + WALL_COOLDOWN_HOURS + "시간에 한 번만 가능해요.\n" +
-            "다음 가능: " + (rh > 0 ? rh + "시간 " : "") + rm + "분 후\n\n" +
-            "📄 지난 정리 보기:\n" + pageUrl;
+        return "📄 이 방의 정리 페이지\n" + pageUrl +
+            "\n\n(새 벽타기는 " + (rh > 0 ? rh + "시간 " : "") + rm + "분 후 가능)";
     }
 
     // 오늘 로그 확인 (파일 → 실패 시 메모리)
