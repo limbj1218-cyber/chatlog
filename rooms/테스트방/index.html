@@ -431,5 +431,164 @@ window.addEventListener('scroll', () => {
 /* 10분마다 자동 새로고침 */
 setTimeout(() => location.reload(), 10 * 60 * 1000);
 </script>
+<!-- ═══ 마스코트 (이 블록은 통째로 유지할 것) ═══ -->
+<style>
+.mascot { position: fixed; z-index: 80; width: 56px; pointer-events: none; text-align: center; will-change: left, bottom; }
+.mascot.roam-a { animation: mascotRoamA 36s ease-in-out infinite; }
+.mascot.roam-b { animation: mascotRoamB 42s ease-in-out infinite; }
+.mascot-sprite { width: 48px; margin: 0 auto; animation: mascotBob 1s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25)); }
+.mascot-sprite svg { display: block; width: 100%; height: auto; image-rendering: pixelated; shape-rendering: crispEdges; }
+.mascot-name { font-size: 10px; font-weight: 800; color: #fff; background: rgba(25,31,40,0.72); border-radius: 999px; padding: 1px 8px; display: inline-block; margin-top: 2px; }
+.mascot-bubble { position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%) translateY(6px) scale(0.9);
+  background: #fff; color: #191f28; font-size: 12px; font-weight: 700; line-height: 1.3; padding: 7px 11px;
+  border-radius: 12px; white-space: nowrap; border: 2px solid #191f28; box-shadow: 0 3px 0 rgba(25,31,40,0.15);
+  opacity: 0; transition: opacity 0.3s, transform 0.3s cubic-bezier(0.16,1,0.3,1); }
+.mascot-bubble.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+.mascot-bubble::after { content: ''; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #191f28; }
+body.dark .mascot-bubble { background: #25262b; color: #fff; border-color: #fff; }
+body.dark .mascot-bubble::after { border-top-color: #fff; }
+@keyframes mascotBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes mascotRoamA {
+  0% { left: 10vw; bottom: 14vh; } 20% { left: 38vw; bottom: 26vh; } 40% { left: 66vw; bottom: 13vh; }
+  60% { left: 80vw; bottom: 30vh; } 80% { left: 44vw; bottom: 19vh; } 100% { left: 10vw; bottom: 14vh; } }
+@keyframes mascotRoamB {
+  0% { left: 72vw; bottom: 40vh; } 25% { left: 48vw; bottom: 54vh; } 50% { left: 20vw; bottom: 38vh; }
+  75% { left: 36vw; bottom: 55vh; } 100% { left: 72vw; bottom: 40vh; } }
+@media (max-width: 520px) { .mascot { width: 48px; } .mascot-sprite { width: 40px; } .mascot-bubble { font-size: 11px; bottom: 66px; } }
+@media (prefers-reduced-motion: reduce) {
+  .mascot, .mascot-sprite { animation: none !important; }
+  .mascot.roam-a { left: 72vw; bottom: 16vh; } .mascot.roam-b { left: 10vw; bottom: 34vh; } }
+</style>
+<script>
+(function () {
+  /* 방 주민 마스코트 — 접속할 때마다 랜덤 2명이 돌아다닙니다 */
+  var MASCOTS = [
+    {
+      name: "라옴", // 마더 테레사
+      colors: { h:"#f6c945", W:"#f4f4f0", B:"#3b6fd4", F:"#f0c8a0", E:"#222222", R:"#e8e8e2" },
+      grid: [
+        "..hhhhhhh...",
+        "............",
+        "...WWWWWW...",
+        "..WWWWWWWW..",
+        "..WFFFFFFW..",
+        "..WFEFFEFW..",
+        "..WFFFFFFW..",
+        "..BWWWWWWB..",
+        "...RRRRRR...",
+        "..RRRRRRRR..",
+        "..RRRRRRRR..",
+        "..RR.RR.RR..",
+        "...R....R..."
+      ],
+      phrases: ["괜찮아요, 다 잘될 거예요 🙏","모르면 물어보세요, 언제든지요","오늘도 평화로운 하루 되세요","제가 기도해 드릴게요…","화내지 마세요, 복 나가요"]
+    },
+    {
+      name: "마이본", // 인형극의 대가
+      colors: { C:"#3a2c22", F:"#f0c8a0", E:"#222222", D:"#5b3e8f", s:"#9aa1ad", p:"#ff8fb3" },
+      grid: [
+        "....CCCC....",
+        "...FFFFFF...",
+        "...FEFFEF...",
+        "...FFFFFF...",
+        "..DDDDDDDD..",
+        "s.DDDDDDDD..",
+        "s.DDDDDDDD..",
+        "s.DDDDDDDD..",
+        "p..DD..DD...",
+        "pp.DD..DD...",
+        "p..D....D..."
+      ],
+      phrases: ["이 방의 진짜 주인공은 인형입니다","(인형이 대신 말합니다) 안녕하세요~","줄은 보이지 않을 뿐, 늘 있습니다","오늘의 공연은 오후 9시입니다","박수는 인형에게 주세요 👏"]
+    },
+    {
+      name: "시지지", // 유마고치
+      colors: { G:"#7dd8c8", W:"#e9f2ef", E:"#222222", M:"#e05a7a", B:"#f6c945" },
+      grid: [
+        "...GGGGGG...",
+        "..GGGGGGGG..",
+        ".GGWWWWWWGG.",
+        ".GGWEWWEWGG.",
+        ".GGWWMMWWGG.",
+        ".GGWWWWWWGG.",
+        ".GGGGGGGGGG.",
+        "..GGBGBGGG..",
+        "..GGGGGGGG..",
+        "...GGGGGG..."
+      ],
+      phrases: ["밥 줘… 배고파…","삐빅. 시지지가 진화하고 싶어합니다","관심을 주지 않으면 가출합니다","레벨업까지 앞으로 3일","삐리릭. 오늘의 기분: 시무룩"]
+    },
+    {
+      name: "강성개미", // 기술조교
+      colors: { Y:"#f6c945", A:"#b5452e", E:"#ffffff", w:"#9aa1ad" },
+      grid: [
+        "...YYYYYY...",
+        "..YYYYYYYY..",
+        "..AAEAAEAA..",
+        "...AAAAAA...",
+        "ww.AAAAAA...",
+        ".w.AAAAAA...",
+        "...AAAAAA...",
+        "..AAAAAAAA..",
+        "..AAAAAAAA..",
+        "..A..AA..A.."
+      ],
+      phrases: ["일단 재부팅부터 해보셨나요?","로그 먼저 보여주세요","그건 버그가 아니라 기능입니다","개미는 오늘도 일한다 🐜","질문 전에 검색 한 번, 약속~"]
+    },
+    {
+      name: "날다인", // 영원한 금광의 1황
+      colors: { K:"#ffd34d", F:"#f0c8a0", E:"#222222", M:"#7a5230", P:"#9aa1ad", G:"#ffd34d" },
+      grid: [
+        "..K.K.K.K...",
+        "..KKKKKKK...",
+        "...FFFFFF...",
+        "...FEFFEF...",
+        "...FFFFFF...",
+        "..MMMMMMMM..",
+        "PP.MMMMMM...",
+        ".P.MMMMMM...",
+        ".P.MMGGMM...",
+        "...MM..MM...",
+        "...M....M..."
+      ],
+      phrases: ["금광은 배신하지 않는다 ⛏️","오늘도 채굴 완료. 1황은 쉬지 않는다","금이 안 나온다고? 더 파라","영원한 1황… 그것이 나","곡괭이는 거들 뿐"]
+    }
+  ];
+
+  function svgFor(m) {
+    var cell = 4, cols = 12, rows = m.grid.length;
+    var out = '<svg viewBox="0 0 ' + (cols * cell) + ' ' + (rows * cell) + '" xmlns="http://www.w3.org/2000/svg">';
+    for (var y = 0; y < rows; y++) {
+      var row = m.grid[y];
+      for (var x = 0; x < row.length; x++) {
+        var c = m.colors[row.charAt(x)];
+        if (c) out += '<rect x="' + (x * cell) + '" y="' + (y * cell) + '" width="' + cell + '" height="' + cell + '" fill="' + c + '"/>';
+      }
+    }
+    return out + '</svg>';
+  }
+
+  function cycle(bubble, phrases, startDelay) {
+    setTimeout(function tick() {
+      bubble.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+      bubble.classList.add('show');
+      setTimeout(function () { bubble.classList.remove('show'); }, 2800);
+      setTimeout(tick, 2800 + 3200 + Math.random() * 3000);
+    }, startDelay);
+  }
+
+  var picks = MASCOTS.slice().sort(function () { return Math.random() - 0.5; }).slice(0, 2);
+  picks.forEach(function (m, i) {
+    var d = document.createElement('div');
+    d.className = 'mascot ' + (i === 0 ? 'roam-a' : 'roam-b');
+    d.innerHTML = '<div class="mascot-bubble"></div><div class="mascot-sprite">' + svgFor(m) +
+      '</div><div class="mascot-name">' + m.name + '</div>';
+    document.body.appendChild(d);
+    cycle(d.querySelector('.mascot-bubble'), m.phrases, 1800 + i * 2200);
+  });
+})();
+</script>
+<!-- ═══ 마스코트 끝 ═══ -->
+
 </body>
 </html>
