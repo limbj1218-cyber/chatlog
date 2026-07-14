@@ -2,34 +2,42 @@
  * ═══════════════════════════════════════════════════════════
  *  단톡봇 — 메신저봇R용 카카오톡 봇 (방별 독립 동작)
  *
+ *  ◆ 동작할 방: 아래 ROOMS 목록에 직접 입력 (카톡 방 이름과 정확히 일치)
+ *
  *  ◆ 권한
  *    - 최고 관리자: 대화명에 "후파" 포함
  *    - 부관리자: 방에서 /지정 이름조각 으로 지정 (방별 관리)
  *
- *  ◆ 제어실 ("임병진" 일반 채팅방)
- *    - /등록 방이름 → 그 방에서 봇 활성화
- *    - /삭제 방이름 → 비활성화
- *    - /방목록 → 활성 방 목록
- *
- *  ◆ 활성화된 방에서
+ *  ◆ 명령어 (활성화된 방에서)
  *    - /등록 명령어 내용...  → 자동응답 등록 (관리자만, 내용은 띄어쓰기 포함 전부)
  *    - /삭제 명령어          → 자동응답 삭제 (관리자만)
  *    - 등록된 명령어와 메시지가 정확히 일치하면 봇이 내용으로 응답
  *    - /벽타기 → 오늘 대화를 GitHub에 올려 Actions가 요약·게시 (방별 6시간에 1번)
- *    - /목록 /통계 /날씨 /봇 /도움말
+ *    - /목록 /통계 /날씨 /봇 /도움말 /방이름(진단)
  *
- *  모든 데이터(부관리자, 자동응답, 쿨다운, 대화로그)는 방별로 분리 저장.
+ *  ◆ 저장: 파일 저장을 시도하고, 실패하면 메모리로 자동 대체.
+ *    (메모리 모드에서는 앱을 재시작하면 자동응답/부관리자/오늘 기록이 사라지므로
+ *     가능하면 메신저봇R에 "모든 파일 접근" 권한을 주는 것을 권장)
+ *
+ *  모든 데이터(부관리자, 자동응답, 쿨다운, 대화로그)는 방별로 분리.
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "단톡봇";
 
+// ─────────────── 봇이 동작할 방 (여기에 직접 입력) ───────────────
+var ROOMS = [
+    "임병진",
+    // "우리 오픈채팅방",     ← 이렇게 쉼표로 계속 추가
+    // "두번째 방",
+];
+// ──────────────────────────────────────────────────────────────
+
 // ─────────────── 기본 설정 ───────────────
 var PREFIX = "/";              // 명령어 접두사
 var SUPER_ADMIN = "후파";      // 대화명에 이 문자열이 포함되면 최고 관리자
-var CONTROL_ROOM = "임병진";   // 봇 제어실 (방 등록/해제 전용 채팅방)
 var WALL_COOLDOWN_HOURS = 6;   // /벽타기 방별 쿨다운 (시간)
 
-// GitHub 연동 (벽타기용) — 배포 후 채우세요
+// GitHub 연동 (벽타기용)
 var GITHUB = {
     OWNER: "limbj1218-cyber",
     REPO: "chatlog",
@@ -53,40 +61,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
         // ⓪ 진단용 — 등록 여부와 무관하게 모든 방에서 동작
         if (text === PREFIX + "방이름") {
-            var saved = "저장 테스트: ";
-            try {
-                FileStream.write(DIRS.DATA + "/write_test.txt", "ok");
-                saved += (String(FileStream.read(DIRS.DATA + "/write_test.txt")) === "ok") ? "정상 ✅" : "실패 ❌";
-            } catch (e) { saved += "실패 ❌ (" + e + ")"; }
-            replier.reply("🔍 봇이 보는 정보\n" +
-                "방 이름: [" + room + "]\n" +
-                "보낸 사람: [" + sender + "]\n" +
-                "제어실 설정값: [" + CONTROL_ROOM + "]\n" +
-                "제어실 일치: " + (room === CONTROL_ROOM ? "예 ✅" : "아니오 ❌") + "\n" +
-                "이 방 활성화됨: " + (activeRooms().indexOf(room) !== -1 ? "예 ✅" : "아니오 ❌") + "\n" +
-                saved);
+            replier.reply(diagText(room, sender));
             return;
         }
 
-        // ① 제어실
-        if (room === CONTROL_ROOM) {
-            controlRoom(text, replier);
-            return;
-        }
+        // ① 목록에 없는 방은 완전히 무시
+        if (ROOMS.indexOf(room) === -1) return;
 
-        // ② 등록 안 된 방은 완전히 무시
-        if (activeRooms().indexOf(room) === -1) return;
-
-        // ③ 대화 기록 (벽타기/통계/일일정리의 원본)
+        // ② 대화 기록 (벽타기/통계의 원본)
         logMessage(room, sender, msg);
 
-        // ④ /명령어
+        // ③ /명령어
         if (text.indexOf(PREFIX) === 0) {
             handleCommand(room, text, sender, replier);
             return;
         }
 
-        // ⑤ 등록된 자동응답 — 메시지 전체가 정확히 일치할 때만
+        // ④ 등록된 자동응답 — 메시지 전체가 정확히 일치할 때만
         var cmds = loadJson(cmdsPath(room), {});
         if (cmds.hasOwnProperty(text)) replier.reply(cmds[text]);
 
@@ -95,39 +86,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     }
 }
 
-// ═══════════════ 제어실 (임병진 방) ═══════════════
+// ═══════════════ 진단 ═══════════════
 
-function controlRoom(text, replier) {
-    if (text.indexOf(PREFIX) !== 0) return;
-    var p = splitCmd(text);
-    var rooms = activeRooms();
-
-    if (p.cmd === "등록") {
-        if (!p.arg) { replier.reply("사용법: " + PREFIX + "등록 방이름"); return; }
-        if (rooms.indexOf(p.arg) !== -1) { replier.reply("이미 등록된 방이에요: " + p.arg); return; }
-        rooms.push(p.arg);
-        saveJson(roomsPath(), rooms);
-        replier.reply("✅ 봇 활성화: " + p.arg +
-            "\n(카톡에 보이는 방 이름과 한 글자도 다르면 동작하지 않아요)");
-
-    } else if (p.cmd === "삭제") {
-        var i = rooms.indexOf(p.arg);
-        if (i === -1) { replier.reply("등록되지 않은 방이에요: " + p.arg); return; }
-        rooms.splice(i, 1);
-        saveJson(roomsPath(), rooms);
-        replier.reply("🛑 봇 비활성화: " + p.arg);
-
-    } else if (p.cmd === "방목록") {
-        replier.reply(rooms.length
-            ? "🤖 활성화된 방 (" + rooms.length + "개)\n- " + rooms.join("\n- ")
-            : "활성화된 방이 없어요.\n" + PREFIX + "등록 방이름 으로 추가하세요.");
-
-    } else if (p.cmd === "도움말") {
-        replier.reply("🎛️ 제어실 명령어\n" +
-            PREFIX + "등록 방이름 — 그 방에서 봇 활성화\n" +
-            PREFIX + "삭제 방이름 — 비활성화\n" +
-            PREFIX + "방목록 — 활성화된 방 보기");
-    }
+function diagText(room, sender) {
+    var saved = "파일 저장: ";
+    try {
+        FileStream.write(DIRS.DATA + "/write_test.txt", "ok");
+        saved += (String(FileStream.read(DIRS.DATA + "/write_test.txt")) === "ok")
+            ? "정상 ✅" : "실패 ❌ (메모리 모드로 동작)";
+    } catch (e) { saved += "실패 ❌ (메모리 모드로 동작)"; }
+    return "🔍 봇이 보는 정보\n" +
+        "방 이름: [" + room + "]\n" +
+        "보낸 사람: [" + sender + "]\n" +
+        "이 방 활성화됨: " + (ROOMS.indexOf(room) !== -1 ? "예 ✅" : "아니오 ❌ (코드의 ROOMS 목록에 추가하세요)") + "\n" +
+        saved;
 }
 
 // ═══════════════ 방 명령어 ═══════════════
@@ -256,13 +228,9 @@ function wallClimb(room) {
     var pageUrl = roomPageUrl(room);
 
     // 쿨다운 확인 (방별)
-    var last = 0;
-    try {
-        var t = FileStream.read(wallPath(room));
-        if (t) last = parseInt(String(t).trim(), 10) || 0;
-    } catch (e) {}
+    var wall = loadJson(wallPath(room), { t: 0 });
     var now = new Date().getTime();
-    var remain = WALL_COOLDOWN_HOURS * 3600000 - (now - last);
+    var remain = WALL_COOLDOWN_HOURS * 3600000 - (now - (wall.t || 0));
     if (remain > 0) {
         var rh = Math.floor(remain / 3600000);
         var rm = Math.ceil((remain % 3600000) / 60000);
@@ -271,26 +239,25 @@ function wallClimb(room) {
             "📄 지난 정리 보기:\n" + pageUrl;
     }
 
-    // 오늘 로그 확인
-    var log = null;
-    try { log = FileStream.read(logPath(room)); } catch (e) {}
-    if (log === null || log === undefined || String(log).trim() === "") {
-        return "📭 오늘 기록된 대화가 없어서 정리할 게 없어요.";
+    // 오늘 로그 확인 (파일 → 실패 시 메모리)
+    var log = readTodayLog(room);
+    if (!log) {
+        return "📭 오늘 기록된 대화가 없어서 정리할 게 없어요.\n(봇이 켜진 이후의 대화만 기록됩니다)";
     }
 
     // GitHub에 업로드 → push가 Actions를 깨워 요약·게시
     var path = "chats/" + safeName(room) + "-" + today() + ".txt";
-    var ok = githubPutFile(path, String(log), "벽타기: " + room + " " + today());
+    var ok = githubPutFile(path, log, "벽타기: " + room + " " + today());
     if (!ok) return "⚠️ GitHub 업로드에 실패했어요. 토큰/저장소 설정을 확인해주세요.";
 
-    FileStream.write(wallPath(room), String(now));
+    saveJson(wallPath(room), { t: now });
     return "🧗 벽타기 시작! 오늘 대화를 정리하고 있어요.\n" +
         "약 2~5분 후 페이지가 갱신됩니다:\n" + pageUrl;
 }
 
 function roomPageUrl(room) {
-    if (!GITHUB.PAGE_BASE) return "(페이지 주소 미설정)";
     var base = GITHUB.PAGE_BASE;
+    if (!base) return "(페이지 주소 미설정)";
     if (base.charAt(base.length - 1) !== "/") base += "/";
     return base + "rooms/" + encodeURIComponent(safeName(room)) + "/";
 }
@@ -357,12 +324,9 @@ function base64utf8(str) {
 // ─── 통계 / 날씨 ───
 
 function statsText(room) {
-    var raw = null;
-    try { raw = FileStream.read(logPath(room)); } catch (e) {}
-    if (raw === null || raw === undefined || raw === "") {
-        return "📊 오늘은 아직 기록된 대화가 없어요.";
-    }
-    var lines = String(raw).split("\n");
+    var raw = readTodayLog(room);
+    if (!raw) return "📊 오늘은 아직 기록된 대화가 없어요.";
+    var lines = raw.split("\n");
     var re = /^\[(.+?)\] \[오[전후] \d{1,2}:\d{2}\] /;
     var total = 0, counts = {};
     for (var i = 0; i < lines.length; i++) {
@@ -407,16 +371,33 @@ function weatherText(city) {
     }
 }
 
-// ─── 대화 기록 ───
+// ═══════════════ 대화 기록 (파일 + 메모리 이중화) ═══════════════
+
+var MEMLOG = {};   // room → { date, lines[] }  (파일 저장 실패 대비)
 
 /** 카톡 내보내기와 같은 형식: [이름] [오후 3:24] 내용 */
 function logMessage(room, sender, msg) {
-    try {
-        FileStream.append(logPath(room), "[" + sender + "] [" + kakaoTime() + "] " + msg + "\n");
-    } catch (e) {} // 기록 실패해도 봇 동작에는 지장 없게
+    var line = "[" + sender + "] [" + kakaoTime() + "] " + msg;
+    // 메모리 기록 (오늘 것만 유지, 최대 5000줄)
+    var buf = MEMLOG[room];
+    if (!buf || buf.date !== today()) buf = MEMLOG[room] = { date: today(), lines: [] };
+    buf.lines.push(line);
+    if (buf.lines.length > 5000) buf.lines.shift();
+    // 파일 기록 (되면 좋고, 안 되면 메모리로 충분)
+    try { FileStream.append(logPath(room), line + "\n"); } catch (e) {}
 }
 
-// ─── 권한 ───
+/** 오늘 로그: 파일이 있으면 파일, 없으면 메모리 */
+function readTodayLog(room) {
+    var raw = null;
+    try { raw = FileStream.read(logPath(room)); } catch (e) {}
+    if (raw !== null && raw !== undefined && String(raw).trim() !== "") return String(raw);
+    var buf = MEMLOG[room];
+    if (buf && buf.date === today() && buf.lines.length > 0) return buf.lines.join("\n") + "\n";
+    return null;
+}
+
+// ═══════════════ 권한 ═══════════════
 
 function isSuper(sender) {
     return String(sender).indexOf(SUPER_ADMIN) !== -1;
@@ -431,21 +412,26 @@ function isAdmin(room, sender) {
     return false;
 }
 
-// ─── 저장소 / 유틸 ───
+// ═══════════════ 저장소 (파일 + 메모리 이중화) ═══════════════
+
+var MEM = {};   // 파일 저장 실패 시 대체 저장소 (앱 재시작 전까지 유지)
 
 function loadJson(path, def) {
     try {
         var raw = FileStream.read(path);
-        if (raw === null || raw === undefined || String(raw).trim() === "") return def;
-        return JSON.parse(String(raw));
-    } catch (e) { return def; }
+        if (raw !== null && raw !== undefined && String(raw).trim() !== "") {
+            return JSON.parse(String(raw));
+        }
+    } catch (e) {}
+    return MEM.hasOwnProperty(path) ? MEM[path] : def;
 }
 
 function saveJson(path, obj) {
-    FileStream.write(path, JSON.stringify(obj));
+    MEM[path] = obj;   // 메모리에 항상 저장
+    try { FileStream.write(path, JSON.stringify(obj)); } catch (e) {}
 }
 
-function activeRooms() { return loadJson(roomsPath(), []); }
+// ═══════════════ 유틸 ═══════════════
 
 function splitCmd(text) {
     var body = text.substring(PREFIX.length).trim();
@@ -474,8 +460,7 @@ function safeName(room) {
     return String(room).replace(/[\\\/:*?"<>|]/g, "_");
 }
 
-function roomsPath()      { return DIRS.DATA + "/rooms.json"; }
 function cmdsPath(room)   { return DIRS.DATA + "/cmds_" + safeName(room) + ".json"; }
 function subsPath(room)   { return DIRS.DATA + "/subs_" + safeName(room) + ".json"; }
-function wallPath(room)   { return DIRS.DATA + "/wall_" + safeName(room) + ".txt"; }
+function wallPath(room)   { return DIRS.DATA + "/wall_" + safeName(room) + ".json"; }
 function logPath(room)    { return DIRS.LOG + "/" + safeName(room) + "-" + today() + ".txt"; }
