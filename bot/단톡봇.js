@@ -369,10 +369,15 @@ function announcePage(room, st) {
     } catch (e) {}
 }
 
-/** 수동 /벽타기 성공 시에도 업로드 기준점 갱신 */
+/**
+ * 수동 /벽타기 성공 시 기준점 갱신:
+ * - upLen: 자동 벽타기가 같은 내용을 또 올리지 않게
+ * - anLen: 방금 응답으로 링크가 이미 나갔으므로, 새 대화가 없는 한 정시 링크 공지는 건너뜀
+ */
 function markUploaded(room, log) {
     var st = loadJson(schedPath(room), {});
     st.upLen = log.length;
+    st.anLen = log.length;
     saveJson(schedPath(room), st);
 }
 
