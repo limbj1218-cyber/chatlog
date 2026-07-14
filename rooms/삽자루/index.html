@@ -360,37 +360,42 @@ setTimeout(() => location.reload(), 10 * 60 * 1000);
 </script>
 <!-- ═══ 마스코트 (이 블록은 통째로 유지할 것) ═══ -->
 <style>
-.mascot { position: fixed; z-index: 80; width: 56px; pointer-events: none; text-align: center; will-change: left, bottom; }
-.mascot.roam-a { animation: mascotRoamA 36s ease-in-out infinite; }
-.mascot.roam-b { animation: mascotRoamB 42s ease-in-out infinite; }
-.mascot-sprite { width: 48px; margin: 0 auto; animation: mascotBob 1s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25)); }
+.mascot-corner { position: fixed; left: 10px; bottom: 8px; z-index: 80; display: flex; gap: 8px; align-items: flex-end; pointer-events: none; user-select: none; }
+.mascot { position: relative; width: 52px; text-align: center; }
+.mascot-sprite { width: 44px; margin: 0 auto; animation: mascotBob 1s ease-in-out infinite; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.25)); }
+.mascot:nth-child(2) .mascot-sprite { animation-delay: 0.15s; }
+.mascot:nth-child(3) .mascot-sprite { animation-delay: 0.3s; }
+.mascot:nth-child(4) .mascot-sprite { animation-delay: 0.45s; }
+.mascot:nth-child(5) .mascot-sprite { animation-delay: 0.6s; }
 .mascot-sprite svg { display: block; width: 100%; height: auto; image-rendering: pixelated; shape-rendering: crispEdges; }
-.mascot-name { font-size: 10px; font-weight: 800; color: #fff; background: rgba(25,31,40,0.72); border-radius: 999px; padding: 1px 8px; display: inline-block; margin-top: 2px; }
-.mascot.boss .mascot-sprite { width: 56px; }
+.mascot-name { font-size: 9px; font-weight: 800; color: #fff; background: rgba(25,31,40,0.72); border-radius: 999px; padding: 1px 6px; display: inline-block; margin-top: 2px; white-space: nowrap; }
+.mascot.boss { width: 58px; }
+.mascot.boss .mascot-sprite { width: 52px; }
 .mascot.boss .mascot-name { background: linear-gradient(135deg, #f6c945, #f0a020); color: #3a2c00; }
-.mascot-bubble { position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%) translateY(6px) scale(0.9);
+.mascot-bubble { position: absolute; left: -4px; bottom: calc(100% + 10px); transform: translateY(6px) scale(0.9);
   background: #fff; color: #191f28; font-size: 12px; font-weight: 700; line-height: 1.3; padding: 7px 11px;
-  border-radius: 12px; white-space: pre-line; width: max-content; max-width: 230px; border: 2px solid #191f28; box-shadow: 0 3px 0 rgba(25,31,40,0.15);
+  border-radius: 12px; white-space: pre-line; width: max-content; max-width: 240px; text-align: left;
+  border: 2px solid #191f28; box-shadow: 0 3px 0 rgba(25,31,40,0.15);
   opacity: 0; transition: opacity 0.3s, transform 0.3s cubic-bezier(0.16,1,0.3,1); }
-.mascot-bubble.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-.mascot-bubble::after { content: ''; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #191f28; }
+.mascot-bubble.show { opacity: 1; transform: translateY(0) scale(1); }
+.mascot-bubble::after { content: ''; position: absolute; left: 22px; bottom: -8px; border: 6px solid transparent; border-top-color: #191f28; }
 body.dark .mascot-bubble { background: #25262b; color: #fff; border-color: #fff; }
 body.dark .mascot-bubble::after { border-top-color: #fff; }
-@keyframes mascotBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-@keyframes mascotRoamA {
-  0% { left: 10vw; bottom: 14vh; } 20% { left: 38vw; bottom: 26vh; } 40% { left: 66vw; bottom: 13vh; }
-  60% { left: 80vw; bottom: 30vh; } 80% { left: 44vw; bottom: 19vh; } 100% { left: 10vw; bottom: 14vh; } }
-@keyframes mascotRoamB {
-  0% { left: 72vw; bottom: 40vh; } 25% { left: 48vw; bottom: 54vh; } 50% { left: 20vw; bottom: 38vh; }
-  75% { left: 36vw; bottom: 55vh; } 100% { left: 72vw; bottom: 40vh; } }
-@media (max-width: 520px) { .mascot { width: 48px; } .mascot-sprite { width: 40px; } .mascot.boss .mascot-sprite { width: 46px; } .mascot-bubble { font-size: 11px; bottom: 68px; } }
-@media (prefers-reduced-motion: reduce) {
-  .mascot, .mascot-sprite { animation: none !important; }
-  .mascot.roam-a { left: 72vw; bottom: 16vh; } .mascot.roam-b { left: 10vw; bottom: 34vh; } }
+@keyframes mascotBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@media (max-width: 520px) {
+  .mascot-corner { transform: scale(0.8); transform-origin: left bottom; gap: 5px; }
+}
+@media (prefers-reduced-motion: reduce) { .mascot-sprite { animation: none !important; } }
 </style>
 <script>
 (function () {
-  /* 방 주민 마스코트 (16칸 픽셀) — 라옴(강사님)은 항상, 나머지 중 1명이 랜덤 동행 */
+  /* ── 마스코트가 나올 방 목록 (방 이름 추가하면 그 방 페이지에도 등장) ── */
+  var MASCOT_ROOMS = ["금광2"];
+
+  var roomName = (document.querySelector('.hero h1') || {}).textContent || "";
+  if (MASCOT_ROOMS.indexOf(roomName.trim()) === -1) return;
+
+  /* 방 주민 마스코트 (16칸 픽셀) — 왼쪽 아래 고정, 순서대로 정렬 */
   var MASCOTS = [
     {
       name: "라옴", // 마더 테레사 · 강사님 · 대장
@@ -527,22 +532,23 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
     setTimeout(function tick() {
       bubble.textContent = phrases[Math.floor(Math.random() * phrases.length)];
       bubble.classList.add('show');
-      setTimeout(function () { bubble.classList.remove('show'); }, 2800);
-      setTimeout(tick, 2800 + 3200 + Math.random() * 3000);
+      setTimeout(function () { bubble.classList.remove('show'); }, 3000);
+      setTimeout(tick, 3000 + 12000 + Math.random() * 8000);
     }, startDelay);
   }
 
-  /* 라옴(강사님·대장)은 항상 등장, 나머지 4명 중 1명이 랜덤 동행 */
-  var rest = MASCOTS.slice(1);
-  var picks = [MASCOTS[0], rest[Math.floor(Math.random() * rest.length)]];
-  picks.forEach(function (m, i) {
+  /* 왼쪽 아래에 순서대로 나열: ⭐라옴(대장) → 마이폰 → 시지지 → 강성개미 → 날다진 */
+  var corner = document.createElement('div');
+  corner.className = 'mascot-corner';
+  MASCOTS.forEach(function (m, i) {
     var d = document.createElement('div');
-    d.className = 'mascot ' + (i === 0 ? 'roam-a boss' : 'roam-b');
+    d.className = 'mascot' + (i === 0 ? ' boss' : '');
     d.innerHTML = '<div class="mascot-bubble"></div><div class="mascot-sprite">' + svgFor(m) +
       '</div><div class="mascot-name">' + (i === 0 ? '⭐ ' : '') + m.name + '</div>';
-    document.body.appendChild(d);
-    cycle(d.querySelector('.mascot-bubble'), m.phrases, 1800 + i * 2200);
+    corner.appendChild(d);
+    cycle(d.querySelector('.mascot-bubble'), m.phrases, 2000 + i * 3600);
   });
+  document.body.appendChild(corner);
 })();
 </script>
 <!-- ═══ 마스코트 끝 ═══ -->
