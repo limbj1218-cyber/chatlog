@@ -10,7 +10,8 @@
 - `rooms/방이름/index.html` — 방별 정리 페이지 (방마다 독립)
 - `rooms/_template.html` — 새 방 페이지 생성용 템플릿 (`{{방이름}}` 치환)
 - `chats/` — 봇이 업로드하는 방별 대화 로그. 파일명: `방이름-YYYY-MM-DD.txt`
-- `bot/단톡봇.js` — 메신저봇R용 봇 스크립트 (안드로이드 폰 위 Rhino 엔진에서 실행되므로 ES5 문법만 사용할 것)
+- `bot/단톡봇.js` — 봇 본체 (안드로이드 폰 위 Rhino 엔진에서 실행되므로 ES5 문법만 사용할 것)
+- `bot/로더.js` — 폰에 실제로 설치되는 로더. 깃헙 raw에서 단톡봇.js를 받아 실행하며 TOKEN/ROOMS를 주입. 본체 수정 후 push하면 방에서 `/업데이트`로 반영
 - `bot/봇설치가이드.md` — 봇 설치/연동 가이드
 - `index.html` — 루트 페이지 (구버전 단일 페이지, 추후 방 목록 페이지로 전환 예정)
 - `.github/workflows/summarize.yml` — 벽타기 워크플로우 (chats/** push 시 실행)
