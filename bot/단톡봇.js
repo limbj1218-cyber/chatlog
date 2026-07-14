@@ -63,22 +63,25 @@ var GITHUB = {
  * 전부 실패하면 기존처럼 메모리 모드로 동작.
  */
 function pickBaseDir() {
-    var cands = ["/sdcard/msgbot"];
+    // 실행 중인 봇 앱(메신저봇R, 다크토네이도 챗봇 등 무엇이든)에게 자기 전용 폴더를 물어본다.
+    // 앱 전용 폴더는 저장 권한이 필요 없다.
+    var cands = [];
     try {
         var app = android.app.ActivityThread.currentApplication();
         var ext = app.getExternalFilesDir(null);
-        if (ext) cands.push(String(ext.getAbsolutePath()));
-        cands.push(String(app.getFilesDir().getAbsolutePath()) + "/dantalk");
+        if (ext) cands.push(String(ext.getAbsolutePath()));            // ① 앱 전용 외부 폴더
+        cands.push(String(app.getFilesDir().getAbsolutePath()) + "/dantalk"); // ② 앱 내부 저장소
     } catch (e) {}
+    cands.push("/sdcard/dantalkbot");   // ③ 예비 (저장 권한이 있는 폰)
     for (var i = 0; i < cands.length; i++) {
         try {
             FileStream.write(cands[i] + "/write_test.txt", "ok");
             if (String(FileStream.read(cands[i] + "/write_test.txt")) === "ok") return cands[i];
         } catch (e) {}
     }
-    return "/sdcard/msgbot";   // 전부 실패 → 어차피 메모리 모드
+    return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0714-3";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0714-4";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
