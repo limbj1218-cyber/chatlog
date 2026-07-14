@@ -29,7 +29,8 @@ jobs:
         id: changed
         run: |
           # core.quotepath=false: 한글 파일명이 8진수 이스케이프로 깨지지 않게
-          FILE=$(git -c core.quotepath=false diff --name-only HEAD^ HEAD -- 'chats/*.txt' | head -n 1)
+          # --diff-filter=AM: 추가/수정만 감지 (원본 삭제 커밋이 다시 트리거되지 않게)
+          FILE=$(git -c core.quotepath=false diff --diff-filter=AM --name-only HEAD^ HEAD -- 'chats/*.txt' | head -n 1)
           echo "file=$FILE" >> "$GITHUB_OUTPUT"
           echo "변경 파일: $FILE"
 
@@ -47,11 +48,13 @@ jobs:
             --allowedTools "Read,Write,Edit,Glob,Grep" \
             --permission-mode acceptEdits
 
-      - name: 커밋 & 푸시
+      - name: 커밋 & 푸시 (원본 로그는 삭제)
         if: steps.changed.outputs.file != ''
         run: |
           git config user.name "wall-bot"
           git config user.email "wall-bot@users.noreply.github.com"
+          # 요약이 끝난 원본 대화 로그는 공개 저장소에 남기지 않는다
+          git rm -f --ignore-unmatch -- "${{ steps.changed.outputs.file }}"
           git add -A
           git diff --cached --quiet || git commit -m "벽타기 정리: ${{ steps.changed.outputs.file }}"
           git push

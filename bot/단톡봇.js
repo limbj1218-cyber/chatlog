@@ -68,16 +68,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         // ① 목록에 없는 방은 완전히 무시
         if (ROOMS.indexOf(room) === -1) return;
 
-        // ② 대화 기록 (벽타기/통계의 원본)
+        // ② 날짜가 바뀌었으면 어제 로그를 자동 업로드 → 매일 빠짐없이 정리됨
+        //    (logMessage가 메모리 버퍼를 오늘 것으로 교체하기 전에 실행해야 함)
+        autoUploadYesterday(room);
+
+        // ③ 대화 기록 (벽타기/통계의 원본)
         logMessage(room, sender, msg);
 
-        // ③ /명령어
+        // ④ /명령어
         if (text.indexOf(PREFIX) === 0) {
             handleCommand(room, text, sender, replier);
             return;
         }
 
-        // ④ 등록된 자동응답 — 메시지 전체가 정확히 일치할 때만
+        // ⑤ 등록된 자동응답 — 메시지 전체가 정확히 일치할 때만
         var cmds = loadJson(cmdsPath(room), {});
         if (cmds.hasOwnProperty(text)) replier.reply(cmds[text]);
 
@@ -386,14 +390,36 @@ function logMessage(room, sender, msg) {
     try { FileStream.append(logPath(room), line + "\n"); } catch (e) {}
 }
 
-/** 오늘 로그: 파일이 있으면 파일, 없으면 메모리 */
-function readTodayLog(room) {
+/** 특정 날짜 로그: 파일이 있으면 파일, 없으면 메모리 */
+function readLogFor(room, date) {
     var raw = null;
-    try { raw = FileStream.read(logPath(room)); } catch (e) {}
+    try { raw = FileStream.read(DIRS.LOG + "/" + safeName(room) + "-" + date + ".txt"); } catch (e) {}
     if (raw !== null && raw !== undefined && String(raw).trim() !== "") return String(raw);
     var buf = MEMLOG[room];
-    if (buf && buf.date === today() && buf.lines.length > 0) return buf.lines.join("\n") + "\n";
+    if (buf && buf.date === date && buf.lines.length > 0) return buf.lines.join("\n") + "\n";
     return null;
+}
+
+function readTodayLog(room) { return readLogFor(room, today()); }
+
+/**
+ * 날짜 전환 감지: 이 방의 마지막 활동일이 오늘이 아니면,
+ * 그날(어제) 로그를 GitHub에 자동 업로드해서 정리가 누락되지 않게 한다.
+ * (그날 /벽타기를 이미 했더라도 전체 하루치로 다시 올려 최종본으로 갱신)
+ */
+function autoUploadYesterday(room) {
+    var st = loadJson(statePath(room), { lastDate: null });
+    var t = today();
+    if (st.lastDate === t) return;
+    var prev = st.lastDate;
+    st.lastDate = t;
+    saveJson(statePath(room), st);          // 먼저 저장해서 중복 업로드 방지
+    if (!prev || !GITHUB.TOKEN) return;     // 첫 실행이거나 토큰 없으면 통과
+    var log = readLogFor(room, prev);
+    if (!log) return;                        // 그날 기록이 없으면 통과
+    var path = "chats/" + safeName(room) + "-" + prev + ".txt";
+    githubPutFile(path, log, "자동정리: " + room + " " + prev);
+    // 조용히 처리 (방에 메시지 안 보냄)
 }
 
 // ═══════════════ 권한 ═══════════════
@@ -460,6 +486,7 @@ function safeName(room) {
 }
 
 function cmdsPath(room)   { return DIRS.DATA + "/cmds_" + safeName(room) + ".json"; }
+function statePath(room)  { return DIRS.DATA + "/state_" + safeName(room) + ".json"; }
 function subsPath(room)   { return DIRS.DATA + "/subs_" + safeName(room) + ".json"; }
 function wallPath(room)   { return DIRS.DATA + "/wall_" + safeName(room) + ".json"; }
 function logPath(room)    { return DIRS.LOG + "/" + safeName(room) + "-" + today() + ".txt"; }
