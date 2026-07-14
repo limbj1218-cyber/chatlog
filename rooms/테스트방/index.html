@@ -436,13 +436,10 @@ setTimeout(() => location.reload(), 10 * 60 * 1000);
 </script>
 <!-- ═══ 마스코트 (이 블록은 통째로 유지할 것) ═══ -->
 <style>
-.mascot-corner { position: fixed; left: 10px; bottom: 8px; z-index: 80; display: flex; gap: 8px; align-items: flex-end; pointer-events: none; user-select: none; }
+.mascot-corner { position: fixed; left: 10px; bottom: 8px; z-index: 80; display: flex; flex-direction: column; align-items: flex-start; gap: 62px; pointer-events: none; user-select: none; }
+.mascot-row { display: flex; gap: 8px; align-items: flex-end; }
 .mascot { position: relative; width: 52px; text-align: center; }
 .mascot-sprite { width: 44px; margin: 0 auto; animation: mascotBob 1s ease-in-out infinite; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.25)); }
-.mascot:nth-child(2) .mascot-sprite { animation-delay: 0.15s; }
-.mascot:nth-child(3) .mascot-sprite { animation-delay: 0.3s; }
-.mascot:nth-child(4) .mascot-sprite { animation-delay: 0.45s; }
-.mascot:nth-child(5) .mascot-sprite { animation-delay: 0.6s; }
 .mascot-sprite svg { display: block; width: 100%; height: auto; image-rendering: pixelated; shape-rendering: crispEdges; }
 .mascot-name { font-size: 9px; font-weight: 800; color: #fff; background: rgba(25,31,40,0.72); border-radius: 999px; padding: 1px 6px; display: inline-block; margin-top: 2px; white-space: nowrap; }
 .mascot.boss { width: 58px; }
@@ -459,7 +456,8 @@ body.dark .mascot-bubble { background: #25262b; color: #fff; border-color: #fff;
 body.dark .mascot-bubble::after { border-top-color: #fff; }
 @keyframes mascotBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 @media (max-width: 520px) {
-  .mascot-corner { transform: scale(0.8); transform-origin: left bottom; gap: 5px; }
+  .mascot-corner { transform: scale(0.8); transform-origin: left bottom; gap: 52px; }
+  .mascot-row { gap: 5px; }
 }
 @media (prefers-reduced-motion: reduce) { .mascot-sprite { animation: none !important; } }
 </style>
@@ -613,16 +611,25 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
     }, startDelay);
   }
 
-  /* 왼쪽 아래에 순서대로 나열: ⭐라옴(대장) → 마이폰 → 시지지 → 강성개미 → 날다진 */
+  /* 왼쪽 아래 2줄 배치 — 윗줄: ⭐라옴·마이폰 / 아랫줄: 시지지·강성개미·날다진
+     (줄 사이 간격을 넉넉히 두어 아랫줄 말풍선이 윗줄에 가리지 않게) */
   var corner = document.createElement('div');
   corner.className = 'mascot-corner';
-  MASCOTS.forEach(function (m, i) {
-    var d = document.createElement('div');
-    d.className = 'mascot' + (i === 0 ? ' boss' : '');
-    d.innerHTML = '<div class="mascot-bubble"></div><div class="mascot-sprite">' + svgFor(m) +
-      '</div><div class="mascot-name">' + (i === 0 ? '⭐ ' : '') + m.name + '</div>';
-    corner.appendChild(d);
-    cycle(d.querySelector('.mascot-bubble'), m.phrases, 2000 + i * 3600);
+  var ROWS = [[0, 1], [2, 3, 4]];
+  ROWS.forEach(function (rowIdx) {
+    var row = document.createElement('div');
+    row.className = 'mascot-row';
+    rowIdx.forEach(function (i) {
+      var m = MASCOTS[i];
+      var d = document.createElement('div');
+      d.className = 'mascot' + (i === 0 ? ' boss' : '');
+      d.innerHTML = '<div class="mascot-bubble"></div><div class="mascot-sprite">' + svgFor(m) +
+        '</div><div class="mascot-name">' + (i === 0 ? '⭐ ' : '') + m.name + '</div>';
+      d.querySelector('.mascot-sprite').style.animationDelay = (i * 0.15) + 's';
+      row.appendChild(d);
+      cycle(d.querySelector('.mascot-bubble'), m.phrases, 2000 + i * 3600);
+    });
+    corner.appendChild(row);
   });
   document.body.appendChild(corner);
 })();
