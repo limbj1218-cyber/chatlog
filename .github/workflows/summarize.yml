@@ -36,11 +36,8 @@ jobs:
         if: steps.changed.outputs.file != ''
         uses: anthropics/claude-code-action@v1
         with:
-          # 방법 A) Anthropic API 키 (사용량 과금)
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # 방법 B) Claude Pro/Max 구독으로 쓰려면 위 줄을 지우고 아래 줄 사용
-          #         (PC에서 `claude setup-token` 실행해 나온 토큰을 시크릿에 등록)
-          # claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Claude Pro/Max 구독 토큰 사용 (시크릿: CLAUDE_CODE_OAUTH_TOKEN)
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             ${{ steps.changed.outputs.file }} 파일이 방금 업로드됐어 (벽타기 요청).
             CLAUDE.md 의 "방별 페이지 규칙"에 따라 이 방의 페이지를 생성하거나 갱신해줘.
