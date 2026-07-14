@@ -1,0 +1,57 @@
+# 벽타기 워크플로우
+# 봇 폰이 chats/방이름-날짜.txt 를 push하면 → Claude가 그 방 페이지를 갱신 → 다시 push
+# → GitHub Pages 자동 반영. PC가 꺼져 있어도 동작.
+name: wall-climb
+
+on:
+  push:
+    paths:
+      - "chats/**"
+
+# 여러 방이 동시에 벽타기해도 순서대로 처리 (충돌 방지)
+concurrency:
+  group: summarize
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 변경된 대화 파일 찾기
+        id: changed
+        run: |
+          FILE=$(git diff --name-only HEAD^ HEAD -- 'chats/*.txt' | head -n 1)
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "변경 파일: $FILE"
+
+      - name: Claude로 정리
+        if: steps.changed.outputs.file != ''
+        uses: anthropics/claude-code-action@v1
+        with:
+          # 방법 A) Anthropic API 키 (사용량 과금)
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # 방법 B) Claude Pro/Max 구독으로 쓰려면 위 줄을 지우고 아래 줄 사용
+          #         (PC에서 `claude setup-token` 실행해 나온 토큰을 시크릿에 등록)
+          # claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            ${{ steps.changed.outputs.file }} 파일이 방금 업로드됐어 (벽타기 요청).
+            CLAUDE.md 의 "방별 페이지 규칙"에 따라 이 방의 페이지를 생성하거나 갱신해줘.
+            git 커밋/푸시는 하지 마 (다음 스텝이 처리함).
+          claude_args: "--allowedTools Read,Write,Edit,Glob,Grep"
+
+      - name: 커밋 & 푸시
+        if: steps.changed.outputs.file != ''
+        run: |
+          git config user.name "wall-bot"
+          git config user.email "wall-bot@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "벽타기 정리: ${{ steps.changed.outputs.file }}"
+          git push
