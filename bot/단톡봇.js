@@ -81,8 +81,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         //    (logMessage가 메모리 버퍼를 오늘 것으로 교체하기 전에 실행해야 함)
         autoUploadYesterday(room);
 
-        // ②-1 스케줄 확인 (타이머가 도즈모드로 잠들었어도 메시지가 오면 밀린 일 처리)
-        try { schedulerTick(); } catch (e) {}
+        // ②-1 스케줄 확인 — 단, 이 메시지가 온 "이 방"의 밀린 일만 처리
+        //    (다른 방 것까지 처리하면 한 방의 /벽타기가 다른 방에 공지를 띄우는 것처럼 보임)
+        try { schedulerTick(room); } catch (e) {}
 
         // ③ 대화 기록 (벽타기/통계의 원본)
         logMessage(room, sender, msg);
@@ -316,11 +317,16 @@ java.lang.System.setProperty("dantalk.timer.gen", TIMER_GEN);
     }), 20000, 60000);   // 20초 후 시작, 1분마다
 })();
 
-function schedulerTick() {
+/**
+ * 스케줄 실행. onlyRoom을 주면 그 방의 밀린 일만 처리 (메시지 수신으로 깨어난 경우),
+ * 없으면 전체 방 처리 (1분 타이머가 제시간에 도는 경우).
+ */
+function schedulerTick(onlyRoom) {
     var nowMin = minutesOfDay();
     var t = today();
-    for (var i = 0; i < ROOMS.length; i++) {
-        var room = ROOMS[i];
+    var targets = onlyRoom ? [onlyRoom] : ROOMS;
+    for (var i = 0; i < targets.length; i++) {
+        var room = targets[i];
         var st = loadJson(schedPath(room), {});
         var changed = false;
         var j, key, sMin;
