@@ -32,17 +32,19 @@ jobs:
           echo "file=$FILE" >> "$GITHUB_OUTPUT"
           echo "변경 파일: $FILE"
 
+      - name: Claude Code 설치
+        if: steps.changed.outputs.file != ''
+        run: npm install -g @anthropic-ai/claude-code
+
       - name: Claude로 정리
         if: steps.changed.outputs.file != ''
-        uses: anthropics/claude-code-action@v1
-        with:
-          # Claude Pro/Max 구독 토큰 사용 (시크릿: CLAUDE_CODE_OAUTH_TOKEN)
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt: |
-            ${{ steps.changed.outputs.file }} 파일이 방금 업로드됐어 (벽타기 요청).
-            CLAUDE.md 의 "방별 페이지 규칙"에 따라 이 방의 페이지를 생성하거나 갱신해줘.
-            git 커밋/푸시는 하지 마 (다음 스텝이 처리함).
-          claude_args: "--allowedTools Read,Write,Edit,Glob,Grep"
+        env:
+          # Claude Pro/Max 구독 토큰 (시크릿: CLAUDE_CODE_OAUTH_TOKEN)
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          claude -p "${{ steps.changed.outputs.file }} 파일이 방금 업로드됐어 (벽타기 요청). CLAUDE.md 의 '방별 페이지 규칙'에 따라 이 방의 페이지를 생성하거나 갱신해줘. git 커밋/푸시는 하지 마 (다음 스텝이 처리함)." \
+            --allowedTools "Read,Write,Edit,Glob,Grep" \
+            --permission-mode acceptEdits
 
       - name: 커밋 & 푸시
         if: steps.changed.outputs.file != ''
