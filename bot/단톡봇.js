@@ -81,7 +81,7 @@ function pickBaseDir() {
     }
     return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0715-1";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0715-2";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
@@ -574,9 +574,9 @@ function weatherText(city) {
 if (typeof __DANTALK_MEMLOG__ === "undefined") __DANTALK_MEMLOG__ = {};
 var MEMLOG = __DANTALK_MEMLOG__;
 
-/** 카톡 내보내기와 같은 형식: [이름] [오후 3:24] 내용 */
+/** 카톡 내보내기와 같은 형식: [이름] [오후 3:24] 내용 (토큰류는 기록 단계에서 마스킹) */
 function logMessage(room, sender, msg) {
-    var line = "[" + sender + "] [" + kakaoTime() + "] " + msg;
+    var line = scrubSecrets("[" + sender + "] [" + kakaoTime() + "] " + msg);
     // 메모리 기록 (오늘 것만 유지, 최대 5000줄)
     var buf = MEMLOG[room];
     if (!buf || buf.date !== today()) buf = MEMLOG[room] = { date: today(), lines: [] };
@@ -586,13 +586,26 @@ function logMessage(room, sender, msg) {
     try { FileStream.append(logPath(room), line + "\n"); } catch (e) {}
 }
 
-/** 특정 날짜 로그: 파일이 있으면 파일, 없으면 메모리 */
+/**
+ * 비밀 토큰 마스킹 — 대화에 실수로 붙여넣은 토큰/API키가
+ * 공개 저장소에 올라가지 않게 로그에서 가린다.
+ */
+function scrubSecrets(s) {
+    return String(s)
+        .replace(/github_pat_[A-Za-z0-9_]{20,}/g, "[비밀토큰]")
+        .replace(/ghp_[A-Za-z0-9]{20,}/g, "[비밀토큰]")
+        .replace(/gho_[A-Za-z0-9]{20,}/g, "[비밀토큰]")
+        .replace(/sk-ant-[A-Za-z0-9_\-]{20,}/g, "[비밀토큰]")
+        .replace(/sk-[A-Za-z0-9]{30,}/g, "[비밀토큰]");
+}
+
+/** 특정 날짜 로그: 파일이 있으면 파일, 없으면 메모리 (반환 전 토큰 마스킹) */
 function readLogFor(room, date) {
     var raw = null;
     try { raw = FileStream.read(DIRS.LOG + "/" + safeName(room) + "-" + date + ".txt"); } catch (e) {}
-    if (raw !== null && raw !== undefined && String(raw).trim() !== "") return String(raw);
+    if (raw !== null && raw !== undefined && String(raw).trim() !== "") return scrubSecrets(raw);
     var buf = MEMLOG[room];
-    if (buf && buf.date === date && buf.lines.length > 0) return buf.lines.join("\n") + "\n";
+    if (buf && buf.date === date && buf.lines.length > 0) return scrubSecrets(buf.lines.join("\n") + "\n");
     return null;
 }
 
