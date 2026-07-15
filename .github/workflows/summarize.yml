@@ -7,6 +7,7 @@ on:
   push:
     paths:
       - "chats/**"
+  workflow_dispatch:   # 수동 실행 (남은 로그 재처리용)
 
 # 여러 방이 동시에 벽타기해도 순서대로 처리 (충돌 방지)
 concurrency:
@@ -21,7 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      # 트리거 시점의 스냅샷이 아니라 "항상 최신 main"에서 작업한다.
+      # (두 방이 연달아 업로드하면 앞 실행의 결과를 이어받아야 충돌이 없다)
       - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: 최신 main 동기화
+        run: git pull --rebase origin main
 
       # 커밋 diff가 아니라 "지금 chats/ 에 남아 있는 파일 전부"를 처리한다.
       # 요약이 끝난 파일은 삭제되므로, 남아 있다 = 아직 처리 안 됨.

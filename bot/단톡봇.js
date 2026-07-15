@@ -81,7 +81,7 @@ function pickBaseDir() {
     }
     return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0714-5";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0715-1";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
@@ -147,7 +147,10 @@ function diagText(room, sender) {
         "방 이름: [" + room + "]\n" +
         "보낸 사람: [" + sender + "]\n" +
         "이 방 활성화됨: " + (ROOMS.indexOf(room) !== -1 ? "예 ✅" : "아니오 ❌ (코드의 ROOMS 목록에 추가하세요)") + "\n" +
-        saved + "\n저장 위치: " + BASE_DIR;
+        saved + "\n저장 위치: " + BASE_DIR + "\n" +
+        "마지막 업로드 시도: " + (LAST_UP
+            ? LAST_UP.time + " → " + (LAST_UP.ok ? "성공 ✅" : "실패 ❌ HTTP " + LAST_UP.code + " " + LAST_UP.note)
+            : "(이번 실행에서 아직 없음)");
 }
 
 // ═══════════════ 방 명령어 ═══════════════
@@ -164,6 +167,7 @@ function handleCommand(room, text, sender, replier) {
         case "삭제":    replier.reply(delCmd(room, sender, p.arg)); break;
         case "공지":    replier.reply(setNotice(room, sender, p.arg)); break;
         case "리스트":    replier.reply(listCmds(room)); break;
+        case "업로드":  replier.reply(forceUpload(room, sender)); break;
         case "벽타기":  replier.reply(wallClimb(room)); break;
         case "통계":    replier.reply(statsText(room)); break;
         case "날씨":    replier.reply(weatherText(p.arg || "서울")); break;
@@ -404,6 +408,21 @@ function announcePage(room) {
     } catch (e) {}
 }
 
+/** /업로드 (관리자) — 쿨다운 무시하고 즉시 업로드 + 상세 결과 보고 (문제 진단용) */
+function forceUpload(room, sender) {
+    if (!isAdmin(room, sender)) return "⛔ 관리자만 사용할 수 있어요.";
+    if (!GITHUB.TOKEN) return "❌ GITHUB.TOKEN이 비어 있어요 (로더의 TOKEN 확인 필요)";
+    var log = readTodayLog(room);
+    if (!log) return "📭 오늘 기록된 대화가 없어요.";
+    var path = "chats/" + safeName(room) + "-" + today() + ".txt";
+    var r = githubPutFileVerbose(path, log, "벽타기: " + room + " " + today());
+    if (r.ok) {
+        markUploaded(room, log);
+        return "✅ 업로드 성공 (HTTP " + r.code + ")\n2~5분 후 페이지 갱신:\n" + roomPageUrl(room);
+    }
+    return "❌ 업로드 실패 (HTTP " + r.code + ")\n" + r.note;
+}
+
 /** 수동 /벽타기 성공 시 업로드 기준점 갱신 (자동 벽타기가 같은 내용을 또 올리지 않게) */
 function markUploaded(room, log) {
     var st = loadJson(schedPath(room), {});
@@ -430,7 +449,14 @@ function roomPageUrl(room) {
 
 // ─── GitHub API ───
 
+var LAST_UP = null;   // 마지막 GitHub 업로드 시도 기록 (진단용, /방이름 에서 확인)
+
 function githubPutFile(path, contentStr, message) {
+    return githubPutFileVerbose(path, contentStr, message).ok;
+}
+
+function githubPutFileVerbose(path, contentStr, message) {
+    var out = { ok: false, code: 0, note: "" };
     try {
         var segs = path.split("/");
         for (var i = 0; i < segs.length; i++) segs[i] = encodeURIComponent(segs[i]);
@@ -448,10 +474,14 @@ function githubPutFile(path, contentStr, message) {
         if (sha) body.sha = sha;
 
         var putRes = httpReq("PUT", url, JSON.stringify(body));
-        return putRes.code === 200 || putRes.code === 201;
+        out.code = putRes.code;
+        out.ok = (putRes.code === 200 || putRes.code === 201);
+        if (!out.ok) out.note = String(putRes.body).substring(0, 150);
     } catch (e) {
-        return false;
+        out.note = String(e);
     }
+    LAST_UP = { time: kakaoTime(), path: path, ok: out.ok, code: out.code, note: out.note };
+    return out;
 }
 
 function httpReq(method, urlStr, bodyStr) {
