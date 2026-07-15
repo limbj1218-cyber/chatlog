@@ -233,8 +233,108 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
       <span class="day-accordion-arrow">▼</span>
-      <span class="day-accordion-date">7/14 (화)</span>
+      <span class="day-accordion-date">7/15 (수)</span>
       <span class="day-accordion-badge">오늘</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 46 · 주요 Q&amp;A 3 · 인사이트 4</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">46</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">3</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">4</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">임@진 <span class="mvp-role">후파</span></div>
+          <div class="mvp-desc">이미지 생성 프로그램을 업그레이드해 효과주기 기능과 부분수정 기능을 추가했다고 알렸고, 금광 링크 접속이 안 된다는 멤버에게 로그인 여부를 확인해보라며 트러블슈팅을 도왔습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">김@희 <span class="mvp-role">뉴욕의 스텔라</span></div>
+          <div class="mvp-desc">유튜브 스튜디오에서 영상별 알림을 확인하는 방법을 컨텐츠 메뉴 위치까지 짚어가며 두 차례에 걸쳐 자세히 안내했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">박@원 <span class="mvp-role">행복토끼토끼</span></div>
+          <div class="mvp-desc">허위 정지가 풀린 뒤에도 영상을 어떤 방식과 순서로 삭제했는지 궁금해하는 멤버들의 질문에 자신의 경험을 구체적으로 계속 답해줬습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">요즘 플로우로 생성한 이미지 품질이 유독 별로라고 느끼는 게 저만 그런가요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">임@진(후파)</span></div>
+          <p>컨디션이 다른 것 같다며 서버 상태 탓일 수 있다고 답했고, 별빛클로버는 생성 한도가 정해진 상황에서 원하는 결과가 나올 때까지 재생성을 반복해야 해 아쉽다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">영상 삭제는 하루에 하나씩 하셨나요, 아니면 한 번에 지우셨나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">박@원(행복토끼토끼)</span></div>
+          <p>정지된 며칠 뒤에 영상을 한꺼번에 정리했고, 그 상태로 두다가 90일이 지나 재신청 버튼이 활성화되길래 눌렀다고 답했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">예전에 후파님이 올려주신 프로그램 사용법 안내 영상을 다시 볼 수 있을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">송@혜(행신)</span></div>
+          <p>네이버 카페에 관련 자료가 올라와 있다며 게시글 링크를 공유했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>임@진(후파)</h3><p>이미지 생성 프로그램에 효과 주기 기능과 부분 수정 기능을 새로 추가했다고 소개했습니다. 부분 수정은 "손에 있는 종이를 연필로 바꿔줘" 같은 요청을 입력하면 이미지를 재생성해 수정해주는 기능이라고 설명했습니다.</p>
+        <span class="insight-tag tag-tool">업그레이드</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>김@희(뉴욕의 스텔라)</h3><p>PC로 유튜브 스튜디오에 들어가 컨텐츠 메뉴에서 동영상을 클릭하면 그동안 올린 영상이 한눈에 보이고, 각 영상 오른쪽에 알림 항목이 있다고 위치를 자세히 안내했습니다.</p>
+        <span class="insight-tag tag-info">스튜디오</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>임@진(후파)</h3><p>공유한 링크로 접속이 안 된다는 멤버에게 로그인 여부를 확인해보라고 안내했고, 자신은 같은 링크로 정상 접속된다고 덧붙였습니다.</p>
+        <span class="insight-tag tag-tip">링크 접속</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>송@혜(행신)</h3><p>후파님의 프로그램 사용법을 정리한 자료가 네이버 카페에 올라와 있다며 안내했습니다.</p>
+        <span class="insight-tag tag-tool">사용법 자료</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 12:00~오전 12:22</div><div class="tl-text">후파가 이미지 생성 프로그램에 효과주기·부분수정 기능을 추가했다고 알렸고, 뉴욕의 스텔라가 유튜브 스튜디오 알림 확인 방법을 안내했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 12:18~오전 1:26</div><div class="tl-text">별빛클로버가 요즘 플로우 이미지 품질이 별로라고 토로하자 후파가 컨디션 탓 같다고 답했고, 레지나가 후파와 강성개미에게 감사 인사를 길게 남겼습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 9:17~오전 10:42</div><div class="tl-text">뉴욕의 스텔라가 알림 위치를 다시 안내했고, 행복토끼토끼의 허위 정지 해제 소식에 멤버들이 축하하며 영상 삭제 방식을 물었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 11:01~오전 11:36</div><div class="tl-text">벚꽃나비가 업그레이드에 감사를 전했고, 후파가 금광 링크 접속 문제를 안내했으며, hongstarband가 예전 사용법 영상 공유를 요청했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 11:39~오전 11:50</div><div class="tl-text">행신이 네이버 카페의 사용법 자료 링크를 공유했고, hongstarband와 크리스탈엠이 감사 인사를 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 12:12~오후 2:35</div><div class="tl-text">행복토끼토끼가 영상 정리 경험을 다시 나눴고, 이후가 재사용콘텐츠 항소영상 삭제 여부를, 슬문이 마이폰님에게 촬영 해상도 설정법을 질문하며 하루 대화가 마무리됐습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<!-- ═══ 날짜 블록 끝 ═══ -->
+
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/14 (화)</span>
     </div>
     <div class="day-accordion-summary">전체 메시지 134 · 주요 Q&amp;A 5 · 인사이트 6</div>
   </button>
@@ -369,11 +469,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <!-- ═══ FAQ 랭킹: 정리 때마다 갱신 ═══ -->
     <li class="faq-bar-item"><div class="faq-bar-label"><span>재신청·재심사 절차</span><span class="cnt">2</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
-    <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수</span><span class="cnt">1</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수·방식</span><span class="cnt">2</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>버튼 활성화 시점</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>새 영상 올리고 신청 여부</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>후파님 프로그램 사용법 자료</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>플로우 이미지 품질 이슈</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
@@ -392,10 +496,11 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <div class="qa-card" onclick="toggleQa(this)">
     <div class="qa-header"><div class="qa-q-icon">Q</div>
       <div class="qa-question">허위 정지가 풀리기 전에 기존 영상을 많이 지우셨나요?</div>
+      <span class="qa-count">2회</span>
       <span class="qa-toggle">▼</span></div>
     <div class="qa-body"><div class="qa-answer">
       <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">박@원(행복토끼토끼)</span></div>
-      <p>10개 중 7개를 지우고 쇼츠는 전부 삭제했다고 답했습니다.</p>
+      <p>10개 중 7개를 지우고 쇼츠는 전부 삭제했으며, 며칠 뒤 한꺼번에 정리했다고 답했습니다.</p>
     </div></div>
   </div>
   <div class="qa-card" onclick="toggleQa(this)">
@@ -405,6 +510,24 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="qa-body"><div class="qa-answer">
       <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">박@원(행복토끼토끼)</span></div>
       <p>새 영상은 올리지 않았고, 90일이 지나니 자동으로 활성화된 것 같다고 답했습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">예전에 후파님이 올려주신 프로그램 사용법 안내 영상을 다시 볼 수 있을까요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">송@혜(행신)</span></div>
+      <p>네이버 카페에 관련 자료가 올라와 있다며 게시글 링크를 공유했습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">요즘 플로우로 생성한 이미지 품질이 유독 별로라고 느끼는 게 저만 그런가요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">임@진(후파)</span></div>
+      <p>컨디션이 다른 것 같다며 서버 상태 탓일 수 있다고 답했습니다.</p>
     </div></div>
   </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
