@@ -236,13 +236,13 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/15 (수)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 46 · 주요 Q&amp;A 3 · 인사이트 4</div>
+    <div class="day-accordion-summary">전체 메시지 223 · 주요 Q&amp;A 9 · 인사이트 6</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">46</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">3</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">4</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">223</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">9</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">6</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
     </div>
 
@@ -250,16 +250,16 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
       <div class="mvp-grid">
         <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
-          <div class="mvp-name">임@진 <span class="mvp-role">후파</span></div>
-          <div class="mvp-desc">이미지 생성 프로그램을 업그레이드해 효과주기 기능과 부분수정 기능을 추가했다고 알렸고, 금광 링크 접속이 안 된다는 멤버에게 로그인 여부를 확인해보라며 트러블슈팅을 도왔습니다.</div>
+          <div class="mvp-name">강성개미 <span class="mvp-role">라옴조교</span></div>
+          <div class="mvp-desc">오랜만에 복귀한 교교브로에게 사연 대신 마이폰님 방식부터 익히라고 현실적으로 조언하며, 왜 지금은 사연보다 야담이 유리한지 자신의 경험(4개 채널 5개월간 방치 후 재개)까지 곁들여 긴 시간 진심으로 멘토링했습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
-          <div class="mvp-name">김@희 <span class="mvp-role">뉴욕의 스텔라</span></div>
-          <div class="mvp-desc">유튜브 스튜디오에서 영상별 알림을 확인하는 방법을 컨텐츠 메뉴 위치까지 짚어가며 두 차례에 걸쳐 자세히 안내했습니다.</div>
+          <div class="mvp-name">이@희 <span class="mvp-role">마이폰1</span></div>
+          <div class="mvp-desc">수익제재 명칭 변화(불쾌감 컨텐츠 등)에 대응하기 위해 원래 컨텐츠 유형과 현재 제재명을 묻는 설문을 직접 기획해 진행했고, 저녁 내내 20건 넘는 답변을 받아 정리하며 멤버들의 참여를 이끌었습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
-          <div class="mvp-name">박@원 <span class="mvp-role">행복토끼토끼</span></div>
-          <div class="mvp-desc">허위 정지가 풀린 뒤에도 영상을 어떤 방식과 순서로 삭제했는지 궁금해하는 멤버들의 질문에 자신의 경험을 구체적으로 계속 답해줬습니다.</div>
+          <div class="mvp-name">임@진 <span class="mvp-role">후파</span></div>
+          <div class="mvp-desc">이미지 생성 프로그램에 효과주기·부분수정 기능을 새로 추가해 업글 소식을 알렸고, 링크 접속 문제와 프로그램 다운로드 문의에 일일이 답하며 사연보다 야담을 추천하는 이유까지 구체적으로 설명했습니다.</div>
         </div></div>
       </div>
     </div>
@@ -293,6 +293,60 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
           <p>네이버 카페에 관련 자료가 올라와 있다며 게시글 링크를 공유했습니다.</p>
         </div></div>
       </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">몇 달 쉬다 다시 시작하려는데, 사연보다 야담을 추천하시는 이유가 뭔가요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">임@진(후파) · 강성개미</span></div>
+          <p>야담은 만화라 이미지 생성 제약이 실사인 사연보다 덜해 뽑기가 수월하다고 답했고, 강성개미는 남성향·여성향·인트로·아웃트로 등 손볼 게 적어 야담이 더 수월하다고 덧붙였습니다. 다만 사연으로 노출이 잘 된다면 그대로 하고, 안 된다면 놓친 부분부터 점검해야 한다고 조언했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">후파님 프로그램은 어디서 다운로드 받을 수 있나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">임@진(후파)</span></div>
+          <p>"금광" 오픈채팅 링크로 접속해서 사용하면 된다고 안내했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">허위 맞은 IP에서 기기분리해서 업로드하면 괜찮을까요? 핸드폰 핫스팟으로 올려도 되나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">정@선(다이룰써니)</span></div>
+          <p>기기분리만 하고 같은 IP로 계속 관리 중이며 아직까지 문제없었다고 답했습니다. 핸드폰은 비행기모드를 3초 정도 켰다 끄면 IP가 바뀐다는 정보도 함께 알려줬습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">까포님은 제작 방식에서 직촬이나 스톡 영상을 넣으셨나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">최@현(까포)</span></div>
+          <p>구독·좋아요 부분만 직촬로 넣었고, 인트로 1분은 동영상, 본문 이미지 100장은 캣컷에서 효과를 넣어 제작했으며 직촬이나 스톡 영상은 따로 넣지 않았다고 답했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">기존 허위 콘텐츠 채널에 인형극 영상을 새로 올렸는데 왜 불쾌한 콘텐츠로 제재를 받았을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴</span></div>
+          <p>새로운 제재를 받은 게 아니라 기존 허위콘텐츠 제재명이 불쾌감 콘텐츠로 용어만 바뀐 것으로 보인다고 설명했습니다. 채널이 실제로 재평가를 받으려면 재신청을 해야 하고, 제재명과 상관없이 90일이 지났다면 재신청해보는 게 좋다고 조언했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">노트북을 바꿔서 멀티플로우를 쓰려는데 IP 인증 개수 제한에 걸렸어요, 어떻게 해야 하나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴</span></div>
+          <p>이제 되실 거라고 답하며, 항소 기간이 남아있는지 확인해보라고 안내했습니다.</p>
+        </div></div>
+      </div>
     </div>
 
     <div class="section">
@@ -302,28 +356,37 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <span class="insight-tag tag-tool">업그레이드</span>
       </div></div>
       <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
-        <h3>김@희(뉴욕의 스텔라)</h3><p>PC로 유튜브 스튜디오에 들어가 컨텐츠 메뉴에서 동영상을 클릭하면 그동안 올린 영상이 한눈에 보이고, 각 영상 오른쪽에 알림 항목이 있다고 위치를 자세히 안내했습니다.</p>
-        <span class="insight-tag tag-info">스튜디오</span>
+        <h3>강성개미</h3><p>오랜만에 돌아온 교교브로에게 사연 대신 마이폰님 방식부터 몸에 익히라고 조언하며, 지금은 사연 하는 사람이 적어 막히면 도와줄 사람이 없다고 현실적인 이유를 짚었습니다. 자신도 5개월간 영상을 못 올리다 지난주부터 하나씩 다시 올리고 있다고 근황을 나눴습니다.</p>
+        <span class="insight-tag tag-tip">멘토링</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>정@선(다이룰써니)</h3><p>허위를 맞았던 IP에서도 기기분리만 하면 같은 IP로 계속 업로드해도 문제없었다는 경험을 공유했고, 핸드폰 비행기모드를 3초 정도 켰다 끄면 IP가 바뀐다는 정보도 알려줬습니다.</p>
+        <span class="insight-tag tag-tip">IP 관리</span>
       </div></div>
       <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
-        <h3>임@진(후파)</h3><p>공유한 링크로 접속이 안 된다는 멤버에게 로그인 여부를 확인해보라고 안내했고, 자신은 같은 링크로 정상 접속된다고 덧붙였습니다.</p>
-        <span class="insight-tag tag-tip">링크 접속</span>
+        <h3>김@아(하이진)</h3><p>영상 시청 후 나오는 평가 항목에 최근 불쾌감·일반적 콘텐츠라는 워딩이 그대로 쓰이고 있었다며, 이런 시청자 평가가 누적되면 제재로 이어지는 것 같다는 관찰을 나눴습니다.</p>
+        <span class="insight-tag tag-info">제재 추정</span>
       </div></div>
-      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
-        <h3>송@혜(행신)</h3><p>후파님의 프로그램 사용법을 정리한 자료가 네이버 카페에 올라와 있다며 안내했습니다.</p>
-        <span class="insight-tag tag-tool">사용법 자료</span>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>최@현(까포)</h3><p>작년 12월 선정성 위반으로 첫 수익 정지를 당했다가 4월 재신청으로 승인받았지만, 6월 말부터 다시 영상을 올린 뒤 어제 불쾌감 콘텐츠로 재차 수익 정지를 당했다는 경험을 공유하며 사연 콘텐츠도 아직 안심할 단계는 아니라고 짚었습니다.</p>
+        <span class="insight-tag tag-info">제재 사례</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>안@혜(거베라)</h3><p>사연 두 개로 운영하던 새 채널이 수익창출 인증에 성공해 핀번호까지 받았다고 알리며 방 멤버들의 축하를 받았고, 자신도 곧 수익 인증 글을 쓰고 싶다는 바람을 전했습니다.</p>
+        <span class="insight-tag tag-tip">수익화</span>
       </div></div>
     </div>
 
     <div class="section">
       <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
       <div class="timeline">
-        <div class="tl-item"><div class="tl-time">오전 12:00~오전 12:22</div><div class="tl-text">후파가 이미지 생성 프로그램에 효과주기·부분수정 기능을 추가했다고 알렸고, 뉴욕의 스텔라가 유튜브 스튜디오 알림 확인 방법을 안내했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 12:18~오전 1:26</div><div class="tl-text">별빛클로버가 요즘 플로우 이미지 품질이 별로라고 토로하자 후파가 컨디션 탓 같다고 답했고, 레지나가 후파와 강성개미에게 감사 인사를 길게 남겼습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 9:17~오전 10:42</div><div class="tl-text">뉴욕의 스텔라가 알림 위치를 다시 안내했고, 행복토끼토끼의 허위 정지 해제 소식에 멤버들이 축하하며 영상 삭제 방식을 물었습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 11:01~오전 11:36</div><div class="tl-text">벚꽃나비가 업그레이드에 감사를 전했고, 후파가 금광 링크 접속 문제를 안내했으며, hongstarband가 예전 사용법 영상 공유를 요청했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 11:39~오전 11:50</div><div class="tl-text">행신이 네이버 카페의 사용법 자료 링크를 공유했고, hongstarband와 크리스탈엠이 감사 인사를 전했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 12:12~오후 2:35</div><div class="tl-text">행복토끼토끼가 영상 정리 경험을 다시 나눴고, 이후가 재사용콘텐츠 항소영상 삭제 여부를, 슬문이 마이폰님에게 촬영 해상도 설정법을 질문하며 하루 대화가 마무리됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 12:00~오전 12:26</div><div class="tl-text">후파가 이미지 생성 프로그램에 효과주기·부분수정 기능을 추가했다고 알렸고, 뉴욕의 스텔라가 유튜브 알림 확인 방법을 안내하는 사이 별빛클로버는 요즘 플로우 이미지 품질이 별로라고 토로했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:26~오전 10:42</div><div class="tl-text">레지나가 후파와 강성개미에게 긴 감사 인사를 남겼고, 전날 허위 정지가 풀린 행복토끼토끼에게 멤버들이 계속 축하를 보내며 영상 삭제 방식을 물었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 11:01~오전 11:50</div><div class="tl-text">벚꽃나비가 업그레이드에 감사를 전했고, 후파가 금광 링크 접속 문제(로그인 필요)를 안내했으며, hongstarband의 사용법 영상 요청에 행신이 카페 자료 링크를 공유했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 12:12~오후 3:31</div><div class="tl-text">행복토끼토끼가 영상 정리 경험을 다시 나눴고, 오랜만에 복귀한 교교브로에게 강성개미가 사연 대신 마이폰님 방식과 야담을 권하며 긴 멘토링을 이어갔습니다. 후파도 야담이 이미지 뽑기에 수월한 이유와 프로그램 다운로드 링크를 안내했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 4:12~오후 5:38</div><div class="tl-text">거베라가 사연 두 개로 새 채널 수익창출을 인증했다고 알려 방 전체가 축하 인사로 들썩였고, 시유의 IP·기기분리 질문에 다이룰써니가 자신의 경험과 비행기모드 IP변경 팁을 답했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 5:39~오후 7:41</div><div class="tl-text">마이폰1이 수익제재 명칭 변화 대응을 위한 설문을 시작해 다수 멤버가 원래 콘텐츠 유형과 현재 제재명을 답했고, 까포가 불쾌감 콘텐츠로 재차 정지당한 경험을, 라옴이 문원의 허위→불쾌감 명칭 변경 관련 질문에 자세히 답했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 8:23~오후 8:49</div><div class="tl-text">설문 응답이 이어지는 가운데 blue4와 행신이 시청자의 불쾌감 표시가 실제 제재에 영향을 주는지 의문을 나눴고, 나츠가 경제 롱폼 채널까지 불쾌감 콘텐츠로 정지되는 사례를 언급하며 유튜브의 애매한 기준에 아쉬움을 표하는 것으로 하루 대화가 마무리됐습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -471,13 +534,19 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수·방식</span><span class="cnt">2</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>IP·기기분리 업로드</span><span class="cnt">2</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>후파님 프로그램 사용법·다운로드</span><span class="cnt">2</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>불쾌감 컨텐츠 제재 관련 문의</span><span class="cnt">2</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>버튼 활성화 시점</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>새 영상 올리고 신청 여부</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
-    <li class="faq-bar-item"><div class="faq-bar-label"><span>후파님 프로그램 사용법 자료</span><span class="cnt">1</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>플로우 이미지 품질 이슈</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>사연 vs 야담 추천 이유</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
@@ -514,11 +583,29 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   </div>
   <div class="qa-card" onclick="toggleQa(this)">
     <div class="qa-header"><div class="qa-q-icon">Q</div>
-      <div class="qa-question">예전에 후파님이 올려주신 프로그램 사용법 안내 영상을 다시 볼 수 있을까요?</div>
+      <div class="qa-question">허위 맞은 IP에서 기기분리해서 업로드하면 괜찮을까요?</div>
       <span class="qa-toggle">▼</span></div>
     <div class="qa-body"><div class="qa-answer">
-      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">송@혜(행신)</span></div>
-      <p>네이버 카페에 관련 자료가 올라와 있다며 게시글 링크를 공유했습니다.</p>
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">정@선(다이룰써니)</span></div>
+      <p>기기분리만 하고 같은 IP로 계속 관리 중이며 아직까지 문제없었다고 답했고, 비행기모드를 3초 정도 켰다 끄면 IP가 바뀐다는 정보도 알려줬습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">예전에 후파님이 올려주신 프로그램 사용법 안내 영상을 다시 볼 수 있을까요? 프로그램은 어디서 받나요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">송@혜(행신) · 임@진(후파)</span></div>
+      <p>네이버 카페에 관련 자료가 올라와 있다고 링크를 공유했고, 후파는 "금광" 오픈채팅 링크로 접속해서 쓰면 된다고 안내했습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">기존 허위 콘텐츠 채널에 새 영상을 올렸는데 왜 불쾌한 콘텐츠로 제재를 받았을까요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴</span></div>
+      <p>새로운 제재가 아니라 기존 제재명이 불쾌감 콘텐츠로 용어만 바뀐 것으로 보이며, 실제 재평가를 받으려면 재신청을 해야 한다고 설명했습니다.</p>
     </div></div>
   </div>
   <div class="qa-card" onclick="toggleQa(this)">
@@ -530,6 +617,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <p>컨디션이 다른 것 같다며 서버 상태 탓일 수 있다고 답했습니다.</p>
     </div></div>
   </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">사연보다 야담을 추천하시는 이유가 뭔가요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">임@진(후파) · 강성개미</span></div>
+      <p>야담은 만화라 이미지 생성 제약이 실사인 사연보다 덜해 뽑기가 수월하고, 손볼 요소도 적어 작업이 더 수월하다고 답했습니다.</p>
+    </div></div>
+  </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
 </div>
 
@@ -538,9 +634,14 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <div class="glossary-grid" id="glossaryGrid">
     <!-- ═══ 용어사전(.glossary-card): 새 용어가 나올 때마다 추가 (가나다순) ═══ -->
     <div class="glossary-card"><div class="glossary-term">🔗 관련채널</div><div class="glossary-def">유튜브가 동일 운영자가 관리한다고 판단해 서로 묶어 취급하는 채널들. 한 채널이 허위 처리되면 함께 영향을 받을 수 있습니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">😐 불쾌감 컨텐츠</div><div class="glossary-def">최근 유튜브가 기존 허위 콘텐츠 제재를 세분화하며 쓰기 시작한 명칭 중 하나로, 시청자들의 부정적 평가가 누적되면 적용되는 것으로 추정되는 제재 유형.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎙️ 사연채널</div><div class="glossary-def">실제 사연이나 이야기를 낭독·재구성해 올리는 유형의 유튜브 채널.</div></div>
     <div class="glossary-card"><div class="glossary-term">💰 애드센스</div><div class="glossary-def">유튜브 영상 수익을 정산받기 위해 연결하는 구글의 광고 수익화 계정.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🎨 야담</div><div class="glossary-def">실사 대신 그림·만화체 이미지로 제작하는 콘텐츠 형식. 실사 위주인 사연보다 이미지 생성 제약이 적어 최근 추천되고 있습니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🎭 인형극</div><div class="glossary-def">실제 얼굴 없이 인형 캐릭터로 진행하는 영상 제작 방식. 사연 콘텐츠와는 제작 성격이 다릅니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🔁 재신청</div><div class="glossary-def">허위 등의 사유로 수익창출이 정지된 뒤 90일이 지나면 누를 수 있는 버튼으로, 항소와는 별개의 절차입니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">📑 중복</div><div class="glossary-def">다른 채널과 콘텐츠가 겹친다고 판단될 때 적용되는 제재 사유. 허위와 달리 조건을 갖추면 채널을 살릴 가능성이 있습니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">📮 항소</div><div class="glossary-def">제재를 받은 직후 일정 기간 내에 이의를 제기하는 절차. 90일 경과 후 가능한 재신청과는 다른 절차입니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🚫 허위</div><div class="glossary-def">유튜브가 스팸성·기만적 콘텐츠 등으로 판단해 채널의 수익창출을 정지시키는 제재. 90일이 지나야 재신청이 가능합니다.</div></div>
     <!-- ═══ 용어사전 끝 ═══ -->
   </div>
