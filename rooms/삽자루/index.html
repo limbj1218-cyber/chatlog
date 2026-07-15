@@ -233,8 +233,95 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
       <span class="day-accordion-arrow">▼</span>
-      <span class="day-accordion-date">7/15 (수)</span>
+      <span class="day-accordion-date">7/16 (목)</span>
       <span class="day-accordion-badge">오늘</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 47 · 주요 Q&amp;A 2 · 인사이트 3</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">47</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">2</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">3</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">마마 <span class="mvp-role">일어나</span></div>
+          <div class="mvp-desc">새벽 늦게까지 작업 중인 썸네일 이미지를 여러 번 공유하며 방 멤버들의 피드백을 구했고, 어둡다·이해가 잘 안 된다는 지적을 받을 때마다 바로 수정 방향을 고민하며 진지하게 받아들였습니다. 새벽 2시반에는 혹시 아직 깨어있는 사람이 있을까 싶어 마지막 이미지들을 다시 올리며 끝까지 의견을 구했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">실버사연 <span class="mvp-role">여기아침</span></div>
+          <div class="mvp-desc">마마님의 썸네일 이미지에 대해 구도·색감·안전성까지 조목조목 피드백을 남겼습니다. 이미지가 중첩돼 한눈에 안 들어온다는 점과 칼 이미지가 유튜브 정책상 위험할 수 있다는 점을 짚었고, 색감을 밝고 선명하게 보완하는 구체적인 방법까지 안내했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">바다ᆢ</div>
+          <div class="mvp-desc">이미지가 너무 어둡다고 바로 피드백하며 방향을 잡아줬고, 허위 판정을 받은 채널에는 자극적인 소재 대신 밝고 건전한 콘텐츠를 올리라고 조언했습니다. 어제 허위 처리에 대해 이의제기를 했는지도 챙겨 물었습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">이 장면, 관아 마당에서 시아버지인 걸 알게 되는 상황인가요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">마마(일어나)</span></div>
+          <p>이미 시아버지로 확정된 상황이 아니라 예비 시아버지 자리라고 답했고, 실버사연(여기아침)은 이 구성이 "인생나날" 사연 썸네일(좌측 노인이 깡패에게 당하는 구도, 우측 여성 얼굴 클로즈업)을 레퍼런스한 것 같다고 짚었습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">어제 허위 처리된 건 이의제기 하셨어요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">마마(일어나)</span></div>
+          <p>자신이 없어서 이의제기는 패스했다고 답했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>실버사연(여기아침)</h3><p>공유된 썸네일 이미지가 중첩돼 한 컷으로 내용이 잘 읽히지 않는다고 짚었고, 칼이 등장하는 이미지는 유튜브가 싫어할 수 있으니 피하는 게 좋겠다고 조언했습니다.</p>
+        <span class="insight-tag tag-tip">썸네일 피드백</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>바다ᆢ</h3><p>허위 판정을 받은 채널에 영상을 올릴 거라면 자극적인 소재 대신 행복하고 건전한 내용으로 안전하게 올리라고 조언했습니다.</p>
+        <span class="insight-tag tag-tip">허위채널 운영</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>실버사연(여기아침)</h3><p>이미지에 누런 빛이 돌아 주변 환경과 여성 의상 색이 비슷해 보여 색감 대비가 잘 안 산다고 짚으며, 누런 빛을 빼고 더 밝고 선명하고 풍성한 색감으로 뽑아달라고 요청해보라고 구체적으로 안내했습니다.</p>
+        <span class="insight-tag tag-tip">색감 보정</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 12:41~오전 12:42</div><div class="tl-text">바다ᆢ와 이야기한줌(문하쮸)이 짧게 안부를 주고받으며 하루가 시작됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:28~오전 1:31</div><div class="tl-text">마마(일어나)가 늦은 시간 썸네일 이미지를 올려 피드백을 요청했고, 바다ᆢ는 이미지가 너무 어둡다고 지적했으며 실버사연(여기아침)은 이미지가 중첩돼 한눈에 안 들어오고 칼 이미지는 위험할 수 있다고 짚었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:32~오전 1:34</div><div class="tl-text">야담곳간(릴리온)과 실버사연이 이미지 속 상황을 확인하는 과정에서 예비 시아버지 설정임이 드러났고, "인생나날" 사연 썸네일을 레퍼런스했다는 사실도 밝혀졌습니다. 마마는 새 채널에 올릴지 고민을 나눴습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:34~오전 1:36</div><div class="tl-text">바다ᆢ가 어제 허위 이의제기 여부를 물었고 마마는 자신 없어 패스했다고 답했으며, 바다ᆢ는 허위 채널엔 밝고 건전한 콘텐츠를 올리라고 조언했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:36~오전 1:39</div><div class="tl-text">실버사연이 색감(누런 빛)과 구도를 보완하는 방법을 구체적으로 조언했고, 마마는 늦은 시간 피드백에 감사 인사를 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:42~오전 2:33</div><div class="tl-text">바다ᆢ가 이모티콘으로 화답한 뒤 방이 조용해졌고, 마마는 새벽 2시반 무렵 혹시 아직 깨어있는 사람이 있을까 싶어 나머지 이미지들을 마저 올리며 하루를 마무리했습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<!-- ═══ 날짜 블록 끝 ═══ -->
+
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/15 (수)</span>
     </div>
     <div class="day-accordion-summary">전체 메시지 527 · 주요 Q&amp;A 10 · 인사이트 12</div>
   </button>
