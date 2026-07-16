@@ -220,15 +220,14 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
 
 <!-- ═══ 고정 공지 (여기 내용만 교체) ═══ -->
 <div class="notice-banner">
-  <div class="nb-emoji">📌</div>
-  <div>아직 등록된 공지가 없습니다.</div>
+  <div class="nb-emoji">🐢</div>
+  <div>이 페이지는 <b>라그X하늘</b> 방의 대화를 요약해 두는 일기장이에요. 방에서 <code>/벽타기</code>를 치면 갱신됩니다.</div>
 </div>
 <!-- ═══ 고정 공지 끝 ═══ -->
 
 <div class="tab-content active" id="tab-daily">
-<!-- ═══════════════════════════════════════════
-     새 날짜 블록(.day-accordion)은 날짜 내림차순 위치에 삽입 (최신이 위)
-     ═══════════════════════════════════════════ -->
+<!-- 새 날짜 블록(.day-accordion)은 날짜 내림차순(최신이 위)으로 삽입 -->
+
 <div class="day-accordion">
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
@@ -236,16 +235,146 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/16 (목)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 3</div>
+    <div class="day-accordion-summary">전체 메시지 229 · 주요 Q&amp;A 2 · 인사이트 3</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">3</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">인사이트</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+      <div class="stat-pill"><span class="num">229</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">2</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">3</span><span class="label">인사이트</span></div>
     </div>
-    <div class="empty-hint">아직 대화가 얼마 없어서 정리할 내용이 많지 않아요. 대화가 쌓이면 더 풍성하게 채워집니다.</div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">견 주/스나</div>
+          <div class="mvp-desc">와이프 몰래 새벽 5시에 출발해 코엑스 캐릭터페어에 다녀왔습니다. 홍보대사로 나온 리센느의 축하무대를 제일 앞자리에서 실물로 영접했는데, 주차비가 와이프에게 연동돼 있어 결국 덕질이 들통난 무용담으로 아침부터 방을 뒤집어 놓았습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">후파 <span class="mvp-role">방장</span></div>
+          <div class="mvp-desc">오랜만에 방에 들러(비밀번호 12340) 재련 랭킹에서 오래 활동이 없는 유저들의 데이터를 대거 정리했습니다. 심시리의 장비 수리 문구가 사실 랜덤이라는 비밀도 공개했고, 새로 만든 /벽타기(바로 이 페이지)를 처음으로 시연해 보였습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">그랜드 크로스</div>
+          <div class="mvp-desc">리센느 실물 영접 소식에 "같이 봐주는 우리 입장도 고려해달라"며 고화질 세팅과 원본 전송을 요구하는 등 특유의 드립으로 대화의 텐션을 끌어올렸습니다.</div>
+        </div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">재련 실패 때 뜨는 수리 주문("○○ 외쳐주세요")은 정해져 있나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">후파</span></div>
+          <p>정해진 게 아니라 랜덤으로 나옵니다. 그래서 매번 다른 문구가 뜨니 나온 그대로 외쳐 수리하면 됩니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">재련 랭킹에 활동 안 하는 사람이 너무 많은데 정리해 주실 수 있나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">후파</span></div>
+          <p>네, /삭제 명령으로 오래 비활동한 유저들의 재련 데이터를 초기화해 랭킹을 정리해 드렸습니다.</p>
+        </div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>후파</h3><p>/벽타기로 대화를 계속 쌓다 보면 이 페이지가 방의 유의미한 일기장처럼 될 수 있다며 정리 페이지의 취지를 소개했습니다. 페이지 주소에 아직 옛 방 이름(거북)이 남아 있어 손보기로 했습니다.</p>
+        <span class="insight-tag tag-tool">벽타기</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>뉴뉴윗시</h3><p>시골에서는 뱀은 연례행사처럼 보고 매와 꿩, 밤에는 고라니가 뛰어든다고 합니다. 멧돼지 가족이 산책하는 모습을 보면 "불쌍하다"는 말이 쏙 들어간다는 생생한 시골살이 이야기를 들려줬습니다.</p>
+        <span class="insight-tag tag-info">시골살이</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>견 주/스나</h3><p>캐릭터페어의 홍보대사 축하무대는 무료라도 제일 앞자리에서 실물을 볼 수 있습니다. 다만 대포 카메라 없이 가면 "그러고도 덕후냐"는 놀림을 피하기 어렵습니다.</p>
+        <span class="insight-tag tag-tip">덕질 팁</span>
+      </div></div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전</div><div class="tl-text">견 주/스나가 와이프 몰래 코엑스 캐릭터페어에 다녀온 리센느 영접기로 하루를 열었습니다. 주차비 연동으로 덕질이 들통난 사연에 방이 한바탕 웃었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전~낮</div><div class="tl-text">뉴뉴윗시의 시골 야생동물(뱀·매·꿩·고라니·멧돼지) 이야기와, 고라니를 피하려다 옹벽을 들이받을 뻔한 아하 신랑의 아찔한 경험담이 이어졌습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 1:23</div><div class="tl-text">후파가 오랜만에 방문해 재련 랭킹에서 비활동 유저 데이터를 정리하기 시작했고, 심시리 수리 문구가 랜덤이라는 비밀도 공개됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후</div><div class="tl-text">후파가 새로 만든 /벽타기를 처음 시연하며 이 정리 페이지를 소개했습니다. 페이지가 "방의 일기장"이 될 수 있다는 취지에 멤버들이 관심을 보였습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/15 (수)</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 203 · 주요 Q&amp;A 1 · 인사이트 3</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">203</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">3</span><span class="label">인사이트</span></div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">그랜드 크로스</div>
+          <div class="mvp-desc">초복을 맞아 무한리필 뷔페 먹방 무용담(버섯·야채 무한리필, 쿠우쿠우 초밥 7접시)으로 대화를 종일 이끌었습니다. 로망이의 '치킨값 만원' 계획을 집요하게 놀리며 방을 웃음바다로 만들었습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">로망이</div>
+          <div class="mvp-desc">치킨 사라고 받은 만원으로 편의점 닭다리를 사서 때우려던 '완전범죄' 계획을 펼쳤다가, 이미 다 알고 계신 사장님과 그랜드 크로스에게 들켜 두고두고 놀림감이 됐습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">아하</div>
+          <div class="mvp-desc">오른손 중지 화상(물집·메디폼) 부상 이야기와 초복 삼계탕 인증으로 공감과 웃음을 동시에 자아냈습니다. 재련 게임에도 열심히 참여했습니다.</div>
+        </div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">손을 데었는데(화상) 어떻게 해야 하나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">그랜드 크로스</span></div>
+          <p>일단 찬물에 손을 담가 열부터 빼야 합니다. 화상인 줄 모르고 뾰루지로 착각해 방치하면 물집이 커지니 주의하세요.</p>
+        </div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>그랜드 크로스</h3><p>무한리필 뷔페에서는 값싼 야채·버섯보다 생새우·생연어초밥처럼 값나가는 메뉴로 워밍업한 뒤 배를 채우는 편이 남는 장사라고 합니다. 실제로 초밥만 7접시를 먹었다고.</p>
+        <span class="insight-tag tag-tip">뷔페 공략</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>그랜드 크로스</h3><p>화상은 즉시 찬물에 담가 열을 빼는 것이 우선입니다. 화상인 줄 모르고 방치하면 물집이 커지고 진물이 나므로, 통증이 계속되면 화상을 의심해야 합니다.</p>
+        <span class="insight-tag tag-info">응급처치</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>로망이</h3><p>받은 치킨값을 아끼려고 잔머리를 굴려 봐야, 사장님은 이미 다 알고 계셔서 결국 두 배로 뱉어내게 됩니다. 정직이 최선이라는 교훈(?)을 남겼습니다.</p>
+        <span class="insight-tag tag-tip">웃음벨</span>
+      </div></div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전</div><div class="tl-text">아침부터 심시리 재련(장비 강화) 게임이 활발했습니다. 파괴와 수리를 반복하며 "재련가즈아"가 이어졌습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전~낮</div><div class="tl-text">초복을 맞아 삼계탕·샤브샤브·무한리필 뷔페 이야기로 대화가 무르익었습니다. 그랜드 크로스의 뷔페 먹방 무용담이 하이라이트였습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">낮~오후</div><div class="tl-text">로망이가 치킨값 만원을 아끼려는 '완전범죄' 계획을 꺼냈고, 그랜드 크로스가 "바로 뽀록난다"며 집요하게 놀렸습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후~저녁</div><div class="tl-text">아하가 오른손 중지 화상 부상 썰을 풀며 응급처치 조언이 오갔고, 저녁 메뉴를 고민하며 하루가 마무리됐습니다.</div></div>
+      </div>
+    </div>
   </div></div>
 </div>
 <!-- ═══ 날짜 블록 끝 ═══ -->
@@ -255,19 +384,50 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <div class="section-header"><div class="section-icon">📊</div><div class="section-title">누적 질문 랭킹</div></div>
   <ul class="faq-bar-list">
     <!-- ═══ FAQ 랭킹: 정리 때마다 갱신 ═══ -->
-    <!-- ═══ FAQ 랭킹 끝 ═══ -->
+<li class="faq-bar-item"><div class="faq-bar-label"><span>심시리 재련(장비 강화) 게임</span><span class="cnt">5</span></div>
+<div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
+<li class="faq-bar-item"><div class="faq-bar-label"><span>초복·먹거리(삼계탕/뷔페) 이야기</span><span class="cnt">3</span></div>
+<div class="faq-bar-track"><div class="faq-bar-fill" data-pct="60"></div></div></li>
+<li class="faq-bar-item"><div class="faq-bar-label"><span>리센느·캐릭터페어 덕질</span><span class="cnt">2</span></div>
+<div class="faq-bar-track"><div class="faq-bar-fill" data-pct="40"></div></div></li>
+<!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
   <!-- ═══ FAQ 베스트 답변(.qa-card 재사용): 정리 때마다 갱신 ═══ -->
-  <div class="empty-hint">아직 쌓인 질문이 없어요. 대화가 정리되면 자동으로 채워집니다.</div>
-  <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
+<div class="qa-card" onclick="toggleQa(this)">
+  <div class="qa-header"><div class="qa-q-icon">Q</div>
+    <div class="qa-question">재련 실패 시 수리 주문은 정해져 있나요?</div>
+    <span class="qa-toggle">▼</span></div>
+  <div class="qa-body"><div class="qa-answer">
+    <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">후파</span></div>
+    <p>랜덤입니다. 매번 다른 문구가 나오니 나온 그대로 외쳐 수리하면 됩니다.</p>
+  </div></div>
+</div>
+<div class="qa-card" onclick="toggleQa(this)">
+  <div class="qa-header"><div class="qa-q-icon">Q</div>
+    <div class="qa-question">화상을 입었을 때 응급처치는?</div>
+    <span class="qa-toggle">▼</span></div>
+  <div class="qa-body"><div class="qa-answer">
+    <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">그랜드 크로스</span></div>
+    <p>찬물에 담가 열부터 빼세요. 뾰루지로 착각해 방치하면 물집이 커집니다.</p>
+  </div></div>
+</div>
+<!-- ═══ FAQ 베스트 답변 끝 ═══ -->
 </div>
 
 <div class="tab-content" id="tab-glossary">
   <input type="text" class="glossary-search" id="glossarySearch" placeholder="🔍 용어 검색...">
   <div class="glossary-grid" id="glossaryGrid">
     <!-- ═══ 용어사전(.glossary-card): 새 용어가 나올 때마다 추가 (가나다순) ═══ -->
-    <!-- ═══ 용어사전 끝 ═══ -->
+<div class="glossary-card"><div class="glossary-term">🎮 라오클</div><div class="glossary-def">후파가 하던 라그나로크 계열 게임의 약칭. 요즘은 접고 쉬는 중이라고.</div></div>
+<div class="glossary-card"><div class="glossary-term">💖 리센느</div><div class="glossary-def">견 주/스나와 카드줍꼬가 애정하는 캐릭터. 코엑스 캐릭터페어 홍보대사로 나와 축하무대를 열었다.</div></div>
+<div class="glossary-card"><div class="glossary-term">🧗 벽타기</div><div class="glossary-def">이 방 대화를 요약해 이 페이지에 올리는 봇 명령어.</div></div>
+<div class="glossary-card"><div class="glossary-term">🛠️ 심시리</div><div class="glossary-def">방의 재련(장비 강화) 미니게임을 진행하는 봇.</div></div>
+<div class="glossary-card"><div class="glossary-term">⚒️ 재련(제련)</div><div class="glossary-def">심시리 봇으로 장비를 강화하는 미니게임. 실패하면 하락·파괴되고, 파괴 시 지정된 문구를 외쳐 수리한다. 하루 2회 제한.</div></div>
+<div class="glossary-card"><div class="glossary-term">🏹 줍햄</div><div class="glossary-def">견 주/스나(마스코트 카드줍꼬)의 별칭.</div></div>
+<div class="glossary-card"><div class="glossary-term">🍗 초복</div><div class="glossary-def">삼복 중 첫 복날. 삼계탕 등 보양식을 챙겨 먹는 날.</div></div>
+<div class="glossary-card"><div class="glossary-term">🪙 하휭봇</div><div class="glossary-def">방의 코인(골드) 게임을 진행하는 봇.</div></div>
+<!-- ═══ 용어사전 끝 ═══ -->
   </div>
   <div class="empty-hint" id="glossaryEmpty">아직 등록된 용어가 없어요. 대화에서 용어가 나오면 자동으로 채워집니다.</div>
 </div>
