@@ -379,18 +379,35 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
 @keyframes mascotBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 .mascot.swing .mascot-sprite { animation: mascotSwing 0.9s ease-in-out infinite; transform-origin: 50% 85%; }
 @keyframes mascotSwing { 0%,100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(7deg) translateY(-3px); } }
+.mascot.wide { width: 150px; }
+.mascot.wide .mascot-sprite { width: 142px; animation: archerBob 1.2s ease-in-out infinite; }
+@keyframes archerBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+.mascot-arrow { position: absolute; left: 108px; top: 46px; pointer-events: none; }
+.mascot-arrow svg { display: block; image-rendering: pixelated; }
+.mascot-arrow.a1 { animation: arrowFly 2.4s linear infinite; }
+.mascot-arrow.a2 { animation: arrowFly 2.4s linear infinite; animation-delay: 1.2s; }
+@keyframes arrowFly {
+  0%   { transform: translateX(0); opacity: 0; }
+  6%   { opacity: 1; }
+  86%  { opacity: 1; }
+  100% { transform: translateX(240px); opacity: 0; }
+}
 @media (max-width: 520px) {
   .mascot-corner { transform: scale(0.8); transform-origin: left bottom; gap: 52px; }
   .mascot-row { gap: 5px; }
 }
-@media (prefers-reduced-motion: reduce) { .mascot-sprite { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  .mascot-sprite { animation: none !important; }
+  .mascot-arrow { display: none; }
+}
 </style>
 <script>
 (function () {
   /* ── 방별 마스코트 구성: 방 이름 → 줄 배치(이름 배열). 여기에 방을 추가하면 그 방에도 등장 ── */
   var ROOM_CREW = {
     "금광2":  { rows: [["라옴", "마이폰"], ["시지지", "강성개미", "날다진"]], boss: "라옴" },
-    "삽자루": { rows: [["바다가좋아"]] }
+    "삽자루": { rows: [["바다가좋아"]] },
+    "하늘":   { rows: [["카드줍꼬"]] }
   };
 
   var roomName = (document.querySelector('.hero h1') || {}).textContent || "";
@@ -537,6 +554,31 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
         "...WW....WW....."
       ],
       phrases: ["썸네일 특강 보구와!!"]
+    },
+    {
+      name: "카드줍꼬", // 하늘 방 — 궁수, 활 쏘는 중 (실제로 화살이 날아감). 3칸 폭
+      archer: true, wide: true,
+      colors: { H:"#2f5d3a", F:"#f0c8a0", E:"#222222", m:"#c97b5a", G:"#4a9d5b", P:"#4a3b2a", b:"#2a2118", C:"#8b5a2b", S:"#d8d8d0", f:"#e0313f", A:"#c9a227", T:"#9aa1ad" },
+      grid: [
+        "....HHHHH.................",
+        "...HHHHHHH................",
+        "...HFFFFFH................",
+        "...HFEFEFH........C.......",
+        "...HFFFFFH.........C......",
+        "....FFmmF..........C......",
+        "....GGGGG.......S...C.....",
+        "...GGGGGGGGGG.S.....C.....",
+        "..GGGGGGGGGGS.......C.....",
+        "..GGGGGGGGGfAAAAAAATC.....",
+        "..GGGGGGGGGGS.......C.....",
+        "...GGGGGGGGGG.S.....C.....",
+        "...GGGGGGG......S..C......",
+        "...PPPPPP..........C......",
+        "...PP..PP.........C.......",
+        "..bbP..Pbb...............",
+        "..bb....bb..............."
+      ],
+      phrases: ["사랑해요 리센느"]
     }
   ];
 
@@ -545,8 +587,16 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
     return null;
   }
 
+  function arrowSvg() {
+    return '<svg width="36" height="10" viewBox="0 0 36 10" xmlns="http://www.w3.org/2000/svg">' +
+      '<rect x="3" y="4" width="26" height="2" fill="#c9a227"/>' +
+      '<polygon points="28,1 35,5 28,9" fill="#9aa1ad"/>' +
+      '<rect x="0" y="2" width="3" height="2" fill="#e0313f"/>' +
+      '<rect x="0" y="6" width="3" height="2" fill="#e0313f"/></svg>';
+  }
+
   function svgFor(m) {
-    var cell = 3, cols = 16, rows = m.grid.length;
+    var cell = 3, cols = m.grid[0].length, rows = m.grid.length;
     var out = '<svg viewBox="0 0 ' + (cols * cell) + ' ' + (rows * cell) + '" xmlns="http://www.w3.org/2000/svg">';
     for (var y = 0; y < rows; y++) {
       var row = m.grid[y];
@@ -580,10 +630,13 @@ body.dark .mascot-bubble::after { border-top-color: #fff; }
       if (!m) return;
       var isBoss = (name === crew.boss);
       var d = document.createElement('div');
-      d.className = 'mascot' + (isBoss ? ' boss' : '') + (m.swing ? ' swing' : '');
-      d.innerHTML = '<div class="mascot-bubble"></div><div class="mascot-sprite">' + svgFor(m) +
+      d.className = 'mascot' + (isBoss ? ' boss' : '') + (m.swing ? ' swing' : '') + (m.wide ? ' wide' : '');
+      var arrows = m.archer
+        ? '<div class="mascot-arrow a1">' + arrowSvg() + '</div><div class="mascot-arrow a2">' + arrowSvg() + '</div>'
+        : '';
+      d.innerHTML = arrows + '<div class="mascot-bubble"></div><div class="mascot-sprite">' + svgFor(m) +
         '</div><div class="mascot-name">' + (isBoss ? '⭐ ' : '') + name + '</div>';
-      d.querySelector('.mascot-sprite').style.animationDelay = (idx * 0.15) + 's';
+      if (!m.wide) d.querySelector('.mascot-sprite').style.animationDelay = (idx * 0.15) + 's';
       row.appendChild(d);
       cycle(d.querySelector('.mascot-bubble'), m.phrases, 2000 + idx * 3600);
       idx++;
