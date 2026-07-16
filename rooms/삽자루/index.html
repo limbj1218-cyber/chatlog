@@ -236,13 +236,13 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/16 (목)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 59 · 주요 Q&amp;A 2 · 인사이트 5</div>
+    <div class="day-accordion-summary">전체 메시지 216 · 주요 Q&amp;A 6 · 인사이트 7</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">59</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">2</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">5</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">216</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">6</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">7</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
     </div>
 
@@ -251,15 +251,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <div class="mvp-grid">
         <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
           <div class="mvp-name">마마 <span class="mvp-role">일어나</span></div>
-          <div class="mvp-desc">새벽 늦게까지 작업 중인 썸네일 이미지를 여러 번 공유하며 방 멤버들의 피드백을 구했고, 어둡다·이해가 잘 안 된다는 지적을 받을 때마다 바로 수정 방향을 고민하며 진지하게 받아들였습니다. 새벽 2시반에는 혹시 아직 깨어있는 사람이 있을까 싶어 마지막 이미지들을 다시 올리며 끝까지 의견을 구했습니다.</div>
+          <div class="mvp-desc">새벽 내내 작업 중인 썸네일 이미지를 여러 번 공유하며 방 멤버들의 피드백을 구했고, 낮에는 사연을 그대로 퍼가는 도용 채널을 발견해 공유하는 등 하루 종일 가장 활발하게 대화를 이끌었습니다. 자신이 받은 불쾌감 제재의 원인을 다른 멤버들과 함께 곱씹으며 앞으로 채널 운영 방향을 고민했습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
-          <div class="mvp-name">실버사연 <span class="mvp-role">여기아침</span></div>
-          <div class="mvp-desc">마마님의 썸네일 이미지에 대해 구도·색감·안전성까지 조목조목 피드백을 남겼습니다. 이미지가 중첩돼 한눈에 안 들어온다는 점과 칼 이미지가 유튜브 정책상 위험할 수 있다는 점을 짚었고, 색감을 밝고 선명하게 보완하는 구체적인 방법까지 안내했습니다.</div>
+          <div class="mvp-name">바다ᆢ</div>
+          <div class="mvp-desc">마마의 썸네일에 밝기 문제를 짚어주는 것으로 하루를 열었고, 루시아의 썸네일 논쟁에도 참여해 문장에 힘이 없다는 등 날카로운 피드백을 건넸습니다. 마지막에는 "여기서 답을 만들어 가면 실력이 안 는다, 본인이 방법을 찾아야 는다"는 조언으로 방 전체에 묵직한 메시지를 남겼습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
-          <div class="mvp-name">바다ᆢ</div>
-          <div class="mvp-desc">이미지가 너무 어둡다고 바로 피드백하며 방향을 잡아줬고, 허위 판정을 받은 채널에는 자극적인 소재 대신 밝고 건전한 콘텐츠를 올리라고 조언했습니다. 어제 허위 처리에 대해 이의제기를 했는지도 챙겨 물었습니다.</div>
+          <div class="mvp-name">야담곳간 <span class="mvp-role">릴리온</span></div>
+          <div class="mvp-desc">루시아의 썸네일 피드백에 적극 참여해 레퍼런스 영상의 완성도까지 짚었고, 마마의 제재 사유를 함께 추론하며 도와줬습니다. 사연 도용 채널 이슈에도 가장 격하게 반응하며 방의 문제의식을 이끌었습니다.</div>
         </div></div>
       </div>
     </div>
@@ -284,43 +284,86 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
           <p>자신이 없어서 이의제기는 패스했다고 답했습니다.</p>
         </div></div>
       </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">그록 주간한도가 계속 초기화된다는 게 무슨 말이에요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">인생봄결(후파)</span></div>
+          <p>그록에 생긴 주간한도는 원래 1주일에 한 번씩 초기화돼야 하는데 실제로는 매일 초기화되고 있다고 설명했고, 그저께 한도를 다 썼는데 지금 확인해보니 다시 초기화되어 있었다며 스크린샷까지 공유했습니다. 다만 바다ᆢ는 매일 초기화돼도 주간 한도에 한 번 걸리면 풀릴 때까지 기다려야 하니 조절을 잘 하라고 당부했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">썸네일 문구는 1번과 2번 중 어떤 게 나을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">언덕나무인생(벼랑위에감자) · 마마(일어나) · 야담곳간(릴리온)</span></div>
+          <p>3번("죽어가는 본처 아들을 끝까지 품은 계모의 정체")은 다수가 탈락시켰고, 1번이 문구 색상이 눈에 더 잘 들어온다는 의견이 많아 결국 1번 계열 문구와 이미지를 조합해 새로 만들기로 했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">썸네일은 영상을 다 만들고 나서 만드는 게 나을까요, 미리 만드는 게 나을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">야담곳간(릴리온) · 바다ᆢ</span></div>
+          <p>야담곳간은 머리 아픈 작업은 미루는 편이라 늘 가장 나중에 썸네일을 만들지만, 레퍼런스를 고를 때 이미 키워드와 장소 설정을 정해두고 시작해야 나중에 문구가 막히지 않는다고 답했고, 바다ᆢ도 래퍼를 정하면 머릿속에 썸네일 문구를 미리 대략 구상하고 시작한다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">마마님 제재 사유가 영상 제작 방식 때문인가요, 아니면 다른 이유인가요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">마마(일어나) · 야담곳간(릴리온)</span></div>
+          <p>마마는 오전에 광고 부적합 판정을 받아 썸네일 제목을 수정했더니 광고가 다시 붙었는데, 저녁에는 어린아이가 짧게 등장(끝부분에 목소리 녹음 포함)하는 영상 때문에 제재를 받은 것 같다고 답했고, 야담곳간은 그렇다면 제작 방식이 아니라 어린아이 등장이 원인일 가능성이 크다고 짚었습니다.</p>
+        </div></div>
+      </div>
     </div>
 
     <div class="section">
       <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>인생봄결(후파)</h3><p>그록(Grok)의 주간 사용한도가 원래는 일주일에 한 번 초기화돼야 하는데 매일 초기화되고 있다는 사용 경험을 스크린샷과 함께 공유했습니다.</p>
+        <span class="insight-tag tag-tool">AI 도구</span>
+      </div></div>
       <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
-        <h3>실버사연(여기아침)</h3><p>공유된 썸네일 이미지가 중첩돼 한 컷으로 내용이 잘 읽히지 않는다고 짚었고, 칼이 등장하는 이미지는 유튜브가 싫어할 수 있으니 피하는 게 좋겠다고 조언했습니다.</p>
+        <h3>실버사연(여기아침)</h3><p>공유된 썸네일 이미지가 중첩돼 한 컷으로 내용이 잘 읽히지 않고 색감도 누런 빛이 돌아 대비가 안 산다고 짚으며, 칼 이미지는 유튜브가 싫어할 수 있으니 피하고 더 밝고 선명한 색감으로 뽑아달라고 요청해보라고 구체적으로 안내했습니다.</p>
         <span class="insight-tag tag-tip">썸네일 피드백</span>
       </div></div>
       <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
-        <h3>바다ᆢ</h3><p>허위 판정을 받은 채널에 영상을 올릴 거라면 자극적인 소재 대신 행복하고 건전한 내용으로 안전하게 올리라고 조언했습니다.</p>
-        <span class="insight-tag tag-tip">허위채널 운영</span>
-      </div></div>
-      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
-        <h3>실버사연(여기아침)</h3><p>이미지에 누런 빛이 돌아 주변 환경과 여성 의상 색이 비슷해 보여 색감 대비가 잘 안 산다고 짚으며, 누런 빛을 빼고 더 밝고 선명하고 풍성한 색감으로 뽑아달라고 요청해보라고 구체적으로 안내했습니다.</p>
-        <span class="insight-tag tag-tip">색감 보정</span>
+        <h3>바다ᆢ</h3><p>래퍼를 결정하면 곧바로 머릿속에 썸네일 문구를 대략 구상하고 시작해야 나중에 대본과 키워드가 자연스럽게 이어진다고 조언했습니다.</p>
+        <span class="insight-tag tag-tip">작업 순서</span>
       </div></div>
       <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
-        <h3>마마(일어나)</h3><p>장면 속 장소를 더 구체적으로 밝히면 좋겠다는 제안에, 억울한 누명을 쓰고 참수를 앞둔 형장이라는 설정이라 장소를 언급할 수 없다는 창작상의 고민을 공유했습니다.</p>
+        <h3>야담곳간(릴리온)</h3><p>사연을 레퍼런스할 때는 조선시대에 맞는 장소·상황 설정을 미리 잘 생각해둬야 나중에 썸네일 문구가 막히지 않는다고 조언했습니다.</p>
         <span class="insight-tag tag-tip">스토리 각색</span>
       </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>마마(일어나) · 야담곳간(릴리온)</h3><p>사연 내용을 그대로 퍼다가 올리는 "심야담방"류 채널을 발견했다고 공유했고, 야담 카테고리에도 이런 도용 채널이 늘고 있다는 문제의식을 나눴습니다.</p>
+        <span class="insight-tag tag-info">콘텐츠 도용</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>실버사연(여기아침)</h3><p>불쾌감 제재가 정확히 3개월 주기로 발생하는 것 같다며, 원작 측이 정기적으로 신고하는 것으로 보이니 내용을 최대한 소프트하게 가야 한다고 분석했습니다.</p>
+        <span class="insight-tag tag-info">제재 패턴</span>
+      </div></div>
       <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
-        <h3>인생봄결(후파)</h3><p>그록(Grok)의 주간 사용한도가 계속 초기화되는 것 같다는 사용 경험을 공유했습니다.</p>
-        <span class="insight-tag tag-tool">AI 도구</span>
+        <h3>바다ᆢ</h3><p>쇼츠는 얼굴 노출 외에 차별화할 방법이 마땅치 않다는 고민에, 자신은 쇼츠에도 직접 촬영한 영상을 넣어 운영하는 티를 낸다고 팁을 공유했습니다.</p>
+        <span class="insight-tag tag-tip">쇼츠 운영</span>
       </div></div>
     </div>
 
     <div class="section">
       <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
       <div class="timeline">
-        <div class="tl-item"><div class="tl-time">오전 12:41~오전 12:42</div><div class="tl-text">바다ᆢ와 이야기한줌(문하쮸)이 짧게 안부를 주고받으며 하루가 시작됐습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 1:28~오전 1:31</div><div class="tl-text">마마(일어나)가 늦은 시간 썸네일 이미지를 올려 피드백을 요청했고, 바다ᆢ는 이미지가 너무 어둡다고 지적했으며 실버사연(여기아침)은 이미지가 중첩돼 한눈에 안 들어오고 칼 이미지는 위험할 수 있다고 짚었습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 1:32~오전 1:34</div><div class="tl-text">야담곳간(릴리온)과 실버사연이 이미지 속 상황을 확인하는 과정에서 예비 시아버지 설정임이 드러났고, "인생나날" 사연 썸네일을 레퍼런스했다는 사실도 밝혀졌습니다. 마마는 새 채널에 올릴지 고민을 나눴습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 1:34~오전 1:36</div><div class="tl-text">바다ᆢ가 어제 허위 이의제기 여부를 물었고 마마는 자신 없어 패스했다고 답했으며, 바다ᆢ는 허위 채널엔 밝고 건전한 콘텐츠를 올리라고 조언했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 1:36~오전 1:39</div><div class="tl-text">실버사연이 색감(누런 빛)과 구도를 보완하는 방법을 구체적으로 조언했고, 마마는 늦은 시간 피드백에 감사 인사를 전했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 1:42~오전 2:33</div><div class="tl-text">바다ᆢ가 이모티콘으로 화답한 뒤 방이 조용해졌고, 마마는 새벽 2시반 무렵 혹시 아직 깨어있는 사람이 있을까 싶어 나머지 이미지들을 마저 올리며 하루를 마무리했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 3:02~오전 4:02</div><div class="tl-text">실버사연(여기아침)이 뒤늦게 오타(예시아버지→예비 시아버지)를 짚고 장면 속 장소를 더 구체적으로 밝히는 게 좋겠다고 제안했지만, 마마(일어나)는 억울한 누명을 쓰고 참수를 앞둔 형장이라는 설정이라 장소를 밝히기 어렵다고 답했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 8:06~오전 8:45</div><div class="tl-text">인생봄결(후파)이 이 소재가 이미 사연에 나온 적 있다며 원래는 상견례 자리에서 만난 설정이었다고 짚었고, 그록(Grok) 주간 사용한도가 계속 초기화되는 것 같다는 이야기도 나눴습니다. 마마는 밤새 썸네일 수십 장을 만들어 겨우 업데이트했다고 전하며 새벽까지 함께해준 실버사연에게 감사 인사를 전했고, 실버사연은 아이 등원 준비로 지쳐 졸리다고 답하며 하루가 마무리됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 12:41~오전 2:33</div><div class="tl-text">바다ᆢ와 이야기한줌(문하쮸)이 짧게 안부를 주고받은 뒤, 마마(일어나)가 새벽 내내 썸네일 이미지를 여러 차례 공유하며 피드백을 구했고, 바다ᆢ와 실버사연(여기아침)이 밝기·구도·칼 이미지의 위험성을 짚어줬습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 3:02~오전 4:02</div><div class="tl-text">실버사연이 오타(예시아버지→예비 시아버지)를 짚고 장면 속 장소를 더 구체적으로 밝히자고 제안했지만, 마마는 참수를 앞둔 형장이라는 설정이라 언급하기 어렵다고 답했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 8:06~오전 8:45</div><div class="tl-text">인생봄결(후파)이 이 소재가 실제 사연에도 나온 적 있다고 짚었고, 그록(Grok) 주간 사용한도가 매일 초기화되는 것 같다는 이야기가 처음 나왔습니다. 마마는 밤새 썸네일을 만들며 새벽까지 함께해준 실버사연에게 감사를 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 9:34~오전 11:50</div><div class="tl-text">인생봄결이 그록 주간한도가 매일 초기화되는 버그를 자세히 설명했고, 다들 신기해했지만 원래 하루 100개까지 가능했던 것에 비하면 오히려 줄어든 셈이라는 아쉬움도 나왔습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 12:15~오후 1:45</div><div class="tl-text">그록 한도 관련 당부가 이어진 뒤, 루시아의 이야기 선물(애플트리)이 썸네일 3종 시안을 올려 의견을 구했습니다. 언덕나무인생(벼랑위에감자)·마마·야담곳간(릴리온)·바다ᆢ가 문구와 색상, 레퍼런스 영상의 완성도까지 짚으며 활발히 피드백을 주고받았고, 문구와 이미지를 조합한 새 시안으로 정리됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 1:49~오후 2:00</div><div class="tl-text">바다ᆢ가 스스로 답을 찾아야 실력이 는다는 조언을 건넸고, 마마는 이를 계기로 앞으로는 썸네일 키워드를 영상 제작 전에 먼저 정하기로 다짐했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 2:15~오후 2:48</div><div class="tl-text">마마가 사연 내용을 그대로 퍼가는 도용 채널을 발견해 공유했고, 실버사연은 불쾌감 제재가 정확히 3개월 주기로 발생하는 것 같다고 분석했으며, 야담곳간은 쇼츠까지 불안해진다고 토로했습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -656,6 +699,10 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>롱폼/숏츠 대본 작성 프롬프트·AI 선택</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>썸네일은 영상 전/후 언제 만드는 게 좋은지</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>그록 주간한도가 매일 초기화되는 이유</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
@@ -750,6 +797,24 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="qa-body"><div class="qa-answer">
       <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">바다ᆢ</span></div>
       <p>재미나이(Gemini) pro모드로 초안부터 다 작성한다고 답했고, 가장 중요한 건 인물의 나이·직업·사건·상징물을 바꿔주는 것이라며 참고용 대본 파일들을 공유했습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">썸네일은 영상을 다 만들고 나서 만드는 게 나을까요, 미리 만드는 게 나을까요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">야담곳간(릴리온) · 바다ᆢ</span></div>
+      <p>야담곳간은 머리 아픈 작업은 미루는 편이라 늘 가장 나중에 썸네일을 만들지만, 레퍼런스를 고를 때 이미 키워드와 장소 설정을 정해두고 시작해야 나중에 문구가 막히지 않는다고 답했고, 바다ᆢ도 래퍼를 정하면 머릿속에 썸네일 문구를 미리 대략 구상하고 시작한다고 덧붙였습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">그록 주간한도가 계속 초기화된다는 게 무슨 말이에요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">인생봄결(후파)</span></div>
+      <p>그록에 생긴 주간한도는 원래 1주일에 한 번씩 초기화돼야 하는데 실제로는 매일 초기화되고 있다고 설명했고, 다만 바다ᆢ는 매일 초기화돼도 주간 한도에 한 번 걸리면 풀릴 때까지 기다려야 하니 조절을 잘 하라고 당부했습니다.</p>
     </div></div>
   </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
