@@ -236,21 +236,108 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/16 (목)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 4 · 주요 Q&amp;A 0 · 인사이트 0</div>
+    <div class="day-accordion-summary">전체 메시지 67 · 주요 Q&amp;A 4 · 인사이트 5</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">4</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">67</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">4</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">5</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">정@철(정라봉이)</div>
+          <div class="mvp-desc">새 채널에서 직촬 크리에이티브 커먼즈 영상을 배경으로 깔고 AI 이미지를 끼워 넣는 방식으로 영상을 만들다가 "불쾌감을 주는 콘텐츠"로 제재를 받은 경험을 상세히 공유했습니다. 15시간, 5시간을 들여 항소용 영상을 만들었다고 밝히며 같은 방식을 시도하려는 멤버들에게 참고가 되길 바란다고 전했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">양@국 (바다가좋아)</div>
+          <div class="mvp-desc">정라봉이의 제작 방식을 하나씩 캐물으며 가공 여부를 확인했고, 가공 없이 크리에이티브 커먼즈 영상을 그대로 썼다면 카피 제재일 가능성이 크다고 짚었습니다. 늘리고 자르고 순서를 바꾸는 등 30~40% 변형이 필요하며, 아예 타인 영상 대신 블랙박스나 직접 촬영한 영상을 쓰라고 실질적인 대안을 제시했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">차@욱(청암)</div>
+          <div class="mvp-desc">작년 12월 수익 탄력을 받다가 1월 7일 허위컨텐츠 제재로 765만 원을 날린 뒤, 영상 전량 삭제 후 90일이 지난 4월에 재신청했지만 3개월째 같은 화면이라는 답답한 경험을 공유했습니다. 새 영상 10개로 5400시간을 채워 재신청했는데도 응답이 없고 유튜브 채팅 문의조차 막혀있다고 토로했습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">새로운 채널 개설하고 첫 영상으로 그 방식을 올리신 거예요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">정@철(정라봉이)</span></div>
+          <p>네, 위에 설명한 방법(직촬 배경 + AI 이미지)대로 꾸준히 올렸었다고 답했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">직촬영상에 이미지를 붙여 넣으실 때 직촬영상이 위로 오게 하셨나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">정@철(정라봉이)</span></div>
+          <p>합치지 않고 직촬영상은 계속 뒤에 배경으로만 깔았고, AI 이미지가 나올 때는 AI 이미지만 보이게 했다고 답하며, 합쳐볼 걸 그랬다는 아쉬움을 남겼습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">새로운 영상을 제작하시고 시청시간을 채워서 재신청하신 걸까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">차@욱(청암)</span></div>
+          <p>기존 영상을 100% 삭제한 뒤 10개 영상을 새로 올려 5400시간을 달성했다고 답했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">유튜브 채팅창으로 문의는 해보셨나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">차@욱(청암)</span></div>
+          <p>유튜브 채팅창 문의 자체가 아예 닫혀 있어서 문의할 수 없었다고 답했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>전@미(일어나)</h3><p>6월에 새 채널을 개설해 야담을 운영 중인데 이틀 전 불쾌감을 주는 콘텐츠 제재를 받았다고 밝혔습니다. 처음 2개는 빔프로젝터로 재촬영해 화질이 나빴고, 이후엔 얼굴을 반투명 합성해봤지만 소용없었다며, 아이 위험·불·화약 등 소재가 문제였는지 고민된다고 전했고 마이폰님의 인형극 방식이 가장 안전할 것 같다는 결론을 남겼습니다.</p>
+        <span class="insight-tag tag-tip">소재 vs 촬영방식</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>양@국 (바다가좋아)</h3><p>크리에이티브 커먼즈 영상도 그대로 쓰면 안 되고, 늘리고 자르고 순서를 바꾸고 자막을 입히는 등 30~40%는 다르게 보이도록 가공해야 한다고 조언했습니다. 타인 영상보다는 블랙박스 영상이나 직접 촬영한 영상을 쓰라고 권했고, 카피로 걸린 채널은 살리기 어렵다고 짚었습니다.</p>
+        <span class="insight-tag tag-tip">카피제재 대응</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>김(세오리)</h3><p>라옴님이 특강에서 직촬 영상을 귀퉁이에 살짝 넣는 정도로는 제재를 피하기 어렵다고 했다는 내용을 전하며, 개인적으로는 미성년자가 가학적·폭력적 상황에 놓인 내용만 아니면 '소재' 자체로 정지를 먹이진 않을 것 같다는 의견을 보탰습니다.</p>
+        <span class="insight-tag tag-info">라옴특강</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>김@현(힘새라)</h3><p>제재가 유독 수익 정산 시기와 맞물려 발생하는 것 같다며, 기준도 명분도 없이 계속 이런 식이라고 냉소적으로 짚었습니다.</p>
+        <span class="insight-tag tag-info">제재 패턴</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>정@철(정라봉이)</h3><p>돌아보니 제재가 1월, 4월, 7월 식으로 분기별 한 번씩 반복되는 것 같다는 패턴을 짚으며, 아직 7월은 확정은 아니지만 징조가 안 좋아 보인다고 전했습니다.</p>
+        <span class="insight-tag tag-info">제재 주기</span>
+      </div></div>
     </div>
 
     <div class="section">
       <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
       <div class="timeline">
-        <div class="tl-item"><div class="tl-time">오전 12:02~오전 12:34</div><div class="tl-text">최@라(릴리온)와 송@혜(행신)가 유튜브 수익창출 여부 확인 화면에 대해 짧게 대화를 나눴고, 홍@연(나지)이 외장하드 추천을 요청했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 4:09</div><div class="tl-text">김@진(이후)이 새벽에 자신의 콘텐츠 유형을 "1. 사연-재회, 2. 불쾌감콘텐츠"로 정리해 남기며 대화가 마무리됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 12:02~오전 12:34</div><div class="tl-text">릴리온과 행신이 유튜브 수익창출 여부 확인 화면에 대해 짧게 대화를 나눴고, 나지가 외장하드 추천을 요청했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 4:09</div><div class="tl-text">이후가 새벽에 자신의 콘텐츠 유형을 "1. 사연-재회, 2. 불쾌감콘텐츠"로 정리해 남겼습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 12:45~오후 1:24</div><div class="tl-text">정라봉이가 직촬 배경 + AI 이미지 방식으로 만든 영상이 불쾌감을 주는 콘텐츠로 제재당한 경험을 상세히 공유하며 항소를 준비 중이라고 밝혔고, 힘새라 등은 제재 시점이 정산 시기와 겹친다며 냉소적인 반응을 보였습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 1:27~오후 1:45</div><div class="tl-text">하이진이 제미나이에게 물어본 답변을 공유했고, 정라봉이는 원인이 유튜브 영상 사용 때문인지 썸네일 때문인지 아직 불명확하다면서도 제재가 1·4·7월 분기별로 반복되는 것 같다는 패턴을 짚었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 1:40~오후 2:02</div><div class="tl-text">일어나가 자신의 야담 채널도 이틀 전 불쾌감 콘텐츠 제재를 받았다며 그동안의 시도와 소재 관련 고민을 나눴고, 세오리는 라옴님 특강 내용을 전하며 소재보다 촬영 방식이 문제라는 의견을 보탰습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 2:07~오후 2:25</div><div class="tl-text">슬문과 양국이 정라봉이에게 영상 합성 방식을 자세히 캐물었고, 양국은 가공 없이 크리에이티브 커먼즈 영상을 그대로 썼다면 카피 제재일 가능성이 크다며 30~40% 변형과 자체 촬영 영상 사용을 조언했습니다. 마이폰1은 일어나에게 세부 질문을 남기며 대화를 이어갔습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 2:39~오후 2:47</div><div class="tl-text">청암이 작년 허위 컨텐츠 제재로 765만 원을 날린 뒤 90일 후 재신청했지만 3개월째 무응답이라는 경험을 공유했고, 유튜브 채팅 문의도 막혀있다고 전하며 다른 멤버들의 위로를 받았습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -574,30 +661,39 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <div class="section-header"><div class="section-icon">📊</div><div class="section-title">누적 질문 랭킹</div></div>
   <ul class="faq-bar-list">
     <!-- ═══ FAQ 랭킹: 정리 때마다 갱신 ═══ -->
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>불쾌감 컨텐츠 제재 관련 문의</span><span class="cnt">4</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>재신청·재심사 절차</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수·방식</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>IP·기기분리 업로드</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>후파님 프로그램 사용법·다운로드</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
-    <li class="faq-bar-item"><div class="faq-bar-label"><span>불쾌감 컨텐츠 제재 관련 문의</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>새 영상 올리고 신청 여부</span><span class="cnt">2</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>버튼 활성화 시점</span><span class="cnt">1</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
-    <li class="faq-bar-item"><div class="faq-bar-label"><span>새 영상 올리고 신청 여부</span><span class="cnt">1</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="25"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>플로우 이미지 품질 이슈</span><span class="cnt">1</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="25"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>사연 vs 야담 추천 이유</span><span class="cnt">1</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="25"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>채널 수익창출 상태 확인 방법</span><span class="cnt">1</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="25"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
   <!-- ═══ FAQ 베스트 답변(.qa-card 재사용): 정리 때마다 갱신 ═══ -->
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">가공하지 않고 크리에이티브 커먼즈 영상을 그대로 배경으로 썼는데, 왜 제재를 받았을까요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">양@국 (바다가좋아)</span></div>
+      <p>가공 없이 그대로 쓰면 카피 제재로 걸릴 수 있다며, 늘리고 자르고 순서를 바꾸고 자막을 입히는 등 30~40%는 다르게 보이도록 가공해야 하고, 가능하면 타인 영상 대신 직접 촬영한 영상을 쓰라고 조언했습니다.</p>
+    </div></div>
+  </div>
   <div class="qa-card" onclick="toggleQa(this)">
     <div class="qa-header"><div class="qa-q-icon">Q</div>
       <div class="qa-question">재신청 버튼을 누르신 건가요, 항소를 하신 건가요?</div>
