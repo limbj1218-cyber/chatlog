@@ -52,6 +52,7 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           claude -p "chats/ 폴더에 대화 로그 txt 파일들이 업로드됐어 (벽타기 요청). 각 파일마다 CLAUDE.md 의 '방별 페이지 규칙'에 따라 해당 방의 페이지를 생성하거나 갱신해줘. 파일명 형식은 '방이름-YYYY-MM-DD.txt'야. git 커밋/푸시는 하지 마 (다음 스텝이 처리함)." \
+            --model claude-sonnet-5 \
             --allowedTools "Read,Write,Edit,Glob,Grep" \
             --permission-mode acceptEdits
 

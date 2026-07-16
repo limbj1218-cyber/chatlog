@@ -34,6 +34,12 @@ var ROOMS = [
     // "우리 오픈채팅방",     ← 이렇게 쉼표로 계속 추가
     // "두번째 방",
 ];
+
+// 일시정지된 방 — ROOMS(폰의 방 목록)에 있어도 여기 있으면 완전히 무시(로그·명령·자동응답 전부 중단).
+// 코드에서 바로 관리되므로 폰의 방 목록을 건드리지 않고도 즉시 껐다 켤 수 있다.
+var PAUSED_ROOMS = [
+    "거북",   // 라그X하늘 — 당분간 정지
+];
 // ──────────────────────────────────────────────────────────────
 
 // ─────────────── 기본 설정 ───────────────
@@ -81,7 +87,7 @@ function pickBaseDir() {
     }
     return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0715-2";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0716-1";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
@@ -105,8 +111,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
 
-        // ① 목록에 없는 방은 완전히 무시
+        // ① 목록에 없거나 일시정지된 방은 완전히 무시
         if (ROOMS.indexOf(room) === -1) return;
+        if (PAUSED_ROOMS.indexOf(room) !== -1) return;
 
         // ② 날짜가 바뀌었으면 어제 로그를 자동 업로드 → 매일 빠짐없이 정리됨
         //    (logMessage가 메모리 버퍼를 오늘 것으로 교체하기 전에 실행해야 함)
@@ -147,6 +154,7 @@ function diagText(room, sender) {
         "방 이름: [" + room + "]\n" +
         "보낸 사람: [" + sender + "]\n" +
         "이 방 활성화됨: " + (ROOMS.indexOf(room) !== -1 ? "예 ✅" : "아니오 ❌ (코드의 ROOMS 목록에 추가하세요)") + "\n" +
+        "일시정지 여부: " + (PAUSED_ROOMS.indexOf(room) !== -1 ? "예 ⏸️ (코드의 PAUSED_ROOMS에서 해제 필요)" : "아니오") + "\n" +
         saved + "\n저장 위치: " + BASE_DIR + "\n" +
         "마지막 업로드 시도: " + (LAST_UP
             ? LAST_UP.time + " → " + (LAST_UP.ok ? "성공 ✅" : "실패 ❌ HTTP " + LAST_UP.code + " " + LAST_UP.note)
