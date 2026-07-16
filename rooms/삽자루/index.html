@@ -233,14 +233,82 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
       <span class="day-accordion-arrow">▼</span>
-      <span class="day-accordion-date">7/16 (목)</span>
+      <span class="day-accordion-date">7/17 (금)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 304 · 주요 Q&amp;A 8 · 인사이트 7</div>
+    <div class="day-accordion-summary">전체 메시지 27 · 주요 Q&amp;A 1 · 인사이트 2</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">304</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">27</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">2</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">루시아의 이야기 선물 <span class="mvp-role">애플트리</span></div>
+          <div class="mvp-desc">밤새 재편집한 아이 등장 영상을 올릴지 말지 새벽 내내 고민하며 위험 요소를 제거한 과정과 제미나이에게 대본·이미지를 검증받은 결과까지 상세히 공유했습니다. 그럼에도 불안한 마음에 5분 명상 후 결정하겠다며 솔직한 고민을 나눴습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">야담곳간 <span class="mvp-role">릴리온</span></div>
+          <div class="mvp-desc">유튜브가 아동 관련 콘텐츠 정책을 강화하고 있다는 스크린샷 3장을 새벽에 공유해 멤버들의 경각심을 일깨웠고, 아동이 등장하는 대본은 특히 꼼꼼히 살펴야 한다는 우려를 나눴습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">아이 나오는 영상, 위험 요소는 다 제거했는데 올려도 괜찮을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">실버사연(여기아침)</span></div>
+          <p>아이가 나오는 부분에 딱히 걸리는 요소가 없다면 일단 올려도 괜찮을 것 같다고 답했고, 루시아의 이야기 선물(애플트리)은 제미나이에게 대본과 이미지를 모두 보여준 결과 아동 학대가 아니라 오히려 아동 보호 내용이라 100% 안전하다는 답을 받았다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>야담곳간(릴리온) · 실버사연(여기아침)</h3><p>유튜브가 "불쾌감 컨텐츠"로 이름을 바꾼 배경에는 아동 관련 규정을 조용히 강화해온 흐름이 있는 것 같다며, 대본 단계부터 아동을 금지어로 등록해두고 꼼꼼히 살펴야 한다는 우려를 나눴습니다.</p>
+        <span class="insight-tag tag-info">아동 콘텐츠 주의</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>루시아의 이야기 선물(애플트리)</h3><p>영상을 올려도 될지 확신이 안 설 때는 제미나이 같은 AI에게 대본과 이미지를 통째로 보여주고 안전성 여부를 교차 검증받은 뒤, 그래도 불안하면 잠깐 명상하고 마음을 정리한 다음 결정하는 자신만의 방법을 공유했습니다.</p>
+        <span class="insight-tag tag-tip">콘텐츠 안전 점검</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 12:22~오전 1:00</div><div class="tl-text">바다ᆢ와 실버사연(여기아침)이 짧은 인사를 나누며 틱톡 수익이 터지지 않으면 하루 만오천원 안팎에 그친다는 이야기, 하루 30~40달러는 들어와야 재미있다는 이야기로 하루를 열었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:19~오전 1:36</div><div class="tl-text">야담곳간(릴리온)이 유튜브의 아동 관련 정책 강화를 보여주는 스크린샷 3장을 공유하자, 바다ᆢ와 실버사연이 이제 대본에 아동이 나오면 금지어 수준으로 조심해야겠다며 놀라워했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:54~오전 2:05</div><div class="tl-text">루시아의 이야기 선물(애플트리)이 밤새 재편집한 영상에 아이가 등장하는 부분이 있어 올려도 될지 걱정을 토로했고, 위험 요소는 다 제거했지만 AI들의 안전하다는 답변에도 여전히 불안하다고 털어놓았습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 2:40~오전 2:45</div><div class="tl-text">실버사연이 걸리는 부분이 없다면 올려도 될 것 같다고 답했고, 애플트리는 제미나이에게 대본과 이미지를 모두 검증받아 100% 안전하다는 답을 받았다면서도 5분 명상 후 최종 결정하겠다며 대화를 마무리했습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<!-- ═══ 날짜 블록 끝 ═══ -->
+
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/16 (목)</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 308 · 주요 Q&amp;A 8 · 인사이트 7</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">308</span><span class="label">전체 메시지</span></div>
       <div class="stat-pill"><span class="num">8</span><span class="label">주요 Q&amp;A</span></div>
       <div class="stat-pill"><span class="num">7</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
@@ -381,7 +449,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <div class="tl-item"><div class="tl-time">오후 12:15~오후 1:45</div><div class="tl-text">루시아의 이야기 선물(애플트리)이 계모와 본처 아들 사연의 썸네일 3종을 올려 의견을 구했고, 언덕나무인생·마마·야담곳간·바다ᆢ가 문구와 색상, 레퍼런스 영상의 완성도까지 짚으며 활발히 피드백을 주고받은 끝에 1번 계열 문구로 정리됐습니다.</div></div>
         <div class="tl-item"><div class="tl-time">오후 1:49~오후 2:56</div><div class="tl-text">마마가 예비 시아버지 사연에서 장소를 밝히지 못한 이유를 설명했고, 야담곳간은 레퍼런스를 정할 때부터 키워드와 장소를 미리 정해둬야 한다고 조언했습니다. 이어 마마가 사연을 그대로 퍼가는 도용 채널을 발견해 공유했고, 릴리온은 쇼츠까지 불안해진다고 토로했습니다.</div></div>
         <div class="tl-item"><div class="tl-time">오후 5:10~오후 6:03</div><div class="tl-text">바다ᆢ가 마마의 얼굴 가리기 방식을 묻자 필터가 아닌 불투명 처리라고 답했고, 루시아는 마마의 빠른 재도전을 칭찬하며 자신도 인형극을 고민 중이라고 밝혔습니다. 릴리온이 재심 가능 시점을 묻자 마마는 재심 클릭 버튼이 따로 없어 이의신청이나 90일 대기가 필요할 것 같다고 답했고, 백무영(도비맘)이 위로를 건넸습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 6:31~오후 8:16</div><div class="tl-text">바다ᆢ의 아내 채널이 허위 판정에서 풀렸다는 소식에 축하가 이어졌고, 루시아는 다음 영상에서 아이가 놀림받는 장면을 편집해 빼기로 했습니다. 바다ᆢ는 유튜브 정책상 욕설까지 걸러야 한다는 주의사항과 함께 특강 준비로 코피를 쏟은 일화를 전했고, 저녁엔 마마와 전화 통화를 약속하며 하루가 마무리됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 6:31~오후 9:05</div><div class="tl-text">바다ᆢ의 아내 채널이 허위 판정에서 풀렸다는 소식에 축하가 이어졌고, 루시아는 다음 영상에서 아이가 놀림받는 장면을 편집해 빼기로 했습니다. 바다ᆢ는 유튜브 정책상 욕설까지 걸러야 한다는 주의사항과 함께 특강 준비로 코피를 쏟은 일화를 전했고, 저녁엔 마마와 전화 통화를 약속했습니다. 루시아는 바다ᆢ님만의 스타일로 잘 해내고 허위도 곧 풀릴 거라 응원했고, 벼랑위에감자도 코피까지 쏟은 열정에 놀라워하며 하루가 마무리됐습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -721,6 +789,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>얼굴 가리기 처리 방법(필터 vs 검은 판)</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>아이 나오는 영상, 올려도 안전한지</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
@@ -837,6 +907,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <p>필터가 아니라 자기 얼굴 영상과 직촬 배경 영상 모두 불투명 처리만 했다고 답했습니다.</p>
     </div></div>
   </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">아이 나오는 영상, 위험 요소는 다 제거했는데 올려도 괜찮을까요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">실버사연(여기아침)</span></div>
+      <p>아이가 나오는 부분에 딱히 걸리는 요소가 없다면 일단 올려도 괜찮을 것 같다고 답했고, 루시아의 이야기 선물(애플트리)은 제미나이에게 대본과 이미지를 모두 보여준 결과 100% 안전하다는 답을 받았다고 덧붙였습니다.</p>
+    </div></div>
+  </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
 </div>
 
@@ -853,6 +932,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">🛍️ 쇼핑탭</div><div class="glossary-def">유튜브 영상 설명란에 상품을 태그해 노출하는 기능. 정확한 기준은 불분명하지만 구독자 500명 안팎부터 랜덤으로 열리는 것으로 알려져 있다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📈 시청지속률(시지율)</div><div class="glossary-def">유튜브 영상에서 시청자가 끝까지 시청을 유지하는 비율. 알고리즘 노출에 큰 영향을 준다.</div></div>
     <div class="glossary-card"><div class="glossary-term">💰 애드센스(애센)</div><div class="glossary-def">유튜브 채널 수익화에 쓰이는 구글 광고 계정. 계정이 정지되면 새로 만들어야 해서 아껴 쓰는 것이 권장된다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🤝 AI 삼총사</div><div class="glossary-def">대본·이미지 안전성 확인 등에 함께 활용하는 세 가지 AI 도구(클로드·제미나이·그록 등)를 가리키는 말. 콘텐츠를 올리기 전 교차 검증하는 용도로 쓰인다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎬 오토워커</div><div class="glossary-def">'딸깍' 방식으로 영상을 만드는 다른 강사의 강의명. 금광 강의와는 별개로 수강하는 경우가 있다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📝 이의신청</div><div class="glossary-def">정책 위반 판정에 재심 클릭 버튼이 따로 없을 때 이용하는 절차. 재심과 달리 90일 대기 없이 진행할 수 있는 경우가 있다.</div></div>
     <div class="glossary-card"><div class="glossary-term">✂️ 이지캡컷</div><div class="glossary-def">캡컷(CapCut)을 더 쉽게 활용할 수 있도록 도와주는 방식·도구.</div></div>
