@@ -235,15 +235,79 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/17 (금)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 1 · 주요 Q&amp;A 0 · 인사이트 0</div>
+    <div class="day-accordion-summary">전체 메시지 108 · 주요 Q&amp;A 2 · 인사이트 3</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">1</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">108</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">2</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">3</span><span class="label">인사이트</span></div>
     </div>
-    <div class="empty-hint">오늘은 견 주/스나가 아침 출근길이 많이 막힌다고 남긴 메시지 하나만 있었고, 아직 별다른 대화는 없었습니다.</div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">아하</div>
+          <div class="mvp-desc">아침 출근길에 차 잠금 경보음이 계속 울리는 통에 카센터까지 가려다 스마트키·일반키를 번갈아 시도하며 진땀을 뺐고, 소리가 잦아든 뒤에는 어제 주차하다 벽에 박은 자국을 페인트펜으로 몰래 손봤다는 사연까지 풀며 하루 종일 이야깃거리를 몰고 다녔습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">로망이</div>
+          <div class="mvp-desc">공휴일인지 헷갈려하는 드립으로 아침을 열고, 재련가즈아 챈트와 견 주/스나 놀리기, 아하의 차량 소동에 던진 드립까지 오후 내내 티키타카를 주도하며 방 분위기를 이끌었습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">견 주/스나</div>
+          <div class="mvp-desc">강릉 사천진 해수욕장 스노쿨링 사진 14장을 공유했지만, 저녁 알바 때문에 왕복 6시간 거리를 겨우 2~3시간만 놀고 1시에는 출발해야 했다는 당일치기의 애환을 토로했습니다.</div>
+        </div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">오늘이 무슨 날이길래 다들 쉬나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">그랜드 크로스</span></div>
+          <p>빨간날(공휴일)이라 다들 쉬는 거라고 답했고, 무소유의김사장/상인은 원래 달력을 만들고 나서 나중에 공휴일로 지정된 날이라 이렇게 됐다며, 자신은 금요일만 쉬고 싶었는데 다 쉬니 억울하다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">차 경보음이 계속 울리는데 어떻게 해야 하나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">손끝의느낌 / 드나 · 테레즈 드나</span></div>
+          <p>문을 열었다가 다시 닫아보라고 했지만 해결되지 않았고, 테레즈 드나는 일반 키가 아니라 스마트키로 문을 열었다 닫으면 될 거라고 조언했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>아하</h3><p>어제 주차하다 앞벽에 부딪혀 생긴 흠집을 남편 몰래 페인트펜으로 발라버렸더니 마음이 편해졌다며, 이번엔 아예 페인트펜을 3개나 사뒀다는 셀프 수리 노하우를 공유했습니다.</p>
+        <span class="insight-tag tag-tip">셀프 수리</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>테레즈 드나</h3><p>스마트키가 있다면 일반 키 대신 스마트키로 문을 열었다 닫는 방법으로 경보음 오작동을 해결할 수 있다는 트러블슈팅 팁을 전했습니다.</p>
+        <span class="insight-tag tag-tip">차량 트러블</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>견 주/스나</h3><p>왕복 6시간 거리를 스노쿨링하러 갔다가 저녁 알바 때문에 겨우 2~3시간만 놀고 돌아와야 했다며, 당일치기가 오히려 일주일 놀러 가는 것보다 힘들다는 경험담을 남겼습니다.</p>
+        <span class="insight-tag tag-info">여행 후기</span>
+      </div></div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 7:44~9:28</div><div class="tl-text">견 주/스나가 아침 출근길 정체를 토로하며 하루를 열었고, 그랜드 크로스는 공휴일을 맞아 집에서 디아이모탈을 즐기고 있다고 알렸습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 9:58~10:19</div><div class="tl-text">오늘이 빨간날인지 헷갈려하는 로망이에게 그랜드 크로스가 공휴일이라고 알려줬고, 무소유의김사장/상인은 달력을 만든 뒤 나중에 지정된 공휴일이라 다들 쉬게 됐다며 자신만 금요일에 쉬고 싶었는데 억울하다고 투덜댔습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 10:31~11:03</div><div class="tl-text">재련가즈아 챈트가 이어지며 게임 열기가 달아올랐고, 아하는 비경보상을 내놓으라는 드립을 던졌습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 11:04~11:22</div><div class="tl-text">아하의 차 잠금 경보음이 계속 울리는 소동이 벌어져 손끝의느낌 / 드나와 테레즈 드나가 문 열고 닫기, 스마트키 사용 등 트러블슈팅을 도왔고, 같은 시간 견 주/스나는 강릉 사천진 해수욕장에서 스노쿨링하다 저녁 알바 때문에 서둘러 돌아가야 하는 사정을 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 11:35~11:58</div><div class="tl-text">재련가즈아가 이어지는 가운데 아하는 여전히 차량 경보음 문제로 고생하며 카센터로 향했지만, 도착해서는 오히려 소리가 나지 않아 허탈해했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 12:00~12:22</div><div class="tl-text">로망이의 농담 섞인 드립이 이어지는 사이 아하의 차는 5분 뒤 다시 경보음을 울렸고, 사장님이 신랑한테 차를 바꿔달라고 하라며 농담을 던졌습니다. 그랜드 크로스는 점심 준비를 시작했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 12:26~1:13</div><div class="tl-text">아하가 어제 주차하다 벽에 부딪힌 자국을 페인트펜으로 몰래 수리한 사연을 풀자 로망이와 무소유의김사장/상인이 범퍼카냐며 놀렸고, 페인트펜을 3개나 샀다는 아하의 너스레를 끝으로 손끝의느낌 / 드나와 아하가 짧은 인사를 남기며 하루 대화가 마무리됐습니다.</div></div>
+      </div>
+    </div>
   </div></div>
 </div>
 
