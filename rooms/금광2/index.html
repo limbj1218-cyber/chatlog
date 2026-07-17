@@ -233,8 +233,61 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
       <span class="day-accordion-arrow">▼</span>
-      <span class="day-accordion-date">7/17 (금)</span>
+      <span class="day-accordion-date">7/18 (토)</span>
       <span class="day-accordion-badge">오늘</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 14 · 주요 Q&amp;A 1 · 인사이트 0</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">14</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">박@석(1조 클럽)</div>
+          <div class="mvp-desc">축하 인사에 감사를 전한 뒤, 자신의 재승인 과정에서 시도했던 여러 방법을 가감 없이 풀어놓기 시작했습니다. 영상·조회수 관리, 이미지를 모니터에 띄워 재촬영한 뒤 브루·캡컷으로 재가공하는 방식 등 구체적인 시행착오를 공유해 방 멤버들의 큰 호응을 얻었습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">이@수(월천자스민)</div>
+          <div class="mvp-desc">1조 클럽에게 영상 작업 방식과 허위 전 영상들을 삭제했는지 유지했는지를 구체적으로 물어, 다른 멤버들에게도 도움이 될 노하우 공유를 이끌어냈습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">1조클럽님, 영상작업은 어떻게 하셨어요? 허위전 영상들은 다 삭제하셨는지 유지하셨는지도 간단히 남겨주실 수 있을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">박@석(1조 클럽)</span></div>
+          <p>재승인 버튼을 누르기 전, 허위를 맞기 며칠 전 올린 영상들과 조회수가 몇천 단위였던 영상들을 먼저 삭제했다고 답했습니다. 다른 사람들은 재승인 버튼을 누르자마자 하루 만에 허위가 풀리기도 했는데 자신은 일주일이 넘도록 풀리지 않아 쇼츠까지 전부 지웠고, 그래도 안 풀리자 영상 3개만 새로 만들어보자는 마음으로 인형극 대신 이미지를 모니터에 띄워 휴대폰으로 재촬영한 뒤 브루에 넣고 캡컷에서 눈 내리는 효과를 더해 다시 내보내는 방식을 시도했다고 설명했습니다. 반응이 없어 조회수가 가장 많이 나왔던 영상까지 삭제하고 시간만 채울 영상만 남겨뒀다며 거의 포기했던 상황이었다고 전했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 12:07~오전 2:16</div><div class="tl-text">바다가좋아에 이어 1조 클럽까지 허위(콘텐츠 재승인)에서 풀렸다는 소식에 방 전체가 축하 인사를 쏟아냈고, 월천자스민의 질문에 1조 클럽이 재신청 과정에서 시도했던 영상 삭제와 재촬영 노하우를 상세히 풀어놓기 시작했습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<!-- ═══ 날짜 블록 끝 ═══ -->
+
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/17 (금)</span>
     </div>
     <div class="day-accordion-summary">전체 메시지 100 · 주요 Q&amp;A 5 · 인사이트 3</div>
   </button>
@@ -823,8 +876,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>재신청·재심사 절차</span><span class="cnt">3</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
-    <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수·방식</span><span class="cnt">3</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수·방식</span><span class="cnt">4</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="44"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>IP·기기분리 업로드</span><span class="cnt">2</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="22"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>후파님 프로그램 사용법·다운로드</span><span class="cnt">2</span></div>
