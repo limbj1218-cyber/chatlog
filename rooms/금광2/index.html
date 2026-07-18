@@ -236,13 +236,13 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/18 (토)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 23 · 주요 Q&amp;A 1 · 인사이트 1</div>
+    <div class="day-accordion-summary">전체 메시지 72 · 주요 Q&amp;A 2 · 인사이트 4 · 공지 1</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">23</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">1</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">1</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">72</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">2</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">4</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">1</span><span class="label">공지</span></div>
     </div>
 
@@ -262,12 +262,12 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
           <div class="mvp-desc">축하 인사에 감사를 전한 뒤, 자신의 재승인 과정에서 시도했던 여러 방법을 가감 없이 풀어놓았습니다. 영상·조회수 관리, 이미지를 모니터에 띄워 재촬영한 뒤 브루·캡컷으로 재가공하는 방식 등 구체적인 시행착오를 공유해 방 멤버들의 큰 호응을 얻었습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
-          <div class="mvp-name">권@선(시유)</div>
-          <div class="mvp-desc">애드센스 계정 명의와 등록 명의가 다르더라도 세컨폰으로 고급인증을 진행해 무사히 통과했던 자신의 경험담을 자발적으로 공유했습니다. 어디까지나 본인 사례이니 참고만 해달라고 신중하게 선을 그으면서도, 비슷한 고민을 하던 톡톡레몬에게 실질적인 도움을 주었습니다.</div>
+          <div class="mvp-name">장@지(꿀꿀디)</div>
+          <div class="mvp-desc">재신청 이틀 만에 수익창출이 다시 활성화된 소식을 전하며 신청 일시·채널 카테고리·영상 개수까지 상세히 정리해 공유했습니다. 이 방 덕분에 방향성을 다시 잡을 수 있었다며 진심 어린 감사를 전해 다른 멤버들에게도 큰 힘이 됐습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
-          <div class="mvp-name">김@영(버터링링) <span class="mvp-role">운영진</span></div>
-          <div class="mvp-desc">새 운영진 '버니'로 합류했다는 소식에 방장 격인 바다가좋아의 축하를 받으며, 금광롱폼 수강생 시절 처음 수익을 맛봤던 인연을 되새겼습니다. 주원·바다가좋아와 '금광롱폼 3기' 농담을 유쾌하게 주고받으며 훈훈한 분위기를 이끌었습니다.</div>
+          <div class="mvp-name">조@권(진권)</div>
+          <div class="mvp-desc">이전에 항의했다가 거절됐던 채널이 이번엔 이틀 만에 승인됐다는 사례와, 운영 중인 다른 채널 영상을 그대로 올려도 통과됐다는 경험을 공유했습니다. 다만 승인 후에도 수익은 0원으로 초기화되고 노출도 예전만 못하다는 현실적인 아쉬움도 솔직하게 전했습니다.</div>
         </div></div>
       </div>
     </div>
@@ -283,6 +283,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
           <p>재승인 버튼을 누르기 전, 허위를 맞기 며칠 전 올린 영상들과 조회수가 몇천 단위였던 영상들을 먼저 삭제했다고 답했습니다. 다른 사람들은 재승인 버튼을 누르자마자 하루 만에 허위가 풀리기도 했는데 자신은 일주일이 넘도록 풀리지 않아 쇼츠까지 전부 지웠고, 그래도 안 풀리자 영상 3개만 새로 만들어보자는 마음으로 인형극 대신 이미지를 모니터에 띄워 휴대폰으로 재촬영한 뒤 브루에 넣고 캡컷에서 눈 내리는 효과를 더해 다시 내보내는 방식을 시도했다고 설명했습니다. 반응이 없어 조회수가 가장 많이 나왔던 영상까지 삭제하고 시간만 채울 영상만 남겨뒀다며 거의 포기했던 상황이었다고 전했습니다.</p>
         </div></div>
       </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">재승인돼서 채널이 살아나도 수익은 바로 지급되는 건가요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">조@권(진권)</span></div>
+          <p>아니라고 답했습니다. 애드센스가 0원으로 깔끔하게 초기화된 채로 승인되며, 영상을 다 삭제했다가 다시 올린 탓에 노출빨도 예전만 못하다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
     </div>
 
     <div class="section">
@@ -291,17 +300,30 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <h3>권@선(시유)</h3><p>이번에 새 채널을 수창하면서 애드센스 명의와 주소는 어머니 것으로, 세컨폰과 계좌는 본인 명의로 등록했는데 무사히 통과됐다는 경험을 나눴습니다. 고급인증 단계에서는 본인 계정임에도 세컨 핸드폰으로 어머니 얼굴을 찍어 인증했다고 구체적인 절차를 설명하면서도, 어디까지나 본인 사례이니 참고만 해달라고 덧붙였습니다.</p>
         <span class="insight-tag tag-info">애드센스명의</span>
       </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>이@란(찐진)</h3><p>지난 4월 야담 채널이 허위로 정지됐다가 7월 16일 이의를 신청해 다시 수익창출이 됐다고 전하며, 허위 이후 조회수 낮은 영상은 지우고 3개만 남긴 뒤 5분 내외의 짧은 한국사 영상 4개를 새로 올렸다고 밝혔습니다. 기존 영상 중 어린이가 등장하는 주제는 나이 관련 표현만 제목에서 삭제하고 나머지는 그대로 뒀다는 신중한 접근도 함께 공유했습니다.</p>
+        <span class="insight-tag tag-tip">재신청 노하우</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>송@혜(행신)</h3><p>16일 재신청해 오늘 승인이 났다며, 최근 올린 세 개 영상만 남기고 기존 영상은 모두 삭제했다고 전했습니다. 이미지 위에 작게 직촬 영상을 띄우거나 이미지 위에 직접 촬영한 영상을 겹치는 방식으로 만들었는데, 시청 시간 4000시간이 안 되는데도 승인됐다는 점도 함께 공유했습니다.</p>
+        <span class="insight-tag tag-tip">재신청 노하우</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>조@권(진권)</h3><p>빔프로젝터로 화면을 쏴서 촬영하는 방식으로 직촬 영상을 만들어 승인받았다며, 그냥 직촬만 하면 되는 것 같다는 팁을 전했습니다. 다만 승인 후에도 수익은 0원으로 초기화되고 노출도 예전만 못하다는 현실적인 한계도 함께 짚었습니다.</p>
+        <span class="insight-tag tag-tip">직촬 노하우</span>
+      </div></div>
     </div>
 
     <div class="section">
       <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
       <div class="timeline">
-        <div class="tl-item"><div class="tl-time">오전 12:07~오전 1:54</div><div class="tl-text">바다가좋아에 이어 1조 클럽까지 허위(재승인)에서 풀렸다는 소식에 방 전체가 이모티콘과 함께 연달아 축하 인사를 쏟아냈습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 2:10~오전 2:16</div><div class="tl-text">거베라와 문하쮸도 뒤늦게 축하를 보탰고, 1조 클럽이 감사 인사를 전하며 재승인 과정을 풀어놓을 준비를 했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 2:16~오전 3:11</div><div class="tl-text">월천자스민의 질문에 1조 클럽이 재신청 과정에서 시도했던 영상 삭제·모니터 재촬영·브루와 캡컷 편집 노하우를 상세히 풀어놓았습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 3:11~오전 3:28</div><div class="tl-text">시유가 애드센스 명의가 다를 때 세컨폰 인증으로 통과했던 경험담을 공유했고, 톡톡레몬이 비슷한 상황이었다며 감사 인사를 전했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 4:13~오전 4:20</div><div class="tl-text">마케터 제이J가 새 운영진 버니(버터링링)를 소개하며 금광롱폼 수강생 출신이 디하클에 합류했다고 알렸고, 바다가좋아가 축하와 함께 금광롱폼 2기를 향한 응원을 남겼습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 4:52~오전 4:58</div><div class="tl-text">버터링링이 금광롱폼과의 인연을 회고하며 감사 인사를 전했고, 주원·바다가좋아와 '금광롱폼 3기' 농담을 주고받으며 하루 대화가 마무리됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 12:07~오전 1:01</div><div class="tl-text">딩초코송이, 벼랑위에감자, 비브온, 월천자스민, 다이룰써니가 바다가좋아와 1조 클럽의 허위 해제(수익창출 재개) 소식에 축하 인사를 쏟아냈고, 월천자스민은 1조 클럽에게 영상작업 노하우를 구체적으로 물었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:46~오전 3:28</div><div class="tl-text">톡톡레몬·거베라·문하쮸 등이 뒤이어 축하를 전했고, 1조 클럽이 재승인 과정에서 시도한 영상 삭제·모니터 재촬영·브루·캡컷 편집 노하우를 상세히 풀어놓았습니다. 시유도 애드센스 명의가 다를 때 세컨폰 인증으로 통과했던 경험을 공유했고, 톡톡레몬이 감사 인사를 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 4:13~오전 4:58</div><div class="tl-text">마케터 제이J가 새 운영진 버니(버터링링)를 소개했고, 바다가좋아·버터링링·주원이 금광롱폼 인연을 되새기며 '3기' 농담을 유쾌하게 주고받았습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 9:19~오전 9:50</div><div class="tl-text">찐진이 4월 허위 정지 후 이의신청을 거쳐 수익창출을 되찾은 소식을 전하며 영상 정리 노하우를 공유했고, 이어 꿀꿀디도 재신청 이틀 만에 승인됐다며 채널 카테고리·영상 개수 등 상세한 상황과 함께 방 덕분에 방향을 잡을 수 있었다는 감사 인사를 남겼습니다. 에메트와 릴리온 등이 연달아 축하했고, 행신도 16일 신청해 오늘 승인났다며 남겨둔 영상 구성을 공유했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 9:58~오전 10:12</div><div class="tl-text">진권이 이틀 만에 승인 소식을 알리며 이전에 거절됐던 채널이 이번엔 통과됐고 운영 중인 다른 채널 영상을 그대로 올려도 승인됐다는 사례를 전했습니다. 다만 행신의 질문에 수익은 0원으로 초기화된 채라고 답하며, 노출도 예전만 못해 그다지 기쁘지 않다는 아쉬움을 남겼습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 11:32~오후 12:10</div><div class="tl-text">바다가좋아를 시작으로 드래곤9·현담2·반하다·짱짱맘·후파·여기아침 등 다수가 축하 이모티콘과 인사를 이어가며 훈훈한 분위기가 계속됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 1:31~오후 2:06</div><div class="tl-text">샬롬파파가 허위 화면이 바뀐 것 같다며 영상을 올려 신청하면 풀릴 수도 있는지 궁금해했고, 에메트가 아는 사람에게 답을 구했습니다. 유나주는 수창 승인 후 핀번호 입력 전 허위를 맞아 애드센스 개인/개인사업자 구분이 헷갈린다는 질문을 남기며 하루 대화가 마무리됐습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -899,8 +921,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <!-- ═══ FAQ 랭킹: 정리 때마다 갱신 ═══ -->
     <li class="faq-bar-item"><div class="faq-bar-label"><span>불쾌감 컨텐츠 제재 관련 문의</span><span class="cnt">9</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
-    <li class="faq-bar-item"><div class="faq-bar-label"><span>재신청·재심사 절차</span><span class="cnt">3</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>재신청·재심사 절차</span><span class="cnt">4</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="44"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수·방식</span><span class="cnt">4</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="44"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>IP·기기분리 업로드</span><span class="cnt">2</span></div>
@@ -909,8 +931,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="22"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>새 영상 올리고 신청 여부</span><span class="cnt">2</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="22"></div></div></li>
-    <li class="faq-bar-item"><div class="faq-bar-label"><span>애드센스 명의·본인인증 문의</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="22"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>애드센스 명의·본인인증 문의</span><span class="cnt">3</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>버튼 활성화 시점</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>플로우 이미지 품질 이슈</span><span class="cnt">1</span></div>
@@ -920,6 +942,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <li class="faq-bar-item"><div class="faq-bar-label"><span>채널 수익창출 상태 확인 방법</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>로컬 AI 이미지 생성 모델 활용법</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>재승인 후 수익 지급 여부</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
@@ -1063,6 +1087,24 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <p>가족 번호로 변경이 안 되면 폰 명의를 바꿔야 할 수도 있다는 조언과 함께, 본인 명의로 했다가 부모님 명의로 바꿔도 문제없었고 핸드폰 명의변경 없이 애드센스 등록 전화번호만 바꿔도 괜찮았다는 실제 경험담이 이어졌습니다. 시유는 애드센스 명의와 주소를 어머니 것으로, 세컨폰과 계좌는 본인 명의로 등록했는데도 통과됐다며, 고급인증 단계에서는 세컨 핸드폰으로 어머니 얼굴을 찍어 인증했다고 덧붙였습니다.</p>
     </div></div>
   </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">1조클럽님, 영상작업은 어떻게 하셨어요? 허위전 영상들은 다 삭제하셨는지 유지하셨는지도 간단히 남겨주실 수 있을까요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">박@석(1조 클럽)</span></div>
+      <p>재승인 버튼을 누르기 전, 허위를 맞기 며칠 전 올린 영상들과 조회수가 몇천 단위였던 영상들을 먼저 삭제했다고 답했습니다. 그래도 안 풀리자 영상 3개만 새로 만들어보자는 마음으로 인형극 대신 이미지를 모니터에 띄워 휴대폰으로 재촬영한 뒤 브루에 넣고 캡컷에서 눈 내리는 효과를 더해 다시 내보내는 방식을 시도했다고 설명했습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">재승인돼서 채널이 살아나도 수익은 바로 지급되는 건가요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">조@권(진권)</span></div>
+      <p>아니라고 답했습니다. 애드센스가 0원으로 깔끔하게 초기화된 채로 승인되며, 영상을 다 삭제했다가 다시 올린 탓에 노출빨도 예전만 못하다고 덧붙였습니다.</p>
+    </div></div>
+  </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
 </div>
 
@@ -1079,6 +1121,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">💻 로컬 AI 모델</div><div class="glossary-def">온라인 AI 서비스를 거치지 않고 개인 컴퓨터에 직접 설치해 구동하는 이미지 생성 모델. Z-Image Turbo, Qwen3-4B 등이 있으며, 그래픽카드가 4060 8GB 이상이면 무료로 무제한 이미지를 생성할 수 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">😐 불쾌감 컨텐츠</div><div class="glossary-def">최근 유튜브가 기존 허위 콘텐츠 제재를 세분화하며 쓰기 시작한 명칭 중 하나로, 시청자들의 부정적 평가가 누적되면 적용되는 것으로 추정되는 제재 유형.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎙️ 사연채널</div><div class="glossary-def">실제 사연이나 이야기를 낭독·재구성해 올리는 유형의 유튜브 채널.</div></div>
+    <div class="glossary-card"><div class="glossary-term">📱 스튜디오앱</div><div class="glossary-def">유튜브 스튜디오 모바일 앱. 채널의 수익창출·허위 상태 변경 여부를 확인할 때 화면 캡처와 함께 자주 공유됩니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">💰 애드센스</div><div class="glossary-def">유튜브 영상 수익을 정산받기 위해 연결하는 구글의 광고 수익화 계정.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎨 야담</div><div class="glossary-def">실사 대신 그림·만화체 이미지로 제작하는 콘텐츠 형식. 실사 위주인 사연보다 이미지 생성 제약이 적어 최근 추천되고 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎭 인형극</div><div class="glossary-def">실제 얼굴 없이 인형 캐릭터로 진행하는 영상 제작 방식. 사연 콘텐츠와는 제작 성격이 다릅니다.</div></div>
@@ -1087,6 +1130,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">🛠️ 채널모니터링사이트</div><div class="glossary-def">채널 주소를 입력하면 현재 수익창출 여부와 최근 업로드 현황을 확인할 수 있는 외부 사이트(channelmonetizationcheck.net).</div></div>
     <div class="glossary-card"><div class="glossary-term">🎬 켄번즈 효과</div><div class="glossary-def">정지된 이미지에 서서히 확대·이동하는 느낌을 줘 움직임을 연출하는 영상 편집 기법. 사연류 영상 초반 제작에 자주 쓰입니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎥 크리에이티브 커먼즈</div><div class="glossary-def">저작권자가 특정 조건 하에 재사용을 허용한 콘텐츠. 가공 없이 그대로 쓰면 카피 제재로 이어질 수 있어 30~40% 이상 변형이 필요합니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">📌 핀번호</div><div class="glossary-def">애드센스 등록 후 우편으로 받는 본인확인용 번호. 입력해야 정산이 시작되며, 입력 전에 허위 등 제재를 맞으면 개인/개인사업자 구분이 꼬여 헷갈릴 수 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎞️ 필터(변형)</div><div class="glossary-def">캡컷 등에서 영상 전체에 씌우는 보정·효과. 직촬 영상에 적용하면 오히려 AI 생성 영상으로 오인돼 제재 위험이 커질 수 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📮 항소</div><div class="glossary-def">제재를 받은 직후 일정 기간 내에 이의를 제기하는 절차. 90일 경과 후 가능한 재신청과는 다른 절차입니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🚫 허위</div><div class="glossary-def">유튜브가 스팸성·기만적 콘텐츠 등으로 판단해 채널의 수익창출을 정지시키는 제재. 90일이 지나야 재신청이 가능합니다.</div></div>
