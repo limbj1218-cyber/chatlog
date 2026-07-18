@@ -233,8 +233,53 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
       <span class="day-accordion-arrow">▼</span>
-      <span class="day-accordion-date">7/18 (토)</span>
+      <span class="day-accordion-date">7/19 (일)</span>
       <span class="day-accordion-badge">오늘</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 7 · 인사이트 1</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">7</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">라옴조교 강성개미</div>
+          <div class="mvp-desc">새벽 시간 해외 AI 서비스의 결제 함정에 대해 구체적으로 경고했습니다. 무료 체험 후 결제로 전환되는 수법과 결제 카드 연결의 위험성을 짚으며, 구글 같은 대형 업체와 단순 카드 연결 업체를 구분하는 기준까지 알기 쉽게 설명해 뉴욕의 스텔라의 감사 인사를 받았습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>라옴조교 강성개미</h3><p>해외 AI 서비스들은 대개 무료로 이용하게 해 익숙해지게 한 뒤 결제로 전환하는 방식을 쓴다며, 가입 단계에서부터 결제 카드 연결을 요구하는 곳은 해지·환불이 어려울 수 있어 특히 조심해야 한다고 경고했습니다. 구글처럼 큰 업체는 초기 소액 결제 후 단계적으로 한도를 늘려가면서도 월 최대 결제 한도를 걸어두지만, 단순히 결제 카드만 연결시키는 곳은 무조건 피해야 한다고 강조했습니다. 결제 카드만 연결하지 않으면 안심하고 이용해봐도 괜찮다는 실용적인 조언도 덧붙였습니다.</p>
+        <span class="insight-tag tag-tip">결제함정주의</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 1:09~오전 1:16</div><div class="tl-text">뉴욕의 스텔라가 요금 폭탄을 피하게 해준 것에 감사를 전하자, 라옴조교 강성개미가 해외 AI 서비스의 무료 체험 후 결제 전환 수법과 결제 카드 연결의 위험성을 자세히 짚어주며 안전하게 이용하는 방법을 안내했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:46</div><div class="tl-text">뉴욕의 스텔라가 거듭 감사 인사를 전하며, 57세의 나이에 혼자 유튜브를 독학하다 라옴의 강의를 만나 성장해온 과정과 이 단톡방에서 매일 도움을 받는 것에 대한 진심 어린 고마움을 나눴습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<!-- ═══ 날짜 블록 끝 ═══ -->
+
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/18 (토)</span>
     </div>
     <div class="day-accordion-summary">전체 메시지 92 · 주요 Q&amp;A 3 · 인사이트 8 · 공지 1</div>
   </button>
@@ -1152,6 +1197,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <input type="text" class="glossary-search" id="glossarySearch" placeholder="🔍 용어 검색...">
   <div class="glossary-grid" id="glossaryGrid">
     <!-- ═══ 용어사전(.glossary-card): 새 용어가 나올 때마다 추가 (가나다순) ═══ -->
+    <div class="glossary-card"><div class="glossary-term">🎣 결제 함정</div><div class="glossary-def">해외 AI 서비스들이 무료 체험으로 유인한 뒤 결제로 전환시키는 방식. 가입 단계부터 결제 카드 연결을 요구하는 곳은 해지·환불이 어려울 수 있어 특히 주의가 필요합니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🪪 고급인증</div><div class="glossary-def">구글 계정 명의와 실제 사용자가 다를 때 요구되는 추가 본인 확인 절차. 세컨 핸드폰으로 명의자의 얼굴을 촬영해 인증하는 방식 등이 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🔗 관련채널</div><div class="glossary-def">유튜브가 동일 운영자가 관리한다고 판단해 서로 묶어 취급하는 채널들. 한 채널이 허위 처리되면 함께 영향을 받을 수 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🖥️ 구글 AI 스튜디오</div><div class="glossary-def">구글이 제공하는 고사양 노트북 AI 작업용 가상 공간(주 30시간). 세션 시작과 동시에 요금이 청구되는 방식이라 요금 폭탄 위험이 있어 이용이 권장되지 않습니다.</div></div>
