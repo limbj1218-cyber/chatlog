@@ -236,14 +236,45 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/19 (일)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 12 · 인사이트 2</div>
+    <div class="day-accordion-summary">전체 메시지 88 · 주요 Q&amp;A 1 · 인사이트 6</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">12</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">2</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">88</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">6</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">바다ᆢ</div>
+          <div class="mvp-desc">오후 내내 실버사연과 함께 썸네일 클릭률·조회수 데이터를 하나하나 뜯어보며 유효조회수 계산법과 쇼츠→롱폼 유입 전환 노하우를 짚어줬고, 준비 중인 틱톡 강의를 "쇼츠 영상 한 개로 수익 다각화"라는 주제로 다듬고 있다고 소개했습니다. 톡톡레몬이 직접 "오늘의 mvp는 바다님"이라 콕 집을 만큼 자정부터 밤까지 방을 가장 오래 지켰습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">실버사연 <span class="mvp-role">여기아침</span></div>
+          <div class="mvp-desc">새로 올린 썸네일 3종의 클릭률 테스트 결과를 스크린샷으로 공유하며 인트로 이탈율·시청지속률 39%·조회수 17000·수익 20만원 등 구체적인 수치를 바다ᆢ와 함께 분석했고, 쇼츠 유효조회수 계산법(X0.30)까지 배워갔습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">야담아지트 <span class="mvp-role">톡톡레몬</span></div>
+          <div class="mvp-desc">오전엔 AI 서비스 위험성 기사를 공유해 결제 주의 화두를 던졌고, 밤에는 새로 만든 썸네일과 제목 후보("미친 며느리" vs "지혜로운 며느리")를 올려 방 멤버들의 실시간 피드백을 받아 방향을 정했습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">"미친 며느리"와 "지혜로운 며느리" 중 어떤 제목·썸네일이 더 나을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">야담곳간(릴리온) · 밤의설화(이웃집토토로) · 언덕나무인생(벼랑위에감자)</span></div>
+          <p>다들 "지혜로운 며느리" 문구가 더 잘 읽히고 자연스럽다며 4번 썸네일을 공통으로 픽했습니다. 릴리온은 다만 기존 영상과 너무 비슷한 느낌이면 노출이 제한될 수 있다는 우려도 함께 전했습니다.</p>
+        </div></div>
+      </div>
     </div>
 
     <div class="section">
@@ -256,15 +287,33 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <h3>실버사연(여기아침) · 루시아의 이야기 선물(애플트리)</h3><p>공유된 기사가 클로드 얘기인 것 같다며, 어제 강성개미님이 해줬던 결제 주의 이야기와 같은 맥락이라고 짚었습니다. 루시아의 이야기 선물(애플트리)은 어제 뉴스에도 앤트로픽 결제 관련 얘기가 나왔다며 무섭다는 소감을 더했습니다.</p>
         <span class="insight-tag tag-tip">결제주의</span>
       </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>바다ᆢ</h3><p>썸네일별 클릭률은 조회수가 2~3천을 넘기면 대체로 비슷해지는 경향이 있고, 썸네일 키워드 이미지가 서로 다르면 노출 양상도 달라진다는 실전 관찰을 공유했습니다.</p>
+        <span class="insight-tag tag-tip">썸네일분석</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>바다ᆢ</h3><p>쇼츠 조회수 10만당 롱폼 유입은 대략 1만(10%) 정도 나오고 7~8%도 잘 나오는 편이라 10%면 상당히 좋은 성과라는 기준을 알려줬고, 쇼츠 유효조회수는 조회수에 0.30을 곱하면 대략 맞는다는 계산법도 공유했습니다.</p>
+        <span class="insight-tag tag-tip">쇼츠수익계산</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>바다ᆢ</h3><p>틱톡 강의 콘텐츠로 "쇼츠 영상 한 개로 수익을 다각화하는 법"이라는 주제를 준비 중이며, 아나운서·교수들의 화술 강의를 20개 넘게 들으며 특강 자료를 공들여 다듬고 있다는 근황을 나눴습니다.</p>
+        <span class="insight-tag tag-info">틱톡강의준비</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>루시아의 이야기 선물(애플트리) · 야담아지트(톡톡레몬)</h3><p>하이프는 자신이 구독자 500명을 넘어야만 보낼 수 있는 게 아니라, 하이프를 받을 때만 구독자 수 조건이 걸리고 보내는 쪽은 상관없다는 걸 챗지피티에게 물어 새로 알게 됐다고 정리했습니다.</p>
+        <span class="insight-tag tag-info">하이프조건</span>
+      </div></div>
     </div>
 
     <div class="section">
       <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
       <div class="timeline">
-        <div class="tl-item"><div class="tl-time">오전 10:06~오전 10:17</div><div class="tl-text">야담아지트(톡톡레몬)가 새로 나온 AI 서비스의 위험성을 다룬 기사를 공유했고, 실버사연(여기아침)이 이를 보고 클로드 얘기인 것 같다며 어제 강성개미님이 해준 결제 주의 이야기를 다시 언급했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 10:53~오전 10:56</div><div class="tl-text">루시아의 이야기 선물(애플트리)이 어제 뉴스에도 앤트로픽 결제 관련 얘기가 나왔다며 무섭다는 소감을 남긴 뒤 굿모닝 인사를 전했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 11:33~오전 11:48</div><div class="tl-text">야담곳간(릴리온), 실버사연(여기아침), 바다ᆢ가 이모티콘과 아침 인사를 주고받으며 훈훈한 분위기를 이어갔습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 12:06~오후 2:33</div><div class="tl-text">실버사연(여기아침)의 가벼운 농담에 이어, 문하쮸가 다들 열심히 즐기고 오라는 응원의 말을 남기며 하루를 마무리했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 10:06~오전 10:56</div><div class="tl-text">야담아지트(톡톡레몬)가 새로 나온 AI 서비스의 위험성을 다룬 기사를 공유했고, 실버사연(여기아침)이 클로드 얘기인 것 같다며 어제 강성개미님이 해준 결제 주의 이야기를 다시 언급했습니다. 루시아의 이야기 선물(애플트리)도 앤트로픽 결제 관련 뉴스를 보고 무섭다는 소감과 함께 아침 인사를 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 11:33~오후 2:33</div><div class="tl-text">야담곳간(릴리온), 실버사연, 바다ᆢ가 이모티콘으로 아침 인사를 주고받았고, 낮 동안 조용하다가 이야기한줌(문하쮸)이 응원의 말을 남기며 오후를 열었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 3:08~오후 3:10</div><div class="tl-text">야담아지트(톡톡레몬)가 자정부터 밤까지 방을 가장 오래 지킨 바다ᆢ를 오늘의 MVP로 직접 지목했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 5:19~오후 5:46</div><div class="tl-text">실버사연이 새로 올린 썸네일 테스트 결과를 스크린샷과 함께 공유하며 클릭률·시청지속률·조회수·수익을 바다ᆢ와 세세히 짚어봤고, 쇼츠→롱폼 유입 비율과 유효조회수 계산법까지 실전 강의처럼 오갔습니다. 바다ᆢ는 이 내용을 정리해 틱톡 강의로 준비 중이라고 밝혔습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 6:04~오후 7:50</div><div class="tl-text">루시아의 이야기 선물(애플트리)이 바다ᆢ를 "한국형 미스터 비스트"라 치켜세우며 칭찬을 이어갔고, 언덕나무인생(벼랑위에감자)도 이모티콘으로 화답했습니다. 이후 애플트리가 하이프 조건이 궁금하다는 소감을 남겼습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 8:10~오후 8:49</div><div class="tl-text">야담아지트가 하이프 조건에 대한 궁금증을 나눈 뒤, 새로 만든 썸네일 4장과 함께 "미친 며느리" 대신 "지혜로운 며느리"로 제목을 정할지 피드백을 구했고, 릴리온·이웃집토토로·벼랑위에감자가 모두 4번을 픽하며 하루 대화가 마무리됐습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -1055,6 +1104,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>좋아요 구걸(조회수 인위적 부양)이 채널 성장에 도움될지</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>썸네일·제목 문구 피드백 요청</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
@@ -1252,6 +1303,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <p>그렇게 올려서 좋아요를 받는 건 효과가 없고 실력으로 올라가야 진짜 성장이라며, 그 시간에 차라리 다른 걸 하라고 단호하게 답했습니다. 롱폼에서 조회수를 인위적으로 올리면 채널만 망가지니 절대 하지 말라고 강조했고, 다만 처음엔 다들 조회수가 바닥인 게 당연하니 부담 갖지 말라고 다독였습니다.</p>
     </div></div>
   </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">"미친 며느리"와 "지혜로운 며느리" 중 어떤 제목·썸네일이 더 나을까요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">야담곳간(릴리온) · 밤의설화(이웃집토토로) · 언덕나무인생(벼랑위에감자)</span></div>
+      <p>다들 "지혜로운 며느리" 문구가 더 잘 읽히고 자연스럽다며 4번 썸네일을 공통으로 픽했습니다. 릴리온은 다만 기존 영상과 너무 비슷한 느낌이면 노출이 제한될 수 있다는 우려도 함께 전했습니다.</p>
+    </div></div>
+  </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
 </div>
 
@@ -1279,6 +1339,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">🤝 AI 삼총사</div><div class="glossary-def">대본·이미지 안전성 확인 등에 함께 활용하는 세 가지 AI 도구(클로드·제미나이·그록 등)를 가리키는 말. 콘텐츠를 올리기 전 교차 검증하는 용도로 쓰인다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🌊 오션 군단</div><div class="glossary-def">바다ᆢ 님을 중심으로 모인 방 멤버들을 다정하게 부르는 애칭. 루시아의 이야기 선물(애플트리)이 "오션 군단에는 대단한 분들만 모여있다"며 붙인 별명이다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎬 오토워커</div><div class="glossary-def">'딸깍' 방식으로 영상을 만드는 다른 강사의 강의명. 금광 강의와는 별개로 수강하는 경우가 있다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">📐 유효조회수</div><div class="glossary-def">쇼츠 조회수 중 실제 수익에 반영되는 비율을 추산한 값. 바다ᆢ는 조회수에 0.30을 곱하면 대략 맞는다는 계산법을 공유했다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📝 이의신청</div><div class="glossary-def">정책 위반 판정에 재심 클릭 버튼이 따로 없을 때 이용하는 절차. 재심과 달리 90일 대기 없이 진행할 수 있는 경우가 있다.</div></div>
     <div class="glossary-card"><div class="glossary-term">✂️ 이지캡컷</div><div class="glossary-def">캡컷(CapCut)을 더 쉽게 활용할 수 있도록 도와주는 방식·도구.</div></div>
     <div class="glossary-card"><div class="glossary-term">✨ 재미나이(Gemini)</div><div class="glossary-def">구글의 AI 서비스. 대본 작성에 많이 활용되며, pro모드로 초안부터 작성하는 방식이 인기다.</div></div>
@@ -1286,6 +1347,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">📑 중복콘텐츠</div><div class="glossary-def">유튜브 정책 위반 판정 사유 중 하나. 다른 영상과 유사한 콘텐츠로 판단될 때 표시된다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🏚️ 초가집</div><div class="glossary-def">롱폼 위주로 운영하는 채널을 가리키는 방 내 별명.</div></div>
     <div class="glossary-card"><div class="glossary-term">🛒 쿠팡파트너스</div><div class="glossary-def">쿠팡 상품 링크를 영상 설명란 등에 걸어두고 클릭·구매가 발생하면 상품 금액의 일부(약 6.5%)를 수익으로 받는 제휴 마케팅 프로그램.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🙌 하이프</div><div class="glossary-def">유튜브 시청자가 채널에 보낼 수 있는 응원 기능. 하이프를 받으려면 구독자 수 조건이 있지만, 보내는 쪽에는 조건이 없다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📮 핀번호</div><div class="glossary-def">애드센스 수익 지급을 위해 우편으로 발송되는 주소 인증용 PIN 번호. 결제 문턱을 넘기면 발송되며 이를 입력해야 수익 지급이 진행된다.</div></div>
     <div class="glossary-card"><div class="glossary-term">⚠️ 허위</div><div class="glossary-def">유튜브가 채널에 매기는 정책 위반 판정 사유 중 하나. 재심사를 통해 해제를 요청할 수 있다.</div></div>
     <!-- ═══ 용어사전 끝 ═══ -->
