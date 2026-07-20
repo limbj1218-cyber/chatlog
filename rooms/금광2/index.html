@@ -236,13 +236,13 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/20 (월)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 7 · 공지 1</div>
+    <div class="day-accordion-summary">전체 메시지 56 · 주요 Q&amp;A 2 · 인사이트 1 · 공지 1</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">7</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">56</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">2</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">1</span><span class="label">공지</span></div>
     </div>
 
@@ -255,9 +255,61 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     </div>
 
     <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">김@경(당근조아)</div>
+          <div class="mvp-desc">구독자 1,000명을 달성했다는 카페 글 링크를 공유해 방 전체의 뜨거운 축하를 받았습니다. 기존에 허위를 맞은 채널에 매여있느라 시간을 너무 허비한 것 같다며 이제 그 채널은 없는 셈 치고 지금 채널에 집중하겠다고 밝혔고, 동기들에게도 원하는 성과를 이룰 때까지 함께 힘내자는 진심 어린 인사를 전했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">김@은(별빛클로버)</div>
+          <div class="mvp-desc">구독자 1,000명 인증 이벤트 참여 절차를 궁금해하는 멤버들에게 링크 캡처와 다른 단톡방 인증 캡처를 채널톡에 제출하는 방법을 자세히 안내했고, 카페 글 제목이 너무 밋밋하면 재작성을 요청받을 수 있다는 실전 경험도 함께 나눴습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">송@혜(행신)</div>
+          <div class="mvp-desc">시청시간이 부족한 상태로 재신청해도 이틀 만에 허위가 풀렸던 자신의 경험을 공유해 비슷한 고민을 하던 멤버들에게 실질적인 힘을 보탰고, 기존 영상을 그대로 남긴 채널도 다시 살아난 사례를 짚으며 허위 판정 기준의 모호함에 대한 의문도 남겼습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">구독자 1,000명 인증했는데 치킨은 어디서 받나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">김@은(별빛클로버)</span></div>
+          <p>이 방에 올린 링크와 다른 디하클 단톡방에 올린 링크를 각각 캡처해서 채널톡에 제출하면 된다고 안내했습니다. 다만 카페 글 제목이 "천명달성했어요"처럼 너무 심심하면 재미있는 문장을 덧붙여 수정한 뒤 다시 올려달라는 요청을 받을 수 있다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">허위 채널 재신청 시 시청시간이 기준에 못 미쳐도 신청해도 될까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">송@혜(행신) · 김@(세오리)</span></div>
+          <p>행신은 자신도 시청시간이 부족했지만 그냥 신청 버튼을 눌렀고 이틀 뒤 허위가 풀렸다고 답했습니다. 세오리도 900시간이 모자란 상태로 신청해 3일째 검토 중이라고 자신의 진행 상황을 공유했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>송@혜(행신)</h3><p>기존 영상을 그대로 남겨둔 "11번지 사연" 채널도 이번에 허위가 풀렸다는 사실을 언급하며, 이럴 거면 애초에 왜 허위에 걸렸는지 모르겠다는 의문을 나눴습니다. 자신은 기존 영상 3개를 남겨두고 재신청했는데도 살아났다며 판정 기준이 사례마다 제각각인 것 같다고 짚었습니다.</p>
+        <span class="insight-tag tag-info">허위기준모호</span>
+      </div></div>
+    </div>
+
+    <div class="section">
       <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
       <div class="timeline">
         <div class="tl-item"><div class="tl-time">오전 12:08~오전 12:11</div><div class="tl-text">라옴조교 강성개미가 신규 영상 제작 보조 프로그램 '품앗이' 파일을 공유하며 1기·초보자용 도구임을 설명하고, 메인 프로그램인 호파님 프로그램을 먼저 익혀둘 것을 당부하며 이번 주 최종 테스트 후 정식 오픈을 예고했습니다. 김@은(에메트)이 강성개미에게 늘 좋은 정보를 나눠줘서 감사하다는 인사를 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 3:04~오후 3:18</div><div class="tl-text">김@은(별빛클로버)이 클로드 관련 에피소드를 공유하며 대화 분위기를 풀었고, 이어 김@경(당근조아)이 구독자 1,000명 달성 카페 글 링크를 공유하자 하@수(죽림)·양@국(바다가좋아)·라옴조교 시지지 등이 축하 인사와 이모티콘을 쏟아냈습니다. 별빛클로버는 치킨 이벤트 인증 제출 절차를 자세히 안내했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 3:25~오후 3:54</div><div class="tl-text">권@영(권찌)·최@라(릴리온)·김@녀(별빛멜로디)·안@혜(거베라)·정@선(다이룰써니)·이@희(여기아침) 등이 잇따라 당근조아에게 축하 인사를 전했고, 당근조아는 기존 허위 채널에 매여 시간을 허비했던 아쉬움과 지금 채널에 집중하겠다는 다짐, 동기들과 함께 성과를 이루자는 인사를 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 3:41~오후 4:12</div><div class="tl-text">이@수(월천자스민)가 시청시간이 부족한 허위 채널을 어떻게 해야 할지 고민을 나누자, 행신과 세오리가 부족해도 그냥 신청해서 며칠 만에 풀렸던 경험을 공유했습니다. 행신은 기존 영상을 그대로 둔 "11번지 사연" 채널도 살아난 걸 보며 허위 판정 기준이 모호한 것 같다는 의문을 남겼습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 5:37~오후 5:40</div><div class="tl-text">백@자(라라올라)가 몇 개월 만에 수창되어 세금정보 입력 시 여권 대신 주민등록증이나 운전면허증도 가능한지 질문을 남겼고, 행신이 앞서 나눴던 재신청 사례를 다시 한번 언급했습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -1058,6 +1110,10 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>이미지 생성 429 오류 대처</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>허위 재신청 시청시간 부족해도 되는지</span><span class="cnt">2</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="22"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>구독자 1,000명 인증 이벤트 참여 방법</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
@@ -1227,6 +1283,24 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <p>429는 서버에 요청이 몰려서 발생하는 오류라고 설명하며, 1분에 4컷이 최대인데 이를 초과해서 요청하거나 한도를 다 써버리면 발생한다고 안내했습니다. 해결책으로 1~2시간 뒤에 재처리하고 그래도 안 되면 8시간 후나 다음 날 다시 작업할 것, 혹은 계정을 분리해 다른 ID로 처리할 것을 제안했습니다.</p>
     </div></div>
   </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">허위 채널 재신청 시 시청시간이 기준에 못 미쳐도 신청해도 될까요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">송@혜(행신) · 김@(세오리)</span></div>
+      <p>부족해도 그냥 신청 버튼을 눌러도 되며, 며칠 안에 풀리는 경우가 많다고 답했습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">구독자 1,000명 인증했는데 치킨은 어디서 받나요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">김@은(별빛클로버)</span></div>
+      <p>이 방과 다른 디하클 단톡방에 올린 링크를 각각 캡처해 채널톡에 제출하면 되며, 카페 글 제목이 너무 밋밋하면 재작성을 요청받을 수 있다고 안내했습니다.</p>
+    </div></div>
+  </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
 </div>
 
@@ -1253,6 +1327,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">🔁 재신청</div><div class="glossary-def">허위 등의 사유로 수익창출이 정지된 뒤 90일이 지나면 누를 수 있는 버튼으로, 항소와는 별개의 절차입니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📑 중복</div><div class="glossary-def">다른 채널과 콘텐츠가 겹친다고 판단될 때 적용되는 제재 사유. 허위와 달리 조건을 갖추면 채널을 살릴 가능성이 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🛠️ 채널모니터링사이트</div><div class="glossary-def">채널 주소를 입력하면 현재 수익창출 여부와 최근 업로드 현황을 확인할 수 있는 외부 사이트(channelmonetizationcheck.net).</div></div>
+    <div class="glossary-card"><div class="glossary-term">📮 채널톡</div><div class="glossary-def">구독자 인증 등 이벤트 참여 자료를 운영진에게 제출할 때 쓰는 상담 채널.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🍗 치킨 이벤트</div><div class="glossary-def">구독자 1,000명을 달성하면 인증 캡처와 카페 글을 채널톡에 제출해 치킨 기프티콘을 받는 방 이벤트.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎬 켄번즈 효과</div><div class="glossary-def">정지된 이미지에 서서히 확대·이동하는 느낌을 줘 움직임을 연출하는 영상 편집 기법. 사연류 영상 초반 제작에 자주 쓰입니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎥 크리에이티브 커먼즈</div><div class="glossary-def">저작권자가 특정 조건 하에 재사용을 허용한 콘텐츠. 가공 없이 그대로 쓰면 카피 제재로 이어질 수 있어 30~40% 이상 변형이 필요합니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📌 핀번호</div><div class="glossary-def">애드센스 등록 후 우편으로 받는 본인확인용 번호. 입력해야 정산이 시작되며, 입력 전에 허위 등 제재를 맞으면 개인/개인사업자 구분이 꼬여 헷갈릴 수 있습니다.</div></div>
