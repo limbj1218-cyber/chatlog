@@ -233,8 +233,112 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
       <span class="day-accordion-arrow">▼</span>
-      <span class="day-accordion-date">7/20 (월)</span>
+      <span class="day-accordion-date">7/21 (화)</span>
       <span class="day-accordion-badge">오늘</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 319 · 주요 Q&amp;A 4 · 인사이트 3</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">319</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">4</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">3</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">라옴조교 시지지</div>
+          <div class="mvp-desc">새벽 시간, 채널 하나의 허위 항소가 통과됐다는 소식을 전하며 조회수 상위 2개만 남기고 나머지 영상을 모두 삭제한 뒤 채널 배너 설명을 "경제학"으로 바꾸고 3분 안팎의 시니어 경제 롱폼을 제작시간 5분 만에 뚝딱 만들어 올려 재심사를 넣었다는 구체적인 과정을 공유했습니다. 노출클릭률이 0.6퍼센트에 그쳤다는 웃픈 결과까지 솔직하게 털어놓으며, 남은 항소 채널 두 개도 마저 해본 뒤 결과를 공유하겠다고 예고했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">전@순(호머)</div>
+          <div class="mvp-desc">플리 완전자동화, 영화리뷰 자동화, 블로그 자동화, 프리 발주~정산 자동화까지 스스로 구축해온 자동화 시스템을 상세히 풀어놓아 방 전체를 놀라게 했습니다. 서버·나스·미니PC·맥북·회사 맥미니까지 동원한 개인 자동화 인프라를 소개했고, 프리랜서 편집 비용을 시세(10~15만원)보다 낮은 5만원 선으로 낮춰볼지 고민 중이라는 실전 정보도 나눴습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">양@국 (바다가좋아)</div>
+          <div class="mvp-desc">본인과 아내 채널의 허위가 모두 풀렸다는 반가운 소식을 다시 짚으며, 노을빛사연 채널의 사례를 참고해서 풀었다는 나름의 노하우를 짧게 공유해 시지지의 항소 통과 소식과 함께 새벽 시간 방 분위기를 훈훈하게 만들었습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">경제 롱폼도 AI로 만드신 건가요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴조교 시지지</span></div>
+          <p>네, 쇼벤 강의를 통해 배운 픽셀링 방식으로 딸깍 제작했다고 답했습니다. 이 방식은 금광 자체 툴로도 충분히 구현 가능하다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">바다가좋아님은 허위 채널을 어떻게 푸셨나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">양@국 (바다가좋아)</span></div>
+          <p>노을빛사연 채널의 인사이트(운영 사례)를 참고해서 풀었다고 짧게 답했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">그게 자동화가 되는 건가요? 설정을 빡세게 해야 하는 건지 궁금해요.</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">전@순(호머)</span></div>
+          <p>둥둥쌤이 제공한 클로드 코드를 이것저것 조합해 가편집 정도는 자동으로 처리하고, 세부적인 마무리 작업은 프리랜서에게 맡긴다고 설명했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">영화 프리 단가가 어마어마하다고 들었는데, 어느 정도인가요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">전@순(호머)</span></div>
+          <p>시세는 건당 10~15만원 정도로 알고 있고, 본인은 컷편집 위주로 5만원 선까지 낮춰볼까 고민 중이라고 답했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>라옴조교 시지지</h3><p>재심사를 앞두고 조회수 상위 2개만 남기고 나머지 영상을 모두 삭제한 뒤 채널 배너 설명을 "경제학"으로 바꾸고, 5분 만에 뚝딱 만든 3분짜리 시니어 경제 롱폼을 올려 항소를 넣는 저비용 전략을 공유했습니다. 다만 이렇게 급하게 만든 영상은 노출클릭률이 0.6퍼센트에 그쳤다며, 성의 있게 만들지 않은 데 대한 아쉬움도 함께 남겼습니다.</p>
+        <span class="insight-tag tag-tip">재심사노하우</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>전@순(호머)</h3><p>서버·나스·미니PC(인텔)·맥북·회사 맥미니까지 여러 기기를 함께 사용하는 개인용 자동화 인프라를 구축해 플리·영화리뷰·블로그 자동화와 프리 발주~정산 자동화까지 완료했다고 밝혔습니다. 다만 여러 자원을 동시에 쓰는 구조라 본인 한 사람만 사용할 수 있어 아직 서비스로 만들기는 어렵다는 현실적인 한계도 짚었습니다.</p>
+        <span class="insight-tag tag-tool">자동화인프라</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>라옴조교 시지지</h3><p>수강생들에게 늘 강의를 그만 듣고 강의비부터 뽑은 뒤 다음 강의를 들으라고 잔소리한다며, 강의를 너무 많이 들으면 오히려 다 듣고 났을 때 트렌드가 지나버려 실행을 못 하게 되는 역효과가 있다고 짚었습니다. 정직원이라 디하클 강의를 전부 들을 수 있는데도 회사 일까지 겹쳐 정작 실행이 더 어렵다며, 강의는 한두 개만 듣고 바로 실행하는 게 가장 중요하다고 강조했습니다.</p>
+        <span class="insight-tag tag-tip">실행이답</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 12:25~오전 1:51</div><div class="tl-text">나츠와 버터링링이 앞서 허위를 해결한 아니(정연)의 노하우에 감탄하며 대화를 이어가던 중, 오랜만에 등장한 라옴조교 시지지가 자신도 채널 하나의 항소가 방금 통과됐다는 소식을 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:51~오전 2:10</div><div class="tl-text">시지지가 조회수 상위 2개만 남기고 나머지를 삭제한 뒤 배너를 "경제학"으로 바꾸고 5분 만에 만든 경제 롱폼으로 재심사를 넣은 과정을 상세히 공유했고, 바다가좋아와 거베라가 축하 인사를 건넸습니다. 호머의 질문에 시지지는 쇼벤 강의로 배운 픽셀링 방식을 썼다고 답했고, 바다가좋아는 본인과 아내 채널 모두 허위가 풀렸다며 노을빛사연 채널을 참고했다는 노하우를 짧게 나눴습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 2:10~오전 2:22</div><div class="tl-text">호머가 시니어롱폼을 접고 그동안 만들어온 플리·영화리뷰·블로그 자동화와 프리 발주~정산 자동화 시스템을 소개하며 서버·나스·미니PC·맥북·회사 맥미니를 총동원한 개인 인프라를 밝혀 시지지와 버터링링을 놀라게 했습니다. 프리 편집 비용을 시세보다 낮춰볼지 고민 중이라는 이야기도 이어졌습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 2:22~오전 2:37</div><div class="tl-text">자정을 넘긴 늦은 시간, 버터링링과 호머가 회사·허위·잠 안 자는 이유를 주고받으며 수다를 떨었고, 벼랑위에감자가 등장해 버터링링을 다른 사람과 착각했다가 사과하는 해프닝이 있었습니다. 이어 마이폰님의 인형극 제작이 화제에 오르며 다들 얼굴 노출 없이 콘텐츠를 만드는 어려움을 나눴습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 2:37~오전 2:49</div><div class="tl-text">시지지가 예전 소설쓰기 전공 이야기와 쇼츠보다 롱폼이 체질이라는 고백을 나눴고, 다 함께 강의 결제 중독을 자조하며 웃었습니다. 시지지는 수강생들에게 강의를 그만 듣고 실행부터 하라고 늘 잔소리한다면서도 정작 본인은 강의 지옥에서 못 벗어나고 있다고 털어놓았고, 훈훈한 분위기 속에 새벽 대화가 마무리됐습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<!-- ═══ 날짜 블록 끝 ═══ -->
+
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/20 (월)</span>
     </div>
     <div class="day-accordion-summary">전체 메시지 69 · 주요 Q&amp;A 5 · 인사이트 2 · 공지 1</div>
   </button>
@@ -1146,6 +1250,10 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="22"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>구독자 1,000명 인증 이벤트 참여 방법</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>경제 롱폼 AI 제작 방식</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>자동화 프로그램 구축 노하우</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="11"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
@@ -1351,6 +1459,24 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <p>7/18에 재신청하고 7/20에 풀렸다며, 자신의 경우 이틀 만에 해제됐다고 답했습니다.</p>
     </div></div>
   </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">경제 롱폼도 AI로 만드신 건가요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴조교 시지지</span></div>
+      <p>네, 쇼벤 강의를 통해 배운 픽셀링 방식으로 딸깍 제작했다고 답했습니다. 이 방식은 금광 자체 툴로도 충분히 구현 가능하다고 덧붙였습니다.</p>
+    </div></div>
+  </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">그게 자동화가 되는 건가요? 설정을 빡세게 해야 하는 건지 궁금해요.</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">전@순(호머)</span></div>
+      <p>둥둥쌤이 제공한 클로드 코드를 이것저것 조합해 가편집 정도는 자동으로 처리하고, 세부적인 마무리 작업은 프리랜서에게 맡긴다고 설명했습니다.</p>
+    </div></div>
+  </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
 </div>
 
@@ -1369,6 +1495,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">💻 로컬 AI 모델</div><div class="glossary-def">온라인 AI 서비스를 거치지 않고 개인 컴퓨터에 직접 설치해 구동하는 이미지 생성 모델. Z-Image Turbo, Qwen3-4B 등이 있으며, 그래픽카드가 4060 8GB 이상이면 무료로 무제한 이미지를 생성할 수 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">😐 불쾌감 컨텐츠</div><div class="glossary-def">최근 유튜브가 기존 허위 콘텐츠 제재를 세분화하며 쓰기 시작한 명칭 중 하나로, 시청자들의 부정적 평가가 누적되면 적용되는 것으로 추정되는 제재 유형.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎙️ 사연채널</div><div class="glossary-def">실제 사연이나 이야기를 낭독·재구성해 올리는 유형의 유튜브 채널.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🎓 쇼벤</div><div class="glossary-def">고강도 실전 롱폼 제작 강의. 한 번 등록하면 다음 기수까지 자동연장되며, 강도가 세서 다른 강의와 병행하기 어렵다는 평이 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📱 스튜디오앱</div><div class="glossary-def">유튜브 스튜디오 모바일 앱. 채널의 수익창출·허위 상태 변경 여부를 확인할 때 화면 캡처와 함께 자주 공유됩니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">💰 애드센스</div><div class="glossary-def">유튜브 영상 수익을 정산받기 위해 연결하는 구글의 광고 수익화 계정.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎨 야담</div><div class="glossary-def">실사 대신 그림·만화체 이미지로 제작하는 콘텐츠 형식. 실사 위주인 사연보다 이미지 생성 제약이 적어 최근 추천되고 있습니다.</div></div>
@@ -1381,7 +1508,10 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">🍗 치킨 이벤트</div><div class="glossary-def">구독자 1,000명을 달성하면 인증 캡처와 카페 글을 채널톡에 제출해 치킨 기프티콘을 받는 방 이벤트.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎬 켄번즈 효과</div><div class="glossary-def">정지된 이미지에 서서히 확대·이동하는 느낌을 줘 움직임을 연출하는 영상 편집 기법. 사연류 영상 초반 제작에 자주 쓰입니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎥 크리에이티브 커먼즈</div><div class="glossary-def">저작권자가 특정 조건 하에 재사용을 허용한 콘텐츠. 가공 없이 그대로 쓰면 카피 제재로 이어질 수 있어 30~40% 이상 변형이 필요합니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">💻 클코(클로드 코드)</div><div class="glossary-def">AI 코딩 도구 Claude Code를 줄여 부르는 말. 자동화 프로그램을 짤 때 다른 도구와 조합해 활용됩니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎬 품앗이</div><div class="glossary-def">라옴조교 강성개미가 만든 영상 제작 보조 프로그램. 프로그램 사용이 어려운 1기나 초보자가 쉽게 영상을 만들 수 있도록 이미지 프롬프트를 기본 수준으로 자동 생성해줍니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🧑‍💻 프리(프리랜서 외주)</div><div class="glossary-def">영상 편집 등 세부 작업을 맡기는 외주 프리랜서. 건당 비용은 통상 10~15만원 선으로 언급됩니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🖱️ 픽셀링</div><div class="glossary-def">쇼벤 강의에서 배우는 이미지·영상 제작 방식. 짧은 시간 안에 롱폼 영상을 만들어내는 데 활용되며, 금광 자체 툴로도 유사하게 구현할 수 있다고 언급되었습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📌 핀번호</div><div class="glossary-def">애드센스 등록 후 우편으로 받는 본인확인용 번호. 입력해야 정산이 시작되며, 입력 전에 허위 등 제재를 맞으면 개인/개인사업자 구분이 꼬여 헷갈릴 수 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎞️ 필터(변형)</div><div class="glossary-def">캡컷 등에서 영상 전체에 씌우는 보정·효과. 직촬 영상에 적용하면 오히려 AI 생성 영상으로 오인돼 제재 위험이 커질 수 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📮 항소</div><div class="glossary-def">제재를 받은 직후 일정 기간 내에 이의를 제기하는 절차. 90일 경과 후 가능한 재신청과는 다른 절차입니다.</div></div>
