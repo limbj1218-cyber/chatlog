@@ -233,16 +233,16 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
       <span class="day-accordion-arrow">▼</span>
-      <span class="day-accordion-date">7/21 (화)</span>
+      <span class="day-accordion-date">7/22 (수)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 429 · 주요 Q&amp;A 9 · 인사이트 7</div>
+    <div class="day-accordion-summary">전체 메시지 64 · 주요 Q&amp;A 3 · 인사이트 2</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">429</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">9</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">7</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">64</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">3</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">2</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
     </div>
 
@@ -251,15 +251,101 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <div class="mvp-grid">
         <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
           <div class="mvp-name">바다ᆢ</div>
-          <div class="mvp-desc">새벽엔 캡컷 편집본 대신 착각으로 편집 전 원본 영상을 올렸다고 솔직하게 알렸고, 점심엔 라옴쌤이 1시에 선물을 쏜다는 소식을 전해 방에 기대감을 안겼습니다. 오후엔 "숟가락으로 떠먹여주는" 2기 강의를 두고 3기를 원하는 사람들에게 너스레를 떨었고, 재심을 통과한 쇼츠를 아껴뒀다가 쇼츠를 3부까지 올려 죽은 채널을 깨우는 구체적인 방법까지 전수했습니다. 저녁엔 직촬 영상 재사용 원칙부터 캡컷 투명도(혼합) 트릭까지 하나하나 알려주며 하루 종일 방을 이끌었습니다.</div>
+          <div class="mvp-desc">자정 넘어서까지 처음 준비하는 강의가 두서없이 느껴진다는 고민을 솔직하게 털어놨고, 대본을 그대로 읽으면 말투가 어색해진다는 걱정도 나눴습니다. 새벽엔 쇼츠 대본 지침(가이드라인 노딱 순화 지침)을 상세히 정리해 공유하며 하루를 마무리했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">루시아의 이야기 선물 <span class="mvp-role">애플트리</span></div>
+          <div class="mvp-desc">실버사연의 구독자 1만 명 달성을 축하하며 자정 대화를 열었고, 줌 유료 결제를 고민하는 바다에게 라옴님 플랜에 얹혀서 강의하라고 권했습니다. 강의 범위를 틱톡 초보~중급으로 좁히라는 조언과 대본은 큰 줄기만 외우고 디테일은 보면서 진행하면 된다는 실전 팁까지, 밤늦게 전화 통화로 이어질 만큼 꼼꼼하게 챙겼습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">강의 연습용으로 줌을 유료 결제해야 할까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">루시아의 이야기 선물(애플트리)</span></div>
+          <p>어차피 라옴샘이 1000명까지 참가 가능한 플랜을 쓰고 있으니 굳이 유료 구독하지 말고 연습만 무료 버전으로 하다가 실제 강의는 라옴님 플랜에 얹혀서 하는 게 더 편하다고 답했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">강의가 두서없고 정리가 안 되는 느낌인데 범위를 어떻게 잡아야 할까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">루시아의 이야기 선물(애플트리)</span></div>
+          <p>대상을 유튜브까지 넓히지 말고 틱톡 초보~중급으로 좁혀서 충실히 다루는 게 낫다고 답했습니다. 유튜브 쪽은 이미 라옴님·마이폰님이 다 커버해 놨으니, 틱톡 기본과 쇼츠 편집만 다뤄도 훌륭한 강의가 된다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">대본을 그대로 읽으면 말투가 어색해 보이는데 어떻게 해야 하나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">루시아의 이야기 선물(애플트리)</span></div>
+          <p>대본을 통째로 외우려 하지 말고 큰 줄기만 외운 뒤 디테일은 대본을 보면서 진행하면 된다고 답했습니다. 원래 강의나 수업도 교재를 옆에 펴놓고 읽어가며 사담을 섞는 식으로 진행하는 거라며 안심시켰습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>바다ᆢ</h3><p>쇼츠 대본 지침(가이드라인 노딱 순화 지침)을 새로 정리해 공유했습니다. 원문 화자·출처는 표기하지 않고 1~3부 각 900자 분량으로, 강력한 훅으로 인트로를 길게 시작하고 대사 70%·나레이션 30% 비율로, 비밀은 2부 후반에 공개하며 아동학대·폭력·피·욕설 등은 순화해 유튜브 노딱을 방지하는 게 골자입니다. 말끝 어미까지 사건 전달형·여운형·질문형으로 세세히 구분해 정리했습니다.</p>
+        <span class="insight-tag tag-tool">대본가이드</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>루시아의 이야기 선물(애플트리)</h3><p>몇 년 전 코로나 때 줌 유료를 썼다가 해지 요청 후 6개월이나 질질 끌려서 끊겼던 경험을 전했고, 요즘은 그때와 달리 구독 취소를 요청하면 며칠 이내로 처리해준다는 최신 정보도 함께 공유했습니다.</p>
+        <span class="insight-tag tag-info">줌해지경험</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 12:01~오전 12:07</div><div class="tl-text">톡톡레몬이 온라인 강의에 앞서 줌 사용 경험담을 나누며 1달 정도 미리 질러보는 것도 고려해보라고 조언한 뒤, 잠이 온다며 굿밤 인사를 남기고 자리를 떴습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 12:15~오전 12:24</div><div class="tl-text">애플트리가 실버사연의 구독자 1만 명 달성을 축하하며 자정 대화를 열었고, 줌 유료·무료의 차이와 최근 달라진 해지 정책을 설명하며 라옴님 플랜에 얹혀서 강의하면 더 편하다고 권했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 12:24~오전 12:33</div><div class="tl-text">바다가 자신의 강의가 두서없이 느껴진다는 고민을 털어놓자 애플트리가 청중을 틱톡 초보~중급으로 좁히고 커리큘럼을 충실히 짜라고 조언했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 12:33~오전 12:43</div><div class="tl-text">후파가 썸네일로 보이는 사진을 공유하며 채도와 하늘 색감을 조정했고, 바다가 대본을 그대로 읽는 게 어색하다고 고민하자 애플트리가 큰 줄기만 외우고 디테일은 대본을 보며 진행하라고 답했습니다. 이어 둘은 통화를 위해 잠시 대화를 멈췄습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 2:10~오전 2:11</div><div class="tl-text">바다가 쇼츠 대본 지침(가이드라인 노딱 순화 지침)을 새로 정리해 공유하며 하루 대화를 마무리했습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/21 (화)</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 793 · 주요 Q&amp;A 12 · 인사이트 9</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">793</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">12</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">9</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">바다ᆢ</div>
+          <div class="mvp-desc">새벽엔 캡컷 편집본 대신 착각으로 편집 전 원본 영상을 올렸다고 솔직하게 알렸고, 점심엔 라옴쌤이 1시에 선물을 쏜다는 소식을 전해 방에 기대감을 안겼습니다. 오후엔 "숟가락으로 떠먹여주는" 2기 강의를 두고 3기를 원하는 사람들에게 너스레를 떨었고, 재심을 통과한 쇼츠를 아껴뒀다가 쇼츠를 3부까지 올려 죽은 채널을 깨우는 구체적인 방법까지 전수했습니다. 저녁엔 직촬 영상 재사용 원칙부터 캡컷 투명도(혼합) 트릭까지 하나하나 알려줬고, 밤에는 구독자 인증 단계별 리워드(치킨·한우·금) 체계를 정리해주고 인트로 제작이 어렵다는 하소연엔 롱폼 대본에서 쇼츠 1부를 뽑아 그 안에서 추출하면 된다는 꼼수까지 전수하며 자정 무렵까지 방을 지켰습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
           <div class="mvp-name">야담곳간 <span class="mvp-role">릴리온</span></div>
-          <div class="mvp-desc">아침부터 허위 풀기 작업과 영상 정리를 언제 시작할지 동료들과 타이밍을 논의했고, "벼감"이라는 애칭을 만들어내는 등 방의 흥을 돋웠습니다. 오후엔 오랜만에 허위 채널에 영상을 올리며 두근거림을 감추지 못했는데, 실제로 노출과 조회수가 확연히 달라진 것을 체감하며 채널 회생 의지를 다졌습니다. 저녁 썸네일 피드백 시간까지 끝까지 참여하며 표정과 구도에 대한 세세한 의견을 보탰습니다.</div>
+          <div class="mvp-desc">아침부터 허위 풀기 작업과 영상 정리를 언제 시작할지 동료들과 타이밍을 논의했고, "벼감"이라는 애칭을 만들어내는 등 방의 흥을 돋웠습니다. 오후엔 오랜만에 허위 채널에 영상을 올리며 두근거림을 감추지 못했는데, 실제로 노출과 조회수가 확연히 달라진 것을 체감하며 채널 회생 의지를 다졌습니다. 저녁 썸네일 피드백 시간까지 끝까지 참여했고, 밤에는 두 달 만에 복귀한 부뚜막야담을 반기며 나눔 이벤트에 신청했으며 인트로 제작의 어려움을 "대충권법"이라는 드립으로 풀어내 방에 웃음을 안겼습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
           <div class="mvp-name">실버사연 <span class="mvp-role">여기아침</span></div>
-          <div class="mvp-desc">허위 재사용 등 3종에 모두 걸렸다가 영상을 전부 지우고 재신청해 수익창출 재승인으로 풀린 자신의 성공 사례를 자세히 공유했고, 1기 방에서 전해 들은 라옴님의 "허위 풀린 CASE 정리" 문서까지 방에 전달해 큰 호응을 얻었습니다. 저녁엔 썸네일 시안 4장을 올려 피드백을 요청하고, 방 전체의 의견을 모아가며 수정 방향을 잡았습니다.</div>
+          <div class="mvp-desc">허위 재사용 등 3종에 모두 걸렸다가 영상을 전부 지우고 재신청해 수익창출 재승인으로 풀린 자신의 성공 사례를 자세히 공유했고, 1기 방에서 전해 들은 라옴님의 "허위 풀린 CASE 정리" 문서까지 방에 전달해 큰 호응을 얻었습니다. 저녁엔 썸네일 시안 4장을 올려 피드백을 요청했고, 밤에는 자신의 채널(월하서고)이 구독자 만 명을 돌파했다는 소식을 전해 축하를 받았으며 대본을 10분 만에 재창작하는 노하우도 나눴습니다.</div>
         </div></div>
       </div>
     </div>
@@ -347,6 +433,33 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
           <p>미리캔버스에서 검은 도형을 만들어 내보낸 뒤 캡컷 타임라인에 올리고, 그 도형을 클릭해 오른쪽 "혼합" 메뉴에서 투명도를 조절하면 된다고 스크린샷과 함께 설명했습니다. 이미지엔 바로 적용되는데 영상엔 안 된다는 질문에는 영상을 클릭한 뒤 혼합 옵션을 껐다 켜보라고 조언했고, 실제로 그렇게 하니 해결됐습니다.</p>
         </div></div>
       </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">구독자 인증 단계별로 치킨·한우·금 리워드는 어떻게 나뉘나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">바다ᆢ · 인생봄결(후파)</span></div>
+          <p>후파는 5천 구독자도 인증 대상이라며 1천·5천·1만 순으로 받을 수 있다고 답했고, 바다ᆢ는 치킨은 1천·5천·1만·3만 구간에서, 한우(350그램)는 5만, 금은 10만 구간에서 나온다며 전체 인증 구조를 정리해줬습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">애드센스 미국 세금 신고, 꼭 해야 하나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">야담각(아가타) · 실버사연(여기아침)</span></div>
+          <p>아가타는 본인은 핀번호를 받고 등록한 뒤 얼마 지나지 않아 자동으로 뜬 안내를 따라 작성했다고 답했고, 실버사연은 세금 신고도 꼭 해야 하며 헷갈리면 지피티나 제미나이에게 화면을 캡처해 보여주고 물어보라고 조언했습니다. 100달러 지급 전에만 처리하면 된다는 점도 함께 확인됐습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">인트로 만들기가 너무 어려운데 쉽게 만드는 방법 없을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">바다ᆢ</span></div>
+          <p>롱폼 대본을 먼저 완성한 뒤 같은 창에서 쇼츠까지 뽑아내고, 그 쇼츠 1부에서 1분 분량만 추출하면 인트로가 자연스럽게 해결된다고 답했습니다. 대본과 상관없이 쇼츠와 인트로가 좀 달라도 무관하다며, 재미가 없으면 지어서라도 넣는다고 덧붙였습니다.</p>
+        </div></div>
+      </div>
     </div>
 
     <div class="section">
@@ -379,6 +492,14 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <h3>바다ᆢ</h3><p>영상 자체를 투명 처리하면 편집으로 인식되지 않지만, 검은 도형을 위에 올려 혼합 투명도로 조절하면 무언가 편집이 가해진 것으로 인식된다며, 쇼츠에서 남의 영상을 짜깁기할 때 AI를 속이는 꼼수로 쓸 수 있되 같은 영상은 1~2번만 써야 한다고 조언했습니다.</p>
         <span class="insight-tag tag-tip">투명트릭</span>
       </div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>부뚜막야담(꼬뭉꼬뭉)</h3><p>두 달 만에 "외도하다 왔다"며 복귀해 남은 재고를 투두리스트 노트로 만들어 방 멤버들에게 나눔하겠다고 제안해 훈훈한 반응을 얻었고, 쿠팡 창고 화재로 입고 물건이 전소돼 보상도 포기하고 재고만 처분하기로 했다는 사연도 함께 전했습니다.</p>
+        <span class="insight-tag tag-info">나눔</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>실버사연(여기아침)</h3><p>월하서고 채널이 구독자 만 명을 돌파했다고 전해 방 전체의 축하를 받았습니다.</p>
+        <span class="insight-tag tag-info">만명돌파</span>
+      </div></div>
     </div>
 
     <div class="section">
@@ -394,7 +515,14 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <div class="tl-item"><div class="tl-time">오후 5:24~오후 5:55</div><div class="tl-text">실버사연이 추가 썸네일 시안 4장을 올려 글씨 크기와 문구 조절을 두고 다시 피드백을 받았고, 다들 1번·4번을 지지하며 제목을 줄이는 방향으로 정리됐습니다. 이어 실버사연이 GPT로 만든 사극풍 이미지를 공유해 한바탕 웃음이 터졌고, 바다ᆢ가 루시아의 이야기 선물에게 조회수가 잘 나온 두 번째 영상에 이어 세 번째 영상을 빨리 올려 수창하자고 독려했습니다.</div></div>
         <div class="tl-item"><div class="tl-time">오후 6:15~오후 6:39</div><div class="tl-text">야담각(아가타)이 직촬 영상 길이를 쇼츠 3분 규정에 맞춰야 하는지 묻자, 바다ᆢ가 롱폼·쇼츠에 직촬 영상을 각각 한 번씩만 쓰고 폐기하는 원칙과 캡컷에서 늘리기 대신 복사해서 쓰는 방법을 자세히 알려줬고, 루시아는 격려에 감사하며 세 번째 영상을 준비 중이라고 전했습니다.</div></div>
         <div class="tl-item"><div class="tl-time">오후 6:55~오후 7:17</div><div class="tl-text">아가타가 캡컷에서 영상을 흐리게 만드는 방법을 묻자 바다ᆢ가 검은 도형과 혼합(투명도) 기능을 활용하는 방법을 스크린샷까지 곁들여 차근차근 설명했고, 아가타가 마침내 성공하자 바다ᆢ가 "삽자루"라는 농담 섞인 응원을 건넸습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 8:19~오후 8:25</div><div class="tl-text">바다ᆢ가 영상 자체를 투명 처리하는 것과 검은판을 올려 투명도를 조절하는 것의 차이를 정리하며, 후자가 편집으로 인식돼 쇼츠 짜깁기에서 AI를 속이는 용도로 쓰인다고 설명하며 하루 대화를 마무리했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 8:19~오후 8:25</div><div class="tl-text">바다ᆢ가 영상 자체를 투명 처리하는 것과 검은판을 올려 투명도를 조절하는 것의 차이를 정리하며, 후자가 편집으로 인식돼 쇼츠 짜깁기에서 AI를 속이는 용도로 쓰인다고 설명했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 9:11~오후 9:59</div><div class="tl-text">톡톡레몬이 애드센스 본인인증을 마쳤다며 미국 세금 신고 절차를 궁금해했고, 후파가 5천 구독자도 인증 대상이라고 알려줬으며 바다가 치킨(1천·5천·1만·3만)·한우(5만)·금(10만) 순의 리워드 체계를 정리해줬습니다. 이어 톡톡레몬이 쇼츠 대본이 요즘 이상하게 나온다고 하소연하자 릴리온이 깊이 공감했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 10:04~오후 10:19</div><div class="tl-text">톡톡레몬이 애드센스 미국 세금 신고가 꼭 필요한지 거듭 확인했고, 아가타가 자신은 핀번호 등록 후 자동으로 절차가 진행됐다고 답했습니다. 바다가 모르는 게 있으면 금광방에도 물어보라고 권했지만 톡톡레몬은 이 방이 더 편하다고 답했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 10:18~오후 10:33</div><div class="tl-text">두 달간 자리를 비웠던 부뚜막야담(꼬뭉꼬뭉)이 "외도하다 왔다"며 복귀해 대본 작성에 5시간이 걸렸다는 근황과 20만 원 수익 인증 소식을 전했고, 쿠팡 창고 화재로 입고 물건이 전소돼 보상도 포기하고 재고만 처분하기로 했다는 사연을 나눴습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 10:40~오후 11:00</div><div class="tl-text">부뚜막이 남은 재고로 투두리스트 노트 나눔을 제안하자 톡톡레몬과 릴리온이 반기며 신청했고, "가마 보내달라"는 드립으로 방이 한바탕 웃었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 11:00~오후 11:15</div><div class="tl-text">쉰들러 리스트·나이(윤석열식 만 나이) 잡담이 이어졌고, 톡톡레몬이 무섭다고 한 드라마 얘기에 실버사연이 공감했으며, 실버사연이 자신의 대본을 10분 만에 재창작했다고 전하자 릴리온이 놀라워했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 11:15~오후 11:38</div><div class="tl-text">인트로 제작이 어렵다는 하소연에 바다가 롱폼 대본을 먼저 완성한 뒤 쇼츠 1부에서 1분 분량만 추출하면 인트로가 해결된다는 노하우를 전수했고, 부뚜막이 택배는 수요일에 발송한다고 안내했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 11:29~오후 11:59</div><div class="tl-text">실버사연의 월하서고 채널이 구독자 만 명을 돌파해 다같이 축하했고, 부뚜막이 곧 순금 인증까지 갈 기세라며 응원했습니다. 자정을 앞두고 바다가 줌 유료 결제 경험을 물었고, 톡톡레몬이 예전 가격 정보를 찾아보며 하루 대화를 마무리했습니다.</div></div>
       </div>
     </div>
   </div></div>
