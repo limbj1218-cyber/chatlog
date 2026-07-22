@@ -233,14 +233,71 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
       <span class="day-accordion-arrow">▼</span>
-      <span class="day-accordion-date">7/22 (수)</span>
+      <span class="day-accordion-date">7/23 (목)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 101 · 주요 Q&amp;A 7 · 인사이트 6 · 공지 1</div>
+    <div class="day-accordion-summary">전체 메시지 5 · 주요 Q&amp;A 1 · 인사이트 1 · 공지 0</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">101</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">5</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">라옴조교 시지지</div>
+          <div class="mvp-desc">새벽 시간 톡톡레몬이 처음 겪는 수익창출 정지로 세컨폰 사용 여부를 걱정하자, 채널이 오염되면 세컨폰까지 함께 영향을 받을 수 있지만 세컨폰에 연결된 다른 채널과 구글 로그인만 모두 해제해두면 큰 문제는 없다고 구체적으로 짚어줬습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">정지된 채널의 유튜브·스튜디오가 로그인된 세컨폰을 그대로 써도 괜찮을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴조교 시지지</span></div>
+          <p>혹시라도 그 채널이 오염되면 세컨폰까지 같이 오염될 수 있지만, 그 부분이 괜찮다면 크게 문제 될 건 없을 것 같다고 답했습니다. 다만 세컨폰에 연결된 다른 채널이나 구글 로그인은 모두 해제해두는 게 좋다고 당부했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>라옴조교 시지지</h3><p>정지된 채널과 같은 기기·계정을 공유하는 세컨폰은 채널이 오염될 경우 함께 영향을 받을 수 있다고 짚으며, 그런 위험을 피하려면 세컨폰에 남아있는 다른 채널이나 구글 로그인을 전부 해제해두는 게 안전하다는 실전 팁을 전했습니다.</p>
+        <span class="insight-tag tag-tip">세컨폰관리</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 12:19~12:22</div><div class="tl-text">끄까지가 아무것도 하지 않은 채널이 '불쾌감 주는 컨텐츠'로 정지되고 수익 재신청 버튼이 활성화됐다며, 영상 몇 개만 남기고 삭제한 뒤 쇼츠 직촬 영상 3개를 올려 재신청해도 승산이 있을지, 아예 한꺼번에 다 지워버려도 괜찮을지 궁금해했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 12:32~12:40</div><div class="tl-text">톡톡레몬이 첫 수익창출 정지를 겪으며 애드센스 전화번호를 엄마 번호로 바꿔 핀번호를 기다리는 중이라고 밝히고, 그 채널이 로그인된 세컨폰을 계속 써도 되는지 물었습니다. 시지지가 세컨폰의 다른 로그인은 모두 해제해두라고 답하자, 톡톡레몬은 전화번호가 달라도 로그인에 문제가 없는지 추가로 물으며 대화가 마무리됐습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/22 (수)</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 103 · 주요 Q&amp;A 7 · 인사이트 6 · 공지 1</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">103</span><span class="label">전체 메시지</span></div>
       <div class="stat-pill"><span class="num">7</span><span class="label">주요 Q&amp;A</span></div>
       <div class="stat-pill"><span class="num">6</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">1</span><span class="label">공지</span></div>
@@ -376,7 +433,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <div class="tl-item"><div class="tl-time">오후 2:03~2:48</div><div class="tl-text">라옴이 고고띵의 사례를 재사용 재분류-항소 통과 경위로 다시 확인했고, 나츠·벼랑위에감자가 재신청 대기 중인 답답함을 토로했습니다. 이@영(민트부엉)이 기존 영상을 전부 새로 갈아 4,000시간을 채워 허위를 풀었다는 구체적인 사례를 공유했고, 김@경(린디)이 직촬 굴영상이 무엇인지 물으며 대화가 이어졌습니다.</div></div>
         <div class="tl-item"><div class="tl-time">오후 4:10~5:59</div><div class="tl-text">민트부엉이 4,000시간을 채우는 데 생각보다 오래 걸렸다는 후기를 남겼고, 양@미(카페모카조아)는 후파님 프로그램으로 이미지까지 받은 뒤 다음 순서를 몰라 헤매다 나츠에게서 브루커넥터 사용법을 안내받았습니다. 이@호(끄까지)는 벤치하던 채널이 11일 만에 다시 움직이기 시작했다는 근황과 함께 자신의 재신청 로드맵을 방에 공유했고, 김@주(초긍정)는 인상 깊게 본 유튜브 영상의 그림체와 목소리를 어떤 AI로 만든 건지 궁금해했습니다.</div></div>
         <div class="tl-item"><div class="tl-time">오후 6:00~6:59</div><div class="tl-text">초긍정의 그림체 질문에 벼랑위에감자도 함께 궁금해했고, 다이룰써니가 미드저니인 것 같다면서도 확실친 않다고 조심스럽게 답했습니다. 초긍정은 GPT일 가능성도 언급하며 직접 써보고 싶다는 관심을 이어갔습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 7:08~8:29</div><div class="tl-text">라옴조교 강성개미가 7월 29일 저녁에 열리는 브루(Vrew) 4.4.0 업데이트 라이브를 공지하며 AI 비디오 모델 추가 소식을 전했습니다. 끄까지가 앞서 화제였던 영상의 이미지 생성 방식이 궁금해 제작자에게 직접 메일까지 보냈지만 답은 아직 안 왔다고 전했고, 초긍정이 그 열의에 감탄하며 하루 대화가 마무리됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 7:08~9:00</div><div class="tl-text">라옴조교 강성개미가 7월 29일 저녁에 열리는 브루(Vrew) 4.4.0 업데이트 라이브를 공지하며 AI 비디오 모델 추가 소식을 전했습니다. 끄까지가 앞서 화제였던 영상의 이미지 생성 방식이 궁금해 제작자에게 직접 메일까지 보냈지만 답은 아직 안 왔다고 전했고, 초긍정이 그 열의에 감탄한 데 이어 시유도 같은 그림체가 궁금하다고 거들며 하루 대화가 마무리되는 듯했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 11:26</div><div class="tl-text">룰루랄라1이 새로 만든 유튜브 채널을 인증해야 한다며 전화인증이 가능한 사이트를 아는 사람이 있는지 늦은 밤 질문을 남기며 하루가 마감됐습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -1454,8 +1512,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <!-- ═══ FAQ 랭킹: 정리 때마다 갱신 ═══ -->
     <li class="faq-bar-item"><div class="faq-bar-label"><span>재신청·재심사 절차</span><span class="cnt">11</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
-    <li class="faq-bar-item"><div class="faq-bar-label"><span>불쾌감 컨텐츠 제재 관련 문의</span><span class="cnt">9</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="82"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>불쾌감 컨텐츠 제재 관련 문의</span><span class="cnt">10</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="91"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수·방식</span><span class="cnt">5</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="45"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>애드센스 명의·본인인증 문의</span><span class="cnt">4</span></div>
@@ -1495,6 +1553,10 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <li class="faq-bar-item"><div class="faq-bar-label"><span>인코딩 용량·화질 저하 대응법</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="9"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>AI 이미지·그림체 생성 방식 문의</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="9"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>세컨폰(공용기기) 정지채널 사용 문의</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="9"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>전화인증 가능한 사이트 문의</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="9"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
@@ -1782,6 +1844,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <p>다운받은 이미지를 기존 이미지 파일에 넣고 바로 브루커넥터를 켜면 된다고 답했습니다.</p>
     </div></div>
   </div>
+  <div class="qa-card" onclick="toggleQa(this)">
+    <div class="qa-header"><div class="qa-q-icon">Q</div>
+      <div class="qa-question">정지된 채널의 유튜브·스튜디오가 로그인된 세컨폰을 그대로 써도 괜찮을까요?</div>
+      <span class="qa-toggle">▼</span></div>
+    <div class="qa-body"><div class="qa-answer">
+      <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴조교 시지지</span></div>
+      <p>혹시라도 그 채널이 오염되면 세컨폰까지 같이 오염될 수 있지만, 그 부분이 괜찮다면 크게 문제 될 건 없을 것 같다고 답했습니다. 다만 세컨폰에 연결된 다른 채널이나 구글 로그인은 모두 해제해두는 게 좋다고 당부했습니다.</p>
+    </div></div>
+  </div>
   <!-- ═══ FAQ 베스트 답변 끝 ═══ -->
 </div>
 
@@ -1803,6 +1874,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">🔌 브루커넥터</div><div class="glossary-def">후파님이 공유한 이미지 생성 프로그램(플로우)에서 받은 이미지를 브루로 이어서 불러와 작업할 때 켜는 연동 기능.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎙️ 사연채널</div><div class="glossary-def">실제 사연이나 이야기를 낭독·재구성해 올리는 유형의 유튜브 채널.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎞️ 샤나인코더</div><div class="glossary-def">동영상을 압축·인코딩할 때 쓰는 프로그램. 용량을 줄이면 화질이 저하될 수 있어, AI에게 물어 압축 설정부터 점검해보는 게 권장된다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">📲 세컨폰</div><div class="glossary-def">정지 위험이 있는 채널의 유튜브·스튜디오 앱을 함께 로그인해두는 보조 스마트폰. 본 채널이 오염되면 세컨폰까지 함께 영향받을 수 있어, 다른 채널이나 구글 로그인은 모두 해제해두는 게 안전합니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎓 쇼벤</div><div class="glossary-def">고강도 실전 롱폼 제작 강의. 한 번 등록하면 다음 기수까지 자동연장되며, 강도가 세서 다른 강의와 병행하기 어렵다는 평이 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📱 스튜디오앱</div><div class="glossary-def">유튜브 스튜디오 모바일 앱. 채널의 수익창출·허위 상태 변경 여부를 확인할 때 화면 캡처와 함께 자주 공유됩니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🤫 시크릿방</div><div class="glossary-def">일정 조건을 갖춘 멤버만 들어갈 수 있는 별도의 비공개 채팅방. 편하게 놀리고 놀림받는 금광 본방과 달리 조심스러운 분위기라는 반응이 있습니다.</div></div>
