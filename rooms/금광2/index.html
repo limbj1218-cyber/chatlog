@@ -240,16 +240,38 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/24 (금)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 1</div>
+    <div class="day-accordion-summary">전체 메시지 9 · 주요 Q&amp;A 1</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">1</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">9</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">주요 Q&amp;A</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
     </div>
-    <div class="empty-hint">오늘은 딩초코송이님이 강성개미님에게 좋은 정보 감사하다는 인사를 남긴 짧은 메시지 하나만 있었습니다.</div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">부르(Vrew) 화면에 칸막이처럼 선이 잔뜩 생겼는데 왜 이런 건가요? 없애려면 어떻게 해야 하나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">원@현(한밤중) · 라옴</span></div>
+          <p>한밤중이 화면 우측 하단의 버튼 위치를 스크린샷으로 짚어주며 그 부분을 해제하라고 안내했고, 라옴이 그 선은 편집 가이드라인이며 망처럼 생긴 우측하단 버튼을 클릭하면 해제된다고 설명했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 1:59</div><div class="tl-text">딩초코송이가 강성개미에게 좋은 정보를 알려줘서 고맙다고 인사했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 6:20~6:22</div><div class="tl-text">숑숑1이 부르 화면에 칸막이처럼 생긴 선이 왜 나타났는지, 없애는 방법은 무엇인지 물었습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 7:55~7:56</div><div class="tl-text">한밤중이 스크린샷으로 해제할 버튼 위치를 짚어주었고, 라옴이 편집 가이드라인이라 설명하며 우측하단 버튼을 클릭하면 해제된다고 안내했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 8:25</div><div class="tl-text">크리스탈엠이 축하 인사를 남기며 하루 대화가 마무리됐습니다.</div></div>
+      </div>
+    </div>
   </div></div>
 </div>
 <!-- ═══ 날짜 블록 끝 ═══ -->
@@ -1727,6 +1749,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="7"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>쇼츠 업로드 주기·시간대</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="7"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>부르 편집 가이드라인 선 해제 방법</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="7"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
@@ -2118,6 +2142,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">🎬 켄번즈 효과</div><div class="glossary-def">정지된 이미지에 서서히 확대·이동하는 느낌을 줘 움직임을 연출하는 영상 편집 기법. 사연류 영상 초반 제작에 자주 쓰입니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎥 크리에이티브 커먼즈</div><div class="glossary-def">저작권자가 특정 조건 하에 재사용을 허용한 콘텐츠. 가공 없이 그대로 쓰면 카피 제재로 이어질 수 있어 30~40% 이상 변형이 필요합니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">💻 클코(클로드 코드)</div><div class="glossary-def">AI 코딩 도구 Claude Code를 줄여 부르는 말. 자동화 프로그램을 짤 때 다른 도구와 조합해 활용됩니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">📐 편집 가이드라인</div><div class="glossary-def">브루(Vrew) 편집 화면에 표시되는 격자 모양의 안내선. 화면 우측 하단의 망처럼 생긴 버튼을 클릭하면 켜고 끌 수 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎬 품앗이</div><div class="glossary-def">라옴조교 강성개미가 만든 영상 제작 보조 프로그램. 프로그램 사용이 어려운 1기나 초보자가 쉽게 영상을 만들 수 있도록 이미지 프롬프트를 기본 수준으로 자동 생성해줍니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🧑‍💻 프리(프리랜서 외주)</div><div class="glossary-def">영상 편집 등 세부 작업을 맡기는 외주 프리랜서. 건당 비용은 통상 10~15만원 선으로 언급됩니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🖱️ 픽셀링</div><div class="glossary-def">쇼벤 강의에서 배우는 이미지·영상 제작 방식. 짧은 시간 안에 롱폼 영상을 만들어내는 데 활용되며, 금광 자체 툴로도 유사하게 구현할 수 있다고 언급되었습니다.</div></div>
