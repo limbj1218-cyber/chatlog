@@ -240,13 +240,13 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/24 (금)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 60 · 주요 Q&amp;A 8 · 인사이트 4</div>
+    <div class="day-accordion-summary">전체 메시지 97 · 주요 Q&amp;A 9 · 인사이트 7</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">60</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">8</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">4</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">97</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">9</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">7</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
     </div>
 
@@ -258,12 +258,12 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
           <div class="mvp-desc">이미지 생성·다운로드 매칭 실패로 힘들어하는 멤버들에게 원인(구글 요청 제한)과 대안(이지멀티플로우)을 짚어주고, 계정별 생성 한도에 대한 불안도 안심시켰습니다. 이어서 숏츠 넘버링 파일명 규칙, 브루 TTS 크레딧 절약 팁, 클로드 코드로 오류를 스스로 해결하는 법까지 오전 내내 실무 질문에 꼼꼼히 답했습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
-          <div class="mvp-name">이@희(마이폰1)</div>
-          <div class="mvp-desc">세오리의 야담 목소리 반자동화 관련 질문에, 자신이 준 대본 프롬프트를 쓰면 대사와 나레이션이 한 클립에 섞이지 않아 자동 클립 나누기 여부와 무관하다고 짚어주며 원인을 명확히 풀어줬습니다.</div>
+          <div class="mvp-name">라옴조교 강성개미 <span class="mvp-role">조교</span></div>
+          <div class="mvp-desc">늦은 밤까지 클로드 코워크로 작업하는 영상, 클로드+힉스필드로 영상 만드는 법을 잇달아 소개하면서도 사연·야담처럼 이야기를 풀어내는 작업은 자동화가 아직 부족하니 혹하지 말라고 짚어줬고, 토큰 후불제 요금 폭탄 주의사항과 브루의 Seedance·Kling·Veo 통합 소식, 브루 개발자 채널까지 꼼꼼히 챙겨 공유했습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
-          <div class="mvp-name">이@미(아라라)</div>
-          <div class="mvp-desc">저녁 시간대에 구독자 10만 명이 넘는 채널 링크를 공유하며 본문 영상을 재활용해도 잘 되는 사례를 짚어줬고, 유튜브 허위콘텐츠 기준에 대한 불만과 인트로 음악 제작 방식에 대한 질문에도 답하며 대화를 이끌었습니다.</div>
+          <div class="mvp-name">이@희(마이폰1)</div>
+          <div class="mvp-desc">세오리의 야담 목소리 반자동화 관련 질문에, 자신이 준 대본 프롬프트를 쓰면 대사와 나레이션이 한 클립에 섞이지 않아 자동 클립 나누기 여부와 무관하다고 짚어주며 원인을 명확히 풀어줬습니다.</div>
         </div></div>
       </div>
     </div>
@@ -277,6 +277,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <div class="qa-body"><div class="qa-answer">
           <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">원@현(한밤중) · 라옴</span></div>
           <p>한밤중이 화면 우측 하단의 버튼 위치를 스크린샷으로 짚어주며 그 부분을 해제하라고 안내했고, 라옴이 그 선은 편집 가이드라인이며 망처럼 생긴 우측하단 버튼을 클릭하면 해제된다고 설명했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">이지캡컷과 넘버링 프로그램이 매칭되는 파일이 없다고 자꾸 뜨는데, 동영상·이미지 파일이 모두 있는데도 왜 이런 오류가 나는 걸까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴님(로드)매니저</span></div>
+          <p>파일 이름을 "1_아무글자.mp4"처럼 언더바를 넣어야 매칭되며, 언더바를 기준으로 잘라 앞부분을 번호로 매칭시키도록 프로그래밍돼 있다고 설명했습니다. 다만 9:16 비율 숏츠는 넘버링 프로그램을 테스트해본 적이 없어 잘 안 먹힐 수 있으니, 숏츠는 양이 많지 않고 품질이 중요한 만큼 수동으로 처리하는 게 낫다고 권했습니다.</p>
         </div></div>
       </div>
       <div class="qa-card" onclick="toggleQa(this)">
@@ -308,15 +317,6 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       </div>
       <div class="qa-card" onclick="toggleQa(this)">
         <div class="qa-header"><div class="qa-q-icon">Q</div>
-          <div class="qa-question">숏츠 영상 넘버링 프로그램이 파일과 매칭되지 않는데, 왜 그런 건가요?</div>
-          <span class="qa-toggle">▼</span></div>
-        <div class="qa-body"><div class="qa-answer">
-          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴님(로드)매니저</span></div>
-          <p>파일 이름을 "1_아무글자.mp4"처럼 언더바를 넣어야 매칭되며, 언더바를 기준으로 잘라 앞부분을 번호로 매칭시키도록 프로그래밍돼 있다고 설명했습니다. 다만 9:16 비율 숏츠는 넘버링 프로그램을 테스트해본 적이 없어 잘 안 먹힐 수 있으니, 숏츠는 양이 많지 않고 품질이 중요한 만큼 수동으로 처리하는 게 낫다고 권했습니다.</p>
-        </div></div>
-      </div>
-      <div class="qa-card" onclick="toggleQa(this)">
-        <div class="qa-header"><div class="qa-q-icon">Q</div>
           <div class="qa-question">이미지 그림체를 GPT로 바꾼 게 조회수에 영향이 있을까요?</div>
           <span class="qa-toggle">▼</span></div>
         <div class="qa-body"><div class="qa-answer">
@@ -342,6 +342,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
           <p>수노로 만든 것 같다는 의견을 전했습니다.</p>
         </div></div>
       </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">채널정지가 풀린 욘딩님, 채널명이랑 채널설명글도 다 바꾸셨을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">이@연(욘딩)</span></div>
+          <p>채널명과 설명글은 바꾸지 않고 그대로 두었다고 답했습니다.</p>
+        </div></div>
+      </div>
     </div>
 
     <div class="section">
@@ -362,18 +371,30 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <h3>세오리 · 아라라</h3><p>산책 영상만 재탕해서 야담 채널을 운영해도 잘 되는 사례가 있다는 이야기가 나왔고, 아라라는 유튜브의 허위콘텐츠 판단 기준이 일관되지 않아 답답하다는 의견을 덧붙였습니다.</p>
         <span class="insight-tag tag-info">정책이슈</span>
       </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>이@연(욘딩)</h3><p>채널정지 재신청 버튼을 누른 지 3일 만에 정지가 풀렸다며, 기존 영상 2개만 남기고 나머지는 삭제한 뒤 풍경 영상에 자막을 입힌 15초짜리 쇼츠 3개를 올린 전략을 공유해 방 전체의 축하를 받았습니다.</p>
+        <span class="insight-tag tag-tip">채널정지해제</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>라옴조교 강성개미</h3><p>클로드 코워크로 작업하는 영상을 소개하며, 정보성·요약 콘텐츠는 자동화가 어느 정도 되지만 사연·야담처럼 이야기를 확장해서 풀어내는 롱폼은 아직 자동화에 한계가 있으니 너무 혹하지 말라고 짚었고, 토큰 후불제 방식이라 함부로 많이 쓰면 요금 폭탄을 맞을 수 있다고 주의를 당부했습니다.</p>
+        <span class="insight-tag tag-info">자동화한계</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>라옴조교 강성개미</h3><p>클로드에서 프롬프트를 쓰고 힉스필드에서 영상을 만드는 방법을 영상 링크로 소개하며 Grok을 쓰지 않아도 좀 더 편하게 만들 수 있는 방법이라고 안내했고, 이어서 브루에 Seedance·Kling·Veo 모델이 곧 들어온다는 소식과 브루 개발자 유튜브 채널을 함께 공유하며 업데이트 소식을 챙겨보라고 권했습니다.</p>
+        <span class="insight-tag tag-tool">영상생성툴</span>
+      </div></div>
     </div>
 
     <div class="section">
       <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
       <div class="timeline">
         <div class="tl-item"><div class="tl-time">오전 1:59~7:56</div><div class="tl-text">딩초코송이가 강성개미에게 좋은 정보를 알려줘서 고맙다고 인사했고, 숑숑1이 부르 화면에 칸막이처럼 생긴 선이 왜 나타나는지 묻자 한밤중과 라옴이 편집 가이드라인 버튼을 해제하는 방법을 짚어주며 새벽 시간에 빠르게 해결됐습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 8:25~9:44</div><div class="tl-text">크리스탈엠이 축하 인사를 남겼고, 꼬뭉꼬뭉이 이지캡컷과 넘버링 매칭이 안 된다는 문의를, 꿀꿀디가 멀티이미지 생성기로 100장을 생성했는데 절반 가까이 다운로드가 실패한다는 문의를 잇달아 남겼습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 9:44~10:22</div><div class="tl-text">세오리가 야담 목소리 반자동화 중 자동 클립 나누기 여부를 마이폰1에게 물었고, 마이폰1은 정해진 대본 프롬프트를 쓰면 상관없다고 설명하며 자신은 클립 나누기를 하지 않는다고 답했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 8:25~9:49</div><div class="tl-text">크리스탈엠이 축하 인사를 남겼고, 꼬뭉꼬뭉이 이지캡컷과 넘버링 매칭이 안 된다는 문의를, 꿀꿀디가 멀티이미지 생성기로 100장을 생성했는데 절반 가까이 다운로드가 실패한다는 문의를 잇달아 남겼으며, 세오리와 마이폰1 사이에 야담 목소리 반자동화 클립나누기 논의가 시작됐습니다.</div></div>
         <div class="tl-item"><div class="tl-time">오전 9:59~10:28</div><div class="tl-text">로드매니저가 꿀꿀디의 스크린샷을 확인한 뒤 구글 요청 제한 때문일 가능성이 크다며 이지멀티플로우 사용을 대안으로 제시했고, 계정 관련 걱정을 안심시키며 TTS 크레딧 절약 팁과 클로드 코드로 오류를 스스로 해결하는 법을 소개했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오전 10:49~10:54</div><div class="tl-text">로드매니저가 숏츠 넘버링 파일명 규칙(언더바 매칭)을 안내하며 숏츠는 수동 처리를 권했고, 후파는 이미지 그림체를 GPT로 바꾼 뒤 조회수가 안 나오는 것 같다는 우려를 전했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 12:20~3:58</div><div class="tl-text">세오리가 그림체는 조회수와 상관없을 것 같다는 의견과 함께 최근 노출이 저조하다는 고민을 전했고, 이후가 마이폰1에게 야담 인트로 영상을 그록으로 만들었는지 묻자 당근조아가 flow로 만든다고 들었다며 답했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 5:31~6:31</div><div class="tl-text">아라라가 구독자 10만 명이 넘는 채널을 공유하며 영상 재활용 사례와 유튜브 허위콘텐츠 기준에 대한 아쉬움을 나눴고, 월천자스민이 노래 인트로 제작 방식을 묻자 아라라가 수노로 만든 것 같다고 답하며 하루 대화를 마무리했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 10:49~오후 12:38</div><div class="tl-text">로드매니저가 꼬뭉꼬뭉에게 숏츠 넘버링 파일명 규칙(언더바 매칭)을 안내하며 숏츠는 수동 처리를 권했고, 후파는 이미지 그림체를 GPT로 바꾼 뒤 조회수가 안 나오는 것 같다는 우려를 전했으며 세오리도 그림체는 상관없을 것 같다는 의견과 함께 최근 노출 저조 고민을 나눴습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 3:58~6:31</div><div class="tl-text">당근조아가 야담 인트로는 그록 대신 flow로 만든다고 답했고, 아라라가 구독자 10만 명이 넘는 채널을 공유하며 영상 재활용 사례와 유튜브 허위콘텐츠 기준에 대한 아쉬움을 나눴으며, 월천자스민의 노래 인트로 질문에 수노로 만든 것 같다고 답했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 9:24~9:52</div><div class="tl-text">욘딩이 재신청 3일 만에 채널정지가 풀린 성공 사례를 공유하자 여러 멤버가 축하 인사를 남겼고, 강성개미가 클로드 코워크 활용 영상을 소개하며 자동화 도구의 한계와 토큰 요금 폭탄 주의사항을 안내했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 9:59~11:29</div><div class="tl-text">강성개미가 클로드+힉스필드 영상 제작법과 브루의 Seedance·Kling·Veo 통합 소식, 브루 개발자 채널을 잇달아 공유했고, 아가타가 마이폰1에게 인트로 인형극 영상 제작 방식을 두 차례 물으며 하루 대화가 마무리됐습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -2268,6 +2289,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">💽 하드 마이그레이션</div><div class="glossary-def">하드디스크 전체를 통째로 복사해 컴퓨터를 옮기는 방법. 유튜브는 프로필이 동일하면 인증 없이 그대로 쓰이지만, 카카오톡 같은 실행파일 프로그램은 하드웨어 정보를 확인해 기기 변경을 감지하고 새 기기 인증을 요구한다고 확인되었습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">📮 항소</div><div class="glossary-def">제재를 받은 직후 일정 기간 내에 이의를 제기하는 절차. 90일 경과 후 가능한 재신청과는 다른 절차입니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🚫 허위</div><div class="glossary-def">유튜브가 스팸성·기만적 콘텐츠 등으로 판단해 채널의 수익창출을 정지시키는 제재. 90일이 지나야 재신청이 가능합니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🎬 힉스필드</div><div class="glossary-def">클로드에서 만든 프롬프트를 입력해 영상을 생성하는 AI 영상 제작 플랫폼. Grok을 쓰지 않아도 좀 더 편하게 영상을 만들 수 있는 대안으로 소개되었습니다.</div></div>
     <!-- ═══ 용어사전 끝 ═══ -->
   </div>
   <div class="empty-hint" id="glossaryEmpty">아직 등록된 용어가 없어요. 대화에서 용어가 나오면 자동으로 채워집니다.</div>
