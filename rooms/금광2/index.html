@@ -240,14 +240,45 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/25 (토)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 7 · 인사이트 2</div>
+    <div class="day-accordion-summary">전체 메시지 55 · 주요 Q&amp;A 1 · 인사이트 4</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">7</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">0</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">2</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">55</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">1</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">4</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">김@영(딩초코송이)</div>
+          <div class="mvp-desc">"[금광롱폼 2기] 성과인증"이라며 채널 세 개를 운영해 980만 원의 수익을 인증했고, 아쉽게 1000만 원에는 못 미쳤다며 아쉬움을 내비치면서도 치킨을 받으러 지나간다는 인사를 남겼습니다. 오후 내내 이어진 방 전체의 축하 릴레이에 마지막까지 감사 인사로 화답했습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">이@수(월천자스민)</div>
+          <div class="mvp-desc">저녁 8시 반경 "[금광롱폼2기] 6월수익인증"으로 자신의 첫 유튜브 월급인 180만 원을 인증했고, 이어 "미약한 수익 인증"이라며 겸손하게 한 번 더 성과를 공유해 여러 멤버의 축하를 받았습니다. 앞서 딩초코송이의 성과에도 "채널 3개라니 부지런하다"며 먼저 축하를 건넸습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">라옴조교 강성개미 <span class="mvp-role">조교</span></div>
+          <div class="mvp-desc">새벽 1시 23분에 브루(Vrew) 업데이트 소식이 이 방에 올라올 때마다 알림을 켜두면 놓치지 않고 확인할 수 있다고 안내해, 김@영(버니)을 비롯한 여러 멤버로부터 아침까지 이어지는 감사 인사를 받았습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">이전에 허위 판정을 받은 채널이 살아날 기미가 안 보이는데, 애드센스를 버리기는 아까운 경우 달리 살릴 방법이 없을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">김@아(아가타)</span></div>
+          <p>재신청 버튼이 뜬 상태라면 그대로 두고, 새로 채널을 만들어 조회수를 쌓은 뒤 등록하면 되지 않겠냐고 제안했습니다.</p>
+        </div></div>
+      </div>
     </div>
 
     <div class="section">
@@ -257,9 +288,29 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <span class="insight-tag tag-info">브루업데이트</span>
       </div></div>
       <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
-        <h3>민@정(크리스탈엠)</h3><p>조회수가 잘 나온 영상 2개만 남기고 나머지를 지웠는데도 재신청한 지 3일째 중복 콘텐츠로 반려됐다며, 이의 신청(항소) 영상을 준비 중이라고 경험을 공유했습니다.</p>
+        <h3>민@정(크리스탈엠)</h3><p>조회수가 잘 나온 영상 2개만 남기고 나머지를 지웠는데도(3개 남겼다가 하루 지나고 가장 오래된 것 지움) 재신청한 지 3일째 중복 콘텐츠로 반려됐다며, 이의 신청(항소) 영상을 준비 중이라고 경험을 공유했습니다.</p>
         <span class="insight-tag tag-info">중복컨텐츠</span>
       </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>김@경(당근조아)</h3><p>이상하게 5~6월에 재신청한 사람들이 유독 잘 안 풀리는 것 같다는 관찰을 전했고, 유튜브 스튜디오 고객센터 채팅으로 문의했더니 검토가 오래 걸릴 수 있으니 기다려보라는 답만 들었다고 공유했습니다.</p>
+        <span class="insight-tag tag-info">재신청지연</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>김@현(전지적마눌시점)</h3><p>신청한 지 한 달이 다 돼가도록 채널이 안 살아나고 있다며, 직촬 영상을 다 활용했는데도 안 풀리는 걸 보면 관련채널로 함께 묶인 게 있어서 더 안 풀리는 게 아닐까 싶다는 추측을 남겼습니다.</p>
+        <span class="insight-tag tag-info">관련채널</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 1:23~7:56</div><div class="tl-text">새벽에 버니가 감사 인사를 남기자 강성개미가 브루 업데이트 소식이 뜰 때마다 알림을 켜두라고 안내했고, 아침에 벚꽃나비가 강성개미의 그간의 정보 공유에 거듭 감사를 전했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 8:22~10:02</div><div class="tl-text">크리스탈엠이 조회수 높은 영상만 남겼는데도 중복 콘텐츠로 반려돼 항소를 준비 중이라고 전했고, 레지나가 개미님의 세심한 정보 공유에 감사 인사를, 백만장자가 마이폰1에게 GPT 시놉시스 결과물 수준을 문의했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 5:14~5:26</div><div class="tl-text">나츠가 허위 채널이 살아날 기미가 없어 애드센스를 포기하기 아깝다는 고민을 전하자 아가타가 새 채널을 만들어 조회수를 쌓는 대안을 제시했고, 거베라와 전지적마눌시점도 각자 재신청이 안 풀리는 비슷한 사정을 나눴습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 6:12~6:22</div><div class="tl-text">당근조아가 5~6월 신청자들이 유독 안 풀리는 경향과 유튜브 고객센터의 "검토 지연" 답변을 공유했고, 전지적마눌시점도 6월 신청 후 관련채널 영향을 의심하며 답답함을 토로했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 7:04~7:50</div><div class="tl-text">딩초코송이가 채널 3개로 980만 원 성과인증을 올리며 치킨을 받으러 왔다고 인사하자 망곰이·바다가좋아·민트부엉·월천자스민·별빛클로버·릴리온 등 수십 명이 잇달아 축하를 남겼고, 딩초코송이는 다들 축하해줘서 감사하다는 인사로 화답했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 8:34~8:40</div><div class="tl-text">월천자스민이 첫 유튜브 월급 180만 원 수익인증에 이어 소소한 인증이라며 한 번 더 성과를 공유했고, 바다가좋아·릴리온이 축하를 건넨 데 이어 권찌도 소소한 인증을 남기며 하루 대화가 마무리됐습니다.</div></div>
+      </div>
     </div>
   </div></div>
 </div>
