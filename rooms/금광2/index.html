@@ -240,13 +240,13 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <span class="day-accordion-date">7/25 (토)</span>
       <span class="day-accordion-badge">오늘</span>
     </div>
-    <div class="day-accordion-summary">전체 메시지 55 · 주요 Q&amp;A 1 · 인사이트 4</div>
+    <div class="day-accordion-summary">전체 메시지 205 · 주요 Q&amp;A 2 · 인사이트 6</div>
   </button>
   <div class="day-accordion-body"><div class="day-accordion-content">
     <div class="stats-bar">
-      <div class="stat-pill"><span class="num">55</span><span class="label">전체 메시지</span></div>
-      <div class="stat-pill"><span class="num">1</span><span class="label">주요 Q&amp;A</span></div>
-      <div class="stat-pill"><span class="num">4</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">205</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">2</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">6</span><span class="label">인사이트</span></div>
       <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
     </div>
 
@@ -255,15 +255,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <div class="mvp-grid">
         <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
           <div class="mvp-name">김@영(딩초코송이)</div>
-          <div class="mvp-desc">"[금광롱폼 2기] 성과인증"이라며 채널 세 개를 운영해 980만 원의 수익을 인증했고, 아쉽게 1000만 원에는 못 미쳤다며 아쉬움을 내비치면서도 치킨을 받으러 지나간다는 인사를 남겼습니다. 오후 내내 이어진 방 전체의 축하 릴레이에 마지막까지 감사 인사로 화답했습니다.</div>
+          <div class="mvp-desc">저녁 7시경 "[금광롱폼 2기] 성과인증합니다"라며 운영 중인 채널 세 곳에서 980만 원의 수익을 인증해 방 전체의 축하 릴레이를 이끌어냈습니다. 밤에는 라옴조교 시지지와 늦게까지 대화를 나누며 쇼츠 학습 방향에 대한 고민도 함께 나눴습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
-          <div class="mvp-name">이@수(월천자스민)</div>
-          <div class="mvp-desc">저녁 8시 반경 "[금광롱폼2기] 6월수익인증"으로 자신의 첫 유튜브 월급인 180만 원을 인증했고, 이어 "미약한 수익 인증"이라며 겸손하게 한 번 더 성과를 공유해 여러 멤버의 축하를 받았습니다. 앞서 딩초코송이의 성과에도 "채널 3개라니 부지런하다"며 먼저 축하를 건넸습니다.</div>
+          <div class="mvp-name">임@진(후파) <span class="mvp-role">최고관리자</span></div>
+          <div class="mvp-desc">브루(Vrew)에서 자동으로 줄바꿈을 처리해주는 자체 제작 도구 '브루자동줄바꿈.zip'을 공유했고, 브루노마드의 요청에 그록(Grok) 활용을 돕는 '그록그록' 파일도 나눠줬습니다. 본인의 6월 첫 유튜브 수익 30만 원도 인증하며 시지지와 늦은 밤까지 쇼츠 공부에 대한 대화를 이어갔습니다.</div>
         </div></div>
         <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
-          <div class="mvp-name">라옴조교 강성개미 <span class="mvp-role">조교</span></div>
-          <div class="mvp-desc">새벽 1시 23분에 브루(Vrew) 업데이트 소식이 이 방에 올라올 때마다 알림을 켜두면 놓치지 않고 확인할 수 있다고 안내해, 김@영(버니)을 비롯한 여러 멤버로부터 아침까지 이어지는 감사 인사를 받았습니다.</div>
+          <div class="mvp-name">라옴조교 시지지 <span class="mvp-role">조교</span></div>
+          <div class="mvp-desc">심야 시간대 후파의 첫 수익 인증을 격하게 축하하며 분위기를 띄웠고, 쇼츠는 템플릿·소재·구성을 퍼즐처럼 조합하면 중복도가 낮아져 조회수가 나오는 원리라며 자신의 경험을 바탕으로 노하우를 공유했습니다.</div>
         </div></div>
       </div>
     </div>
@@ -277,6 +277,15 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <div class="qa-body"><div class="qa-answer">
           <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">김@아(아가타)</span></div>
           <p>재신청 버튼이 뜬 상태라면 그대로 두고, 새로 채널을 만들어 조회수를 쌓은 뒤 등록하면 되지 않겠냐고 제안했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">쇼츠는 어떻게 만들어야 조회수가 잘 나오나요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">라옴조교 시지지</span></div>
+          <p>쇼츠는 템플릿·소재·구성 세 요소로 이루어져 있어서, 이를 퍼즐처럼 바꿔 끼워 맞추다 보면 다른 영상과의 중복도가 낮아져 조회수가 나오는 원리인 것 같다고 설명했습니다. 다만 본인도 아직 찐초보라 확신하기는 어렵다고 덧붙였습니다.</p>
         </div></div>
       </div>
     </div>
@@ -299,6 +308,14 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
         <h3>김@현(전지적마눌시점)</h3><p>신청한 지 한 달이 다 돼가도록 채널이 안 살아나고 있다며, 직촬 영상을 다 활용했는데도 안 풀리는 걸 보면 관련채널로 함께 묶인 게 있어서 더 안 풀리는 게 아닐까 싶다는 추측을 남겼습니다.</p>
         <span class="insight-tag tag-info">관련채널</span>
       </div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>임@진(후파)</h3><p>브루(Vrew)에서 자동 클립나누기가 답답해서 직접 만들었다며, 최종 이미지까지 배치한 브루 파일에 글자 수와 행 수만 넣고 돌리면 줄바꿈이 자동으로 처리되는 도구 '브루자동줄바꿈.zip'을 공유했습니다.</p>
+        <span class="insight-tag tag-tool">브루자동화</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🛠️</div><div class="insight-body">
+        <h3>임@진(후파)</h3><p>강@진(브루노마드)이 플로우로 영상을 만들다 그록(Grok)을 함께 쓰니 신세계라며 공유를 요청하자, 그록 활용을 돕는 '그록그록' 파일을 바로 나눠줬습니다.</p>
+        <span class="insight-tag tag-tool">그록그록</span>
+      </div></div>
     </div>
 
     <div class="section">
@@ -306,10 +323,11 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
       <div class="timeline">
         <div class="tl-item"><div class="tl-time">오전 1:23~7:56</div><div class="tl-text">새벽에 버니가 감사 인사를 남기자 강성개미가 브루 업데이트 소식이 뜰 때마다 알림을 켜두라고 안내했고, 아침에 벚꽃나비가 강성개미의 그간의 정보 공유에 거듭 감사를 전했습니다.</div></div>
         <div class="tl-item"><div class="tl-time">오전 8:22~10:02</div><div class="tl-text">크리스탈엠이 조회수 높은 영상만 남겼는데도 중복 콘텐츠로 반려돼 항소를 준비 중이라고 전했고, 레지나가 개미님의 세심한 정보 공유에 감사 인사를, 백만장자가 마이폰1에게 GPT 시놉시스 결과물 수준을 문의했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 5:14~5:26</div><div class="tl-text">나츠가 허위 채널이 살아날 기미가 없어 애드센스를 포기하기 아깝다는 고민을 전하자 아가타가 새 채널을 만들어 조회수를 쌓는 대안을 제시했고, 거베라와 전지적마눌시점도 각자 재신청이 안 풀리는 비슷한 사정을 나눴습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 6:12~6:22</div><div class="tl-text">당근조아가 5~6월 신청자들이 유독 안 풀리는 경향과 유튜브 고객센터의 "검토 지연" 답변을 공유했고, 전지적마눌시점도 6월 신청 후 관련채널 영향을 의심하며 답답함을 토로했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 5:14~6:22</div><div class="tl-text">나츠가 허위 채널이 살아날 기미가 없어 애드센스를 포기하기 아깝다는 고민을 전하자 아가타가 새 채널을 만들어 조회수를 쌓는 대안을 제시했고, 거베라·전지적마눌시점도 재신청이 안 풀리는 비슷한 사정을 나눴으며, 당근조아는 5~6월 신청자들이 유독 안 풀리는 경향과 유튜브 고객센터의 "검토 지연" 답변을 공유했습니다.</div></div>
         <div class="tl-item"><div class="tl-time">오후 7:04~7:50</div><div class="tl-text">딩초코송이가 채널 3개로 980만 원 성과인증을 올리며 치킨을 받으러 왔다고 인사하자 망곰이·바다가좋아·민트부엉·월천자스민·별빛클로버·릴리온 등 수십 명이 잇달아 축하를 남겼고, 딩초코송이는 다들 축하해줘서 감사하다는 인사로 화답했습니다.</div></div>
-        <div class="tl-item"><div class="tl-time">오후 8:34~8:40</div><div class="tl-text">월천자스민이 첫 유튜브 월급 180만 원 수익인증에 이어 소소한 인증이라며 한 번 더 성과를 공유했고, 바다가좋아·릴리온이 축하를 건넨 데 이어 권찌도 소소한 인증을 남기며 하루 대화가 마무리됐습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 8:34~9:21</div><div class="tl-text">월천자스민이 첫 유튜브 월급 180만 원 수익인증에 이어 소소한 인증이라며 한 번 더 성과를 공유했고, 권찌도 인증을 남기며 별빛클로버를 향해 할 수 있다는 응원을 건넸습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 9:47~11:06</div><div class="tl-text">글로우가 조회수 부진 속에서도 치킨을 받으려 수익인증을 남기자 릴리온·에메트·권찌 등이 다시 회복될 거라며 응원했고, 서로 극복 스토리를 함께 만들어가자는 다짐이 이어졌습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오후 11:22~11:59</div><div class="tl-text">시지지와 후파가 밤늦게까지 대화를 이어가며 후파가 브루자동줄바꿈·그록그록 도구를 공유하고 6월 첫수익 30만 원을 인증했으며, 딩초코송이까지 합류해 쇼츠 학습법에 대한 잡담을 나눴습니다.</div></div>
       </div>
     </div>
   </div></div>
@@ -1897,36 +1915,36 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <div class="section-header"><div class="section-icon">📊</div><div class="section-title">누적 질문 랭킹</div></div>
   <ul class="faq-bar-list">
     <!-- ═══ FAQ 랭킹: 정리 때마다 갱신 ═══ -->
-    <li class="faq-bar-item"><div class="faq-bar-label"><span>재신청·재심사 절차</span><span class="cnt">14</span></div>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>재신청·재심사 절차</span><span class="cnt">15</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="100"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>불쾌감 컨텐츠 제재 관련 문의</span><span class="cnt">11</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="79"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="73"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>기존 영상 삭제 개수·방식</span><span class="cnt">7</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="50"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="47"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>허위 재신청 시청시간 부족해도 되는지</span><span class="cnt">5</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="36"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>후파님 프로그램 사용법·다운로드</span><span class="cnt">5</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="36"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="33"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>애드센스 명의·본인인증 문의</span><span class="cnt">4</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="29"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="27"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>재승인 후 수익 지급 여부</span><span class="cnt">3</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="21"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="20"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>쇼츠→롱폼 유도 노하우</span><span class="cnt">3</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="21"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="20"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>IP·기기분리 업로드</span><span class="cnt">3</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="21"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="20"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>이미지 생성 429 오류 대처</span><span class="cnt">3</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="21"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="20"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>새 영상 올리고 신청 여부</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="14"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="13"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>재사용컨텐츠 전환 주의사례</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="14"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="13"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>AI 이미지·그림체 생성 방식 문의</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="14"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="13"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>세컨폰(공용기기) 정지채널 사용 문의</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="14"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="13"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>부르 편집 가이드라인 선 해제 방법</span><span class="cnt">2</span></div>
-    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="14"></div></div></li>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="13"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>애드센스 계정 오염·명의이전 대응법</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="7"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>버튼 활성화 시점</span><span class="cnt">1</span></div>
@@ -2335,6 +2353,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">💻 로컬 AI 모델</div><div class="glossary-def">온라인 AI 서비스를 거치지 않고 개인 컴퓨터에 직접 설치해 구동하는 이미지 생성 모델. Z-Image Turbo, Qwen3-4B 등이 있으며, 그래픽카드가 4060 8GB 이상이면 무료로 무제한 이미지를 생성할 수 있습니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">😐 불쾌감 컨텐츠</div><div class="glossary-def">최근 유튜브가 기존 허위 콘텐츠 제재를 세분화하며 쓰기 시작한 명칭 중 하나로, 시청자들의 부정적 평가가 누적되면 적용되는 것으로 추정되는 제재 유형.</div></div>
     <div class="glossary-card"><div class="glossary-term">✂️ 브루(Vrew)</div><div class="glossary-def">영상 편집·자막 작업에 널리 쓰이는 AI 영상 편집 프로그램. 정기적으로 업데이트 라이브를 열어 새 기능을 소개하며, 최근에는 AI 비디오 모델과 편집 편의 기능이 추가되고 있습니다.</div></div>
+    <div class="glossary-card"><div class="glossary-term">📏 브루자동줄바꿈</div><div class="glossary-def">임@진(후파)이 직접 만든 브루(Vrew) 보조 도구. 최종 이미지까지 배치된 브루 파일에 글자 수·행 수만 넣고 돌리면 줄바꿈이 자동으로 처리되어, 브루의 자동 클립나누기 기능을 대신합니다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🔌 브루커넥터</div><div class="glossary-def">후파님이 공유한 이미지 생성 프로그램(플로우)에서 받은 이미지를 브루로 이어서 불러와 작업할 때 켜는 연동 기능.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎙️ 사연채널</div><div class="glossary-def">실제 사연이나 이야기를 낭독·재구성해 올리는 유형의 유튜브 채널.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎞️ 샤나인코더</div><div class="glossary-def">동영상을 압축·인코딩할 때 쓰는 프로그램. 용량을 줄이면 화질이 저하될 수 있어, AI에게 물어 압축 설정부터 점검해보는 게 권장된다.</div></div>
