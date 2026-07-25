@@ -233,8 +233,92 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
   <button class="day-accordion-header" onclick="toggleDay(this)">
     <div class="day-accordion-left">
       <span class="day-accordion-arrow">▼</span>
-      <span class="day-accordion-date">7/25 (토)</span>
+      <span class="day-accordion-date">7/26 (일)</span>
       <span class="day-accordion-badge">오늘</span>
+    </div>
+    <div class="day-accordion-summary">전체 메시지 69 · 주요 Q&amp;A 2 · 인사이트 3</div>
+  </button>
+  <div class="day-accordion-body"><div class="day-accordion-content">
+    <div class="stats-bar">
+      <div class="stat-pill"><span class="num">69</span><span class="label">전체 메시지</span></div>
+      <div class="stat-pill"><span class="num">2</span><span class="label">주요 Q&amp;A</span></div>
+      <div class="stat-pill"><span class="num">3</span><span class="label">인사이트</span></div>
+      <div class="stat-pill"><span class="num">0</span><span class="label">공지</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🏆</div><div class="section-title">오늘의 MVP</div></div>
+      <div class="mvp-grid">
+        <div class="mvp-card"><div class="mvp-avatar">🥇</div><div>
+          <div class="mvp-name">언덕나무인생(벼랑위에감자)</div>
+          <div class="mvp-desc">새벽 내내 대화를 이끌며 실버사연의 썸네일 클릭율 고민에 노출이 늘면 클릭율이 자연히 준다는 경험을 나눠 지켜보자고 조언했고, 감자 관련 드립을 주고받으며 늦은 밤 분위기를 밝게 이끌었습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥈</div><div>
+          <div class="mvp-name">실버사연(여기아침)</div>
+          <div class="mvp-desc">전전 영상의 노출은 오르는데 클릭율이 4.7%까지 떨어지는 고민을 나누고, 오히려 공들이지 않은 영상이 7% 클릭율로 잘 나온 아이러니를 전하며 유튜브 알고리즘의 변덕스러움에 대한 소회를 남겼습니다.</div>
+        </div></div>
+        <div class="mvp-card"><div class="mvp-avatar">🥉</div><div>
+          <div class="mvp-name">바다ᆢ</div>
+          <div class="mvp-desc">틱톡 리허설을 마친 소감을 스스럼없이 나누고, 새벽에는 강의 피드백을 받아 PPT 자료를 처음부터 다시 만들고 있다는 근황을 전하며 2주 남은 강의 준비 부담을 방과 함께 나눴습니다.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💬</div><div class="section-title">주요 Q&amp;A</div></div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">틱톡 리허설 어땠어요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">바다ᆢ</span></div>
+          <p>쓰레기라 망했다며 자책 섞인 소감을 전했고, 톡톡레몬과 벼랑위에감자는 처음치고 잘했다며 재정비해서 더 멋지게 하면 된다고 격려했습니다.</p>
+        </div></div>
+      </div>
+      <div class="qa-card" onclick="toggleQa(this)">
+        <div class="qa-header"><div class="qa-q-icon">Q</div>
+          <div class="qa-question">노출은 우상향 중인데 썸네일 클릭율이 점점 떨어지고 있어요. 썸네일을 바꾸는 게 나을까요?</div>
+          <span class="qa-toggle">▼</span></div>
+        <div class="qa-body"><div class="qa-answer">
+          <div class="qa-answer-header"><span class="qa-answer-badge">답변</span><span class="qa-answer-name">언덕나무인생(벼랑위에감자) · 야담아지트(톡톡레몬)</span></div>
+          <p>원래 노출이 늘면 클릭율도 함께 줄어드는 경향이 있다며, 노출이 우상향 중이면 썸네일을 바꾸지 말고 그냥 두는 게 낫겠다고 답했습니다.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">💡</div><div class="section-title">인사이트 &amp; 팁</div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>언덕나무인생(벼랑위에감자)</h3><p>노출이 늘면 클릭율이 자연히 떨어지는 경향이 있다며, 클릭율도 초반엔 낮았다가 다시 오르는 등 기복이 있으니 조급해하지 말고 하루이틀 지켜보는 게 낫다는 경험을 공유했습니다.</p>
+        <span class="insight-tag tag-tip">클릭율패턴</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">🔧</div><div class="insight-body">
+        <h3>실버사연(여기아침)</h3><p>공들이지 않고 대충("발로") 만든 영상의 클릭율이 오히려 7%로 잘 나온 경험을 전하며, 유튜브 알고리즘이 갈대처럼 변덕스럽다는 소회를 남겼습니다.</p>
+        <span class="insight-tag tag-info">클릭율</span>
+      </div></div>
+      <div class="insight-card"><div class="insight-emoji">💡</div><div class="insight-body">
+        <h3>바다ᆢ</h3><p>강의 피드백을 받고 나서 PPT 자료가 정말 중요하다는 걸 다시 깨달았다며, 자료를 잘 만들어두면 설명할 분량도 줄어든다는 강의 준비 노하우를 공유했습니다.</p>
+        <span class="insight-tag tag-tip">강의준비</span>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><div class="section-icon">🕒</div><div class="section-title">타임라인</div></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">오전 12:23~12:44</div><div class="tl-text">톡톡레몬이 후파가 만든 브루 자동 줄바꿈 도구에 감사 인사를 전했고, 벼랑위에감자가 물은 틱톡 리허설 후기에 바다ᆢ가 망했다며 자책하자 톡톡레몬과 벼랑위에감자가 처음치고 잘했다며 격려했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:15~1:23</div><div class="tl-text">실버사연이 썸네일 클릭율 하락 고민을 나누자 벼랑위에감자가 노출이 늘면 클릭율이 자연히 준다며 지켜보자고 조언했고, 실버사연은 4.7%까지 떨어진 수치를 공유하며 계속 고민했습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 1:32~1:58</div><div class="tl-text">벼랑위에감자와 실버사연이 클릭율의 변덕스러움과 대충 만든 영상이 오히려 잘 나오는 아이러니를 이야기하며, 주말 업무로 영상 작업을 못 했다는 근황과 감자 드립을 주고받았습니다.</div></div>
+        <div class="tl-item"><div class="tl-time">오전 2:14~2:31</div><div class="tl-text">바다ᆢ가 강의 피드백을 받아 PPT 자료를 처음부터 다시 만들고 있다는 근황을 전했고, 실버사연과 2주 남은 강의 준비 부담을 이야기하다 문하쮸의 응원 인사로 대화가 마무리됐습니다.</div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+<!-- ═══ 날짜 블록 끝 ═══ -->
+<div class="day-accordion">
+  <button class="day-accordion-header" onclick="toggleDay(this)">
+    <div class="day-accordion-left">
+      <span class="day-accordion-arrow">▼</span>
+      <span class="day-accordion-date">7/25 (토)</span>
     </div>
     <div class="day-accordion-summary">전체 메시지 411 · 주요 Q&amp;A 10 · 인사이트 12</div>
   </button>
@@ -2397,6 +2481,8 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="20"></div></div></li>
     <li class="faq-bar-item"><div class="faq-bar-label"><span>브루 자동 줄바꿈 도구, 맥에서도 쓸 수 있는지</span><span class="cnt">1</span></div>
     <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="20"></div></div></li>
+    <li class="faq-bar-item"><div class="faq-bar-label"><span>노출 늘 때 클릭율 하락, 썸네일 교체 여부</span><span class="cnt">1</span></div>
+    <div class="faq-bar-track"><div class="faq-bar-fill" data-pct="20"></div></div></li>
     <!-- ═══ FAQ 랭킹 끝 ═══ -->
   </ul>
   <div class="section-header"><div class="section-icon">💬</div><div class="section-title">베스트 답변</div></div>
@@ -2963,6 +3049,7 @@ footer { text-align: center; color: var(--sub); font-size: 12.5px; margin-top: 4
     <div class="glossary-card"><div class="glossary-term">🏚️ 초가집</div><div class="glossary-def">롱폼 위주로 운영하는 채널을 가리키는 방 내 별명.</div></div>
     <div class="glossary-card"><div class="glossary-term">📊 콘텐츠 퀄리티 분석</div><div class="glossary-def">틱톡 크리에이터 리워드 프로그램에서 영상별로 콘텐츠 퀄리티·상업적 가치·동영상 참여도를 평가하는 기능. 모바일 스튜디오 앱의 게시물당 동영상 분석 → 리워드 → 리워드 분석에서 확인할 수 있으며, 퀄리티가 '높음' 등급이어야 리워드 추가(보너스)가 붙는다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🛒 쿠팡파트너스</div><div class="glossary-def">쿠팡 상품 링크를 영상 설명란 등에 걸어두고 클릭·구매가 발생하면 상품 금액의 일부(약 6.5%)를 수익으로 받는 제휴 마케팅 프로그램.</div></div>
+    <div class="glossary-card"><div class="glossary-term">🖱️ 클릭율</div><div class="glossary-def">썸네일 노출 대비 실제 클릭으로 이어지는 비율. 노출이 늘면 자연히 클릭율이 떨어지는 경향이 있어, 조회수가 우상향 중이라면 썸네일을 바꾸지 않고 지켜보는 것이 권장된다.</div></div>
     <div class="glossary-card"><div class="glossary-term">🎻 포레스텔라</div><div class="glossary-def">야담곳간(릴리온)이 애정하는 팝페라 그룹. "김연아 남편"으로 알려진 멤버가 있어 이를 계기로 팬이 됐다고.</div></div>
     <div class="glossary-card"><div class="glossary-term">🙈 하관</div><div class="glossary-def">신원 노출을 피하려고 얼굴 전체가 아닌 입·턱 등 하관 부위만 촬영하는 직촬 방식.</div></div>
     <div class="glossary-card"><div class="glossary-term">🙌 하이프</div><div class="glossary-def">유튜브 시청자가 채널에 보낼 수 있는 응원 기능. 하이프를 받으려면 구독자 수 조건이 있지만, 보내는 쪽에는 조건이 없다.</div></div>
