@@ -19,6 +19,9 @@
  *    - 02:50/08:50/14:50/20:50 → 새 대화가 있으면 자동 벽타기
  *    - 09:00/15:00/21:00 → 그 방에 오늘 대화가 있으면 그 방 전용 링크를 그 방에만 공지
  *
+ *  ◆ WALLCLIMB_ENABLED = false 이면 위 벽타기 관련 기능(수동/자동 업로드,
+ *    정시 링크 공지, 전날 자동 마감)이 모든 방에서 전부 중단된다 (전체 스위치).
+ *
  *  ◆ 저장: 파일 저장을 시도하고, 실패하면 메모리로 자동 대체.
  *    (메모리 모드에서는 앱을 재시작하면 자동응답/부관리자/오늘 기록이 사라지므로
  *     가능하면 메신저봇R에 "모든 파일 접근" 권한을 주는 것을 권장)
@@ -46,6 +49,9 @@ var PAUSED_ROOMS = [
 var PREFIX = "/";              // 명령어 접두사
 var SUPER_ADMIN = ["후파","임병진"];      // 대화명에 이 문자열이 포함되면 최고 관리자
 var WALL_COOLDOWN_HOURS = 6;   // /벽타기 방별 쿨다운 (시간)
+
+// 벽타기 전체 스위치 — false면 모든 방에서 /벽타기·/업로드·자동 벽타기·정시 링크 공지가 전부 중단됨.
+var WALLCLIMB_ENABLED = false;
 
 // 자동 스케줄 (24시간 기준 "HH:MM")
 var AUTO_UPLOAD_TIMES = ["02:50", "08:50", "14:50", "20:50"];  // 6시간마다 자동 벽타기
@@ -87,7 +93,7 @@ function pickBaseDir() {
     }
     return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0716-1";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0716-2";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
@@ -155,6 +161,7 @@ function diagText(room, sender) {
         "보낸 사람: [" + sender + "]\n" +
         "이 방 활성화됨: " + (ROOMS.indexOf(room) !== -1 ? "예 ✅" : "아니오 ❌ (코드의 ROOMS 목록에 추가하세요)") + "\n" +
         "일시정지 여부: " + (PAUSED_ROOMS.indexOf(room) !== -1 ? "예 ⏸️ (코드의 PAUSED_ROOMS에서 해제 필요)" : "아니오") + "\n" +
+        "벽타기 전체 스위치: " + (WALLCLIMB_ENABLED ? "켜짐 ✅" : "꺼짐 ⏸️ (모든 방 공통)") + "\n" +
         saved + "\n저장 위치: " + BASE_DIR + "\n" +
         "마지막 업로드 시도: " + (LAST_UP
             ? LAST_UP.time + " → " + (LAST_UP.ok ? "성공 ✅" : "실패 ❌ HTTP " + LAST_UP.code + " " + LAST_UP.note)
@@ -215,8 +222,10 @@ function statusText(room) {
         "방: " + room + "\n" +
         "자동응답: " + n + "개\n" +
         "가동 시간: " + (h > 0 ? h + "시간 " : "") + m + "분\n" +
-        "자동 벽타기: " + AUTO_UPLOAD_TIMES.join(", ") + "\n" +
-        "링크 공지: " + ANNOUNCE_TIMES.join(", ");
+        "벽타기: " + (WALLCLIMB_ENABLED ? "사용 중 ✅" : "전체 중지 ⏸️") + "\n" +
+        (WALLCLIMB_ENABLED
+            ? "자동 벽타기: " + AUTO_UPLOAD_TIMES.join(", ") + "\n링크 공지: " + ANNOUNCE_TIMES.join(", ")
+            : "");
 }
 
 // ─── 부관리자 (방별) ───
@@ -300,6 +309,7 @@ function setNotice(room, sender, arg) {
 // ─── 벽타기: 오늘 대화 → GitHub → Actions가 요약·게시 ───
 
 function wallClimb(room) {
+    if (!WALLCLIMB_ENABLED) return "🧗 벽타기 기능이 지금은 꺼져 있어요.";
     if (!GITHUB.TOKEN || !GITHUB.OWNER || !GITHUB.REPO) {
         return "🧗 벽타기가 아직 설정되지 않았어요.\n(스크립트의 GITHUB 설정을 채워주세요)";
     }
@@ -363,6 +373,7 @@ java.lang.System.setProperty("dantalk.timer.gen", TIMER_GEN);
  * 없으면 전체 방 처리 (1분 타이머가 제시간에 도는 경우).
  */
 function schedulerTick(onlyRoom) {
+    if (!WALLCLIMB_ENABLED) return;   // 전체 스위치가 꺼져 있으면 자동 업로드·정시 공지 모두 중단
     var nowMin = minutesOfDay();
     var t = today();
     var targets = onlyRoom ? [onlyRoom] : ROOMS;
@@ -418,6 +429,7 @@ function announcePage(room) {
 
 /** /업로드 (관리자) — 쿨다운 무시하고 즉시 업로드 + 상세 결과 보고 (문제 진단용) */
 function forceUpload(room, sender) {
+    if (!WALLCLIMB_ENABLED) return "🧗 벽타기 기능이 지금은 꺼져 있어요.";
     if (!isAdmin(room, sender)) return "⛔ 관리자만 사용할 수 있어요.";
     if (!GITHUB.TOKEN) return "❌ GITHUB.TOKEN이 비어 있어요 (로더의 TOKEN 확인 필요)";
     var log = readTodayLog(room);
@@ -631,6 +643,7 @@ function autoUploadYesterday(room) {
     var prev = st.lastDate;
     st.lastDate = t;
     saveJson(statePath(room), st);          // 먼저 저장해서 중복 업로드 방지
+    if (!WALLCLIMB_ENABLED) return;         // 벽타기 전체 스위치가 꺼져 있으면 통과
     if (!prev || !GITHUB.TOKEN) return;     // 첫 실행이거나 토큰 없으면 통과
     var log = readLogFor(room, prev);
     if (!log) return;                        // 그날 기록이 없으면 통과
