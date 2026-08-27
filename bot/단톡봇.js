@@ -93,7 +93,7 @@ function pickBaseDir() {
     }
     return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0716-3";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0716-4";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
@@ -737,3 +737,36 @@ function schedPath(room)  { return DIRS.DATA + "/sched_" + safeName(room) + ".js
 function subsPath(room)   { return DIRS.DATA + "/subs_" + safeName(room) + ".json"; }
 function wallPath(room)   { return DIRS.DATA + "/wall_" + safeName(room) + ".json"; }
 function logPath(room)    { return DIRS.LOG + "/" + safeName(room) + "-" + today() + ".txt"; }
+
+// ═══════════════ 앱 API 연결 (직접 붙여넣기용) ═══════════════
+//
+// 이 파일을 봇 앱에 "직접" 붙여넣었을 때, 메신저봇R 신버전(API2)에서도 동작하도록
+// bot.addListener 를 등록한다. API1(구버전·다크토네이도)은 위 response() 가 그대로 호출된다.
+//
+// ※ 로더(bot/로더.js)를 통해 불러온 경우엔 로더가 이미 등록했으므로 건너뛴다.
+//   (로더는 이 코드를 function (__TOKEN__, __ROOMS__) {...} 로 감싸서 실행한다)
+(function registerApi2Direct() {
+    if (typeof __TOKEN__ !== "undefined") return;   // 로더 경유 → 중복 등록 방지
+    try {
+        var b = null;
+        if (typeof BotManager !== "undefined" && BotManager && BotManager.getCurrentBot) {
+            b = BotManager.getCurrentBot();
+        } else if (typeof bot !== "undefined" && bot) {
+            b = bot;
+        }
+        if (!b || typeof b.addListener !== "function") return;
+
+        var ev = (typeof Event !== "undefined" && Event && Event.MESSAGE) ? Event.MESSAGE : "message";
+        b.addListener(ev, function (msg) {
+            response(
+                String(msg.room),
+                String(msg.content),
+                String(msg.author ? msg.author.name : ""),
+                !!msg.isGroupChat,
+                { reply: function (t) { msg.reply(t); } },
+                msg.image,
+                String(msg.packageName || "")
+            );
+        });
+    } catch (e) {}
+})();
