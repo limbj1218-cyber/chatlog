@@ -93,7 +93,7 @@ function pickBaseDir() {
     }
     return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0716-2";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0716-3";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
@@ -422,9 +422,18 @@ function autoUpload(room, st) {
 function announcePage(room) {
     if (!readTodayLog(room)) return;
     // 링크만 발송 (카톡 미리보기 카드가 제목·설명을 대신함 → 말풍선 하나로 보임)
-    try {
-        Api.replyRoom(room, roomPageUrl(room));
-    } catch (e) {}
+    sendToRoom(room, roomPageUrl(room));
+}
+
+/**
+ * 봇이 먼저 말 걸기 — 앱마다 API가 달라서 되는 것을 순서대로 시도한다.
+ * (메신저봇R 구버전 Api.replyRoom / 신버전 Bot·bot.send / 그 외)
+ */
+function sendToRoom(room, text) {
+    try { if (typeof Api !== "undefined" && Api.replyRoom) { Api.replyRoom(room, text); return true; } } catch (e) {}
+    try { if (typeof bot !== "undefined" && bot && bot.send) { bot.send(room, text); return true; } } catch (e) {}
+    try { if (typeof Bot !== "undefined" && Bot && Bot.send) { Bot.send(room, text); return true; } } catch (e) {}
+    return false;
 }
 
 /** /업로드 (관리자) — 쿨다운 무시하고 즉시 업로드 + 상세 결과 보고 (문제 진단용) */
