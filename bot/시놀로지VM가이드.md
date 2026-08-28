@@ -202,6 +202,42 @@ enable_nativebridge
 3. 자동으로 `houdini9_y.sfs` 를 내려받아 설치합니다 (인터넷 필요)
 4. 완료 후 **재부팅**
 
+### 자주 나는 오류와 해결
+
+**`mount: 'system' not in /proc/mounts`**
+Android 9 는 `/system` 이 루트에 포함된 구조(system-as-root)라 정상입니다.
+먼저 이미 쓰기 가능한지 확인하세요:
+```
+touch /system/rwtest && echo "쓰기 OK" && rm /system/rwtest
+```
+"쓰기 OK" 가 나오면 remount 없이 바로 `enable_nativebridge` 를 실행하면 됩니다.
+`Read-only` 라면 루트를 remount:
+```
+mount -o rw,remount /
+```
+
+**`'houdini9_y.sfs' -> '/system/lib/arm': no such file or directory`**
+복사 대상 폴더가 없어서 나는 오류입니다. 폴더를 만들고 재실행:
+```
+su
+mkdir -p /system/lib/arm /system/lib64/arm64 /system/bin/arm
+chmod 755 /system/lib/arm /system/lib64/arm64 /system/bin/arm
+enable_nativebridge
+```
+
+**`su` 를 쳐도 `#` 로 안 바뀜**
+설정 → **Android-x86 options → Enable root access** 를 켜고 재부팅
+
+### 설치 확인 (재부팅 후)
+
+```
+su
+getprop ro.dalvik.vm.native.bridge     → libhoudini.so
+getprop persist.sys.nativebridge       → 1
+ls /system/lib/arm/ | head             → .so 파일들이 보여야 함
+ls /system/lib64/arm64/ | head         → .so 파일들이 보여야 함
+```
+
 > 다운로드가 실패하면 수동 설치: houdini 파일을 `/data/arm/` 에 넣고 `enable_nativebridge` 재실행
 > 아카이브: https://archive.org/details/androidx86-houdini
 
@@ -312,7 +348,8 @@ wm density                           → Physical density: 160
 | 설치 화면만 반복 | VM 설정에서 **ISO 마운트 해제** 안 함 |
 | UEFI 부팅 실패 / GRUB 안 뜸 | EFI 파티션을 `EF00` 이 아닌 코드로 만든 것. 재설치 필요 |
 | cgdisk 에서 Write 가 안 됨 | 확인 문구에 `y` 가 아니라 **`yes`** 를 전부 입력해야 함 |
-| `enable_nativebridge` 실패 | `/system` 을 쓰기 가능으로 마운트했는지 확인 (4단계 5번) |
+| `enable_nativebridge` 실패 | 8단계의 "자주 나는 오류와 해결" 참고 |
+| 카카오톡이 계속 중단됨 | ARM 변환기 미설치가 대부분. 8단계 확인 명령으로 점검 후 카톡 재설치 |
 | 마우스가 어긋남 | 해상도를 `1024x768` 로 낮춰 부팅 |
 | 극도로 느림 | 정상 (GPU 가속 없음). 코어/메모리 조정하되 NAS 부하 주의 |
 | 네트워크 안 됨 | VM 네트워크를 e1000 으로 변경 |
