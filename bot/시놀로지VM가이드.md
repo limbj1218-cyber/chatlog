@@ -220,10 +220,14 @@ mount -o rw,remount /
 복사 대상 폴더가 없어서 나는 오류입니다. 폴더를 만들고 재실행:
 ```
 su
-mkdir -p /system/lib/arm /system/lib64/arm64 /system/bin/arm
-chmod 755 /system/lib/arm /system/lib64/arm64 /system/bin/arm
+mkdir -p /system/lib/arm /system/lib64/arm64
+chmod 755 /system/lib/arm /system/lib64/arm64
 enable_nativebridge
 ```
+
+> ⚠️ **`/system/bin/arm` 은 만들지 마세요.** 그 자리는 디렉터리가 아니라 실행 파일이 들어갈 곳이라,
+> 폴더를 만들면 `can't execute: is a directory` 오류가 납니다.
+> 실수로 만들었다면 `rm -rf /system/bin/arm` 으로 지우고 `enable_nativebridge` 를 다시 실행하세요.
 
 **`su` 를 쳐도 `#` 로 안 바뀜**
 설정 → **Android-x86 options → Enable root access** 를 켜고 재부팅
@@ -236,6 +240,7 @@ getprop ro.dalvik.vm.native.bridge     → libhoudini.so
 getprop persist.sys.nativebridge       → 1
 ls /system/lib/arm/ | head             → .so 파일들이 보여야 함
 ls /system/lib64/arm64/ | head         → .so 파일들이 보여야 함
+ls -l /system/bin/houdini              → 실행 파일이 있어야 함
 ```
 
 > 다운로드가 실패하면 수동 설치: houdini 파일을 `/data/arm/` 에 넣고 `enable_nativebridge` 재실행
@@ -350,6 +355,7 @@ wm density                           → Physical density: 160
 | cgdisk 에서 Write 가 안 됨 | 확인 문구에 `y` 가 아니라 **`yes`** 를 전부 입력해야 함 |
 | `enable_nativebridge` 실패 | 8단계의 "자주 나는 오류와 해결" 참고 |
 | 카카오톡이 계속 중단됨 | ARM 변환기 미설치가 대부분. 8단계 확인 명령으로 점검 후 카톡 재설치 |
+| `can't execute: is a directory` | `/system/bin/arm` 을 폴더로 만든 것. `rm -rf /system/bin/arm` 후 재실행 |
 | 마우스가 어긋남 | 해상도를 `1024x768` 로 낮춰 부팅 |
 | 극도로 느림 | 정상 (GPU 가속 없음). 코어/메모리 조정하되 NAS 부하 주의 |
 | 네트워크 안 됨 | VM 네트워크를 e1000 으로 변경 |
