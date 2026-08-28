@@ -67,12 +67,60 @@ var GITHUB = {
     PAGE_BASE: "https://limbj1218-cyber.github.io/chatlog/"
 };
 
+// ═══════════════ 앱 호환 계층 ═══════════════
+//
+// 봇 앱마다 제공하는 전역이 다르다 (메신저봇R API1/API2, 다크토네이도 챗봇 등).
+// 예: 메신저봇R API2에는 JavaAdapter·FileStream 이 없다.
+// 그래서 파일 입출력·Base64·타이머를 앱에 의존하지 않는 방식으로 감싼다.
+
+/** 파일 읽기 — FileStream 우선, 없으면 java.io */
+function fileRead(path) {
+    try {
+        if (typeof FileStream !== "undefined" && FileStream && FileStream.read) {
+            var r = FileStream.read(path);
+            if (r !== null && r !== undefined) return String(r);
+        }
+    } catch (e) {}
+    try {
+        var f = new java.io.File(path);
+        if (!f.exists()) return null;
+        var br = new java.io.BufferedReader(
+            new java.io.InputStreamReader(new java.io.FileInputStream(f), "UTF-8"));
+        var sb = new java.lang.StringBuilder(), line;
+        while ((line = br.readLine()) !== null) { sb.append(line); sb.append("\n"); }
+        br.close();
+        return String(sb.toString());
+    } catch (e) {}
+    return null;
+}
+
+/** 파일 쓰기 (append=true면 이어쓰기) — FileStream 우선, 없으면 java.io */
+function fileWrite(path, data, append) {
+    try {
+        if (typeof FileStream !== "undefined" && FileStream) {
+            if (append && FileStream.append) { FileStream.append(path, data); return true; }
+            if (!append && FileStream.write) { FileStream.write(path, data); return true; }
+        }
+    } catch (e) {}
+    try {
+        var f = new java.io.File(path);
+        var parent = f.getParentFile();
+        if (parent && !parent.exists()) parent.mkdirs();
+        var w = new java.io.OutputStreamWriter(
+            new java.io.FileOutputStream(f, !!append), "UTF-8");
+        w.write(data);
+        w.close();
+        return true;
+    } catch (e) {}
+    return false;
+}
+
 /**
  * 저장 폴더 자동 선택 — 쓰기 가능한 곳을 순서대로 시도:
- * ① /sdcard/msgbot (저장 권한 있을 때)
- * ② 앱 전용 외부 폴더 (Android/data/... — 권한 불필요)
- * ③ 앱 내부 저장소 (권한 불필요, 항상 가능)
- * 전부 실패하면 기존처럼 메모리 모드로 동작.
+ * ① 앱 전용 외부 폴더 (Android/data/... — 권한 불필요)
+ * ② 앱 내부 저장소 (권한 불필요, 항상 가능)
+ * ③ /sdcard/dantalkbot (저장 권한이 있는 폰)
+ * 전부 실패하면 메모리 모드로 동작.
  */
 function pickBaseDir() {
     // 실행 중인 봇 앱(메신저봇R, 다크토네이도 챗봇 등 무엇이든)에게 자기 전용 폴더를 물어본다.
@@ -87,13 +135,13 @@ function pickBaseDir() {
     cands.push("/sdcard/dantalkbot");   // ③ 예비 (저장 권한이 있는 폰)
     for (var i = 0; i < cands.length; i++) {
         try {
-            FileStream.write(cands[i] + "/write_test.txt", "ok");
-            if (String(FileStream.read(cands[i] + "/write_test.txt")) === "ok") return cands[i];
+            if (fileWrite(cands[i] + "/write_test.txt", "ok", false) &&
+                String(fileRead(cands[i] + "/write_test.txt")).indexOf("ok") === 0) return cands[i];
         } catch (e) {}
     }
     return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0716-4";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0716-5";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
@@ -152,8 +200,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 function diagText(room, sender) {
     var saved = "파일 저장: ";
     try {
-        FileStream.write(DIRS.DATA + "/write_test.txt", "ok");
-        saved += (String(FileStream.read(DIRS.DATA + "/write_test.txt")) === "ok")
+        fileWrite(DIRS.DATA + "/write_test.txt", "ok", false);
+        saved += (String(fileRead(DIRS.DATA + "/write_test.txt")).indexOf("ok") === 0)
             ? "정상 ✅" : "실패 ❌ (읽기 불일치, 메모리 모드)";
     } catch (e) { saved += "실패 ❌ (" + e + ")"; }
     return "🔍 봇이 보는 정보 (봇버전 " + BOT_VER + ")\n" +
@@ -163,6 +211,7 @@ function diagText(room, sender) {
         "일시정지 여부: " + (PAUSED_ROOMS.indexOf(room) !== -1 ? "예 ⏸️ (코드의 PAUSED_ROOMS에서 해제 필요)" : "아니오") + "\n" +
         "벽타기 전체 스위치: " + (WALLCLIMB_ENABLED ? "켜짐 ✅" : "꺼짐 ⏸️ (모든 방 공통)") + "\n" +
         saved + "\n저장 위치: " + BASE_DIR + "\n" +
+        "타이머: " + TIMER_KIND + "\n" +
         "마지막 업로드 시도: " + (LAST_UP
             ? LAST_UP.time + " → " + (LAST_UP.ok ? "성공 ✅" : "실패 ❌ HTTP " + LAST_UP.code + " " + LAST_UP.note)
             : "(이번 실행에서 아직 없음)");
@@ -350,22 +399,55 @@ function wallClimb(room) {
 // - /업데이트 로 코드를 다시 불러와도 타이머가 중복되지 않게 JVM 프로퍼티로 세대를 관리한다.
 
 var TIMER_GEN = String(new Date().getTime());
-java.lang.System.setProperty("dantalk.timer.gen", TIMER_GEN);
+try { java.lang.System.setProperty("dantalk.timer.gen", TIMER_GEN); } catch (e) {}
+var TIMER_KIND = "없음 (메시지 수신 시에만 처리)";
 
+/** 1분마다 할 일. 새 코드가 로드됐으면 false를 돌려 이 (옛) 타이머를 멈춘다. */
+function schedulerBeat() {
+    try {
+        if (String(java.lang.System.getProperty("dantalk.timer.gen")) !== TIMER_GEN) return false;
+        schedulerTick();
+    } catch (e) {}
+    return true;
+}
+
+// 타이머 등록 — 앱마다 쓸 수 있는 방식이 달라 순서대로 시도한다.
+// (메신저봇R API2에는 JavaAdapter 가 없다. 전부 실패해도 봇은 정상 동작하며,
+//  메시지가 올 때마다 그 방의 밀린 일을 처리한다.)
 (function startScheduler() {
-    var timer = new java.util.Timer("dantalk-scheduler", true);
-    timer.schedule(new JavaAdapter(java.util.TimerTask, {
-        run: function () {
-            try {
-                // 새 코드가 로드됐으면 이 (옛) 타이머는 스스로 멈춤
-                if (String(java.lang.System.getProperty("dantalk.timer.gen")) !== TIMER_GEN) {
-                    this.cancel();
-                    return;
-                }
-                schedulerTick();
-            } catch (e) {}
+    // ① setInterval — 앱이 제공하면 가장 간단
+    try {
+        if (typeof setInterval === "function") {
+            var h = setInterval(function () {
+                if (!schedulerBeat() && typeof clearInterval === "function") clearInterval(h);
+            }, 60000);
+            TIMER_KIND = "setInterval";
+            return;
         }
-    }), 20000, 60000);   // 20초 후 시작, 1분마다
+    } catch (e) {}
+
+    // ② JavaAdapter + java.util.Timer (Rhino 계열)
+    try {
+        if (typeof JavaAdapter !== "undefined") {
+            var timer = new java.util.Timer("dantalk-scheduler", true);
+            timer.schedule(new JavaAdapter(java.util.TimerTask, {
+                run: function () { if (!schedulerBeat()) { try { this.cancel(); } catch (e2) {} } }
+            }), 20000, 60000);
+            TIMER_KIND = "JavaAdapter";
+            return;
+        }
+    } catch (e) {}
+
+    // ③ 스레드 직접 돌리기 (Runnable 은 인터페이스라 JS 함수로 바로 넘길 수 있는 앱이 있다)
+    try {
+        var th = new java.lang.Thread(function () {
+            java.lang.Thread.sleep(20000);
+            while (schedulerBeat()) java.lang.Thread.sleep(60000);
+        });
+        th.setDaemon(true);
+        th.start();
+        TIMER_KIND = "Thread";
+    } catch (e) {}
 })();
 
 /**
@@ -541,9 +623,30 @@ function httpReq(method, urlStr, bodyStr) {
     return { code: code, body: body };
 }
 
+/** UTF-8 Base64 — 앱마다 쓸 수 있는 구현이 달라서 순서대로 시도 */
 function base64utf8(str) {
     var bytes = new java.lang.String(str).getBytes("UTF-8");
-    return String(android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP));
+    try {
+        if (typeof android !== "undefined" && android.util && android.util.Base64) {
+            return String(android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP));
+        }
+    } catch (e) {}
+    try {
+        return String(java.util.Base64.getEncoder().encodeToString(bytes));
+    } catch (e) {}
+    // 최후 수단: 직접 인코딩
+    var TBL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    var out = "", i = 0, n = bytes.length;
+    while (i < n) {
+        var b0 = bytes[i++] & 0xff;
+        var b1 = i < n ? bytes[i++] & 0xff : NaN;
+        var b2 = i < n ? bytes[i++] & 0xff : NaN;
+        out += TBL.charAt(b0 >> 2);
+        out += TBL.charAt(((b0 & 3) << 4) | (isNaN(b1) ? 0 : b1 >> 4));
+        out += isNaN(b1) ? "=" : TBL.charAt(((b1 & 15) << 2) | (isNaN(b2) ? 0 : b2 >> 6));
+        out += isNaN(b2) ? "=" : TBL.charAt(b2 & 63);
+    }
+    return out;
 }
 
 // ─── 통계 / 날씨 ───
@@ -575,18 +678,36 @@ function statsText(room) {
         "수다왕 TOP3" + (top || "\n(없음)");
 }
 
+/** 웹페이지 텍스트 가져오기 — jsoup 우선, 없으면 순수 자바 HTTP */
+function httpGetText(url, userAgent) {
+    try {
+        if (typeof org !== "undefined" && org.jsoup) {
+            return String(org.jsoup.Jsoup.connect(url)
+                .ignoreContentType(true)
+                .userAgent(userAgent || "dantalk-bot")
+                .timeout(10000)
+                .execute().body());
+        }
+    } catch (e) {}
+    var conn = new java.net.URL(url).openConnection();
+    conn.setRequestProperty("User-Agent", userAgent || "dantalk-bot");
+    conn.setConnectTimeout(10000);
+    conn.setReadTimeout(15000);
+    var br = new java.io.BufferedReader(
+        new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
+    var sb = new java.lang.StringBuilder(), line;
+    while ((line = br.readLine()) !== null) { sb.append(line); sb.append("\n"); }
+    br.close();
+    conn.disconnect();
+    return String(sb.toString());
+}
+
 /** wttr.in 무료 날씨 — API 키 불필요 */
 function weatherText(city) {
     try {
         var q = java.net.URLEncoder.encode(city, "UTF-8");
         var fmt = java.net.URLEncoder.encode("%c %t (체감 %f), 습도 %h, 바람 %w", "UTF-8");
-        var res = org.jsoup.Jsoup
-            .connect("https://wttr.in/" + q + "?format=" + fmt + "&lang=ko&m")
-            .ignoreContentType(true)
-            .userAgent("curl/8.0")
-            .timeout(10000)
-            .execute().body();
-        res = String(res).trim();
+        var res = httpGetText("https://wttr.in/" + q + "?format=" + fmt + "&lang=ko&m", "curl/8.0").trim();
         if (res.indexOf("Unknown location") !== -1) {
             return "🤔 '" + city + "' 지역을 찾지 못했어요.";
         }
@@ -612,7 +733,7 @@ function logMessage(room, sender, msg) {
     buf.lines.push(line);
     if (buf.lines.length > 5000) buf.lines.shift();
     // 파일 기록 (되면 좋고, 안 되면 메모리로 충분)
-    try { FileStream.append(logPath(room), line + "\n"); } catch (e) {}
+    try { fileWrite(logPath(room), line + "\n", true); } catch (e) {}
 }
 
 /**
@@ -631,7 +752,7 @@ function scrubSecrets(s) {
 /** 특정 날짜 로그: 파일이 있으면 파일, 없으면 메모리 (반환 전 토큰 마스킹) */
 function readLogFor(room, date) {
     var raw = null;
-    try { raw = FileStream.read(DIRS.LOG + "/" + safeName(room) + "-" + date + ".txt"); } catch (e) {}
+    try { raw = fileRead(DIRS.LOG + "/" + safeName(room) + "-" + date + ".txt"); } catch (e) {}
     if (raw !== null && raw !== undefined && String(raw).trim() !== "") return scrubSecrets(raw);
     var buf = MEMLOG[room];
     if (buf && buf.date === date && buf.lines.length > 0) return scrubSecrets(buf.lines.join("\n") + "\n");
@@ -689,7 +810,7 @@ var MEM = __DANTALK_MEM__;
 
 function loadJson(path, def) {
     try {
-        var raw = FileStream.read(path);
+        var raw = fileRead(path);
         if (raw !== null && raw !== undefined && String(raw).trim() !== "") {
             return JSON.parse(String(raw));
         }
@@ -699,7 +820,7 @@ function loadJson(path, def) {
 
 function saveJson(path, obj) {
     MEM[path] = obj;   // 메모리에 항상 저장
-    try { FileStream.write(path, JSON.stringify(obj)); } catch (e) {}
+    try { fileWrite(path, JSON.stringify(obj), false); } catch (e) {}
 }
 
 // ═══════════════ 유틸 ═══════════════
