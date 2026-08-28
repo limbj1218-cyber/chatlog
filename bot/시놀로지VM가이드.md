@@ -144,7 +144,19 @@ https://sourceforge.net/projects/blissos-dev/files/
 2. 파일시스템 **`ext4`** → `Yes` (포맷)
 3. `Do you want to install EFI GRUB2?` → **`Yes`**
 4. `Do you want to install /system directory as read-write?` → **⚠️ 반드시 `Yes`**
-   (`No` 로 하면 8단계 ARM 변환기 설치가 불가능합니다)
+
+> 🔴 **이 질문이 이 가이드에서 가장 중요합니다.**
+> `No` 로 하면 `/system` 이 읽기 전용(squashfs)이 되어 **나중에 되돌릴 방법이 없습니다.**
+> 그 상태에서는 8단계 ARM 변환기 설치가 100% 실패하며, 증상이 아래처럼 헷갈리게 나타납니다:
+>
+> | 증상 | 실제 원인 |
+> |---|---|
+> | `mkdir` 은 성공하는데 폴더가 안 생김 | 임시 오버레이에만 생성됨 |
+> | `enable_nativebridge` 가 오류 없이 조용히 끝남 | 복사 대상이 읽기 전용 |
+> | `getprop persist.sys.nativebridge` 가 비어 있음 | build.prop 쓰기 불가 |
+> | `cp` 에서 `Read-only file system` 대량 발생 | 확정 |
+>
+> 이 증상이 보이면 `mount | grep squashfs` 로 확인하고, `squashfs` 가 보이면 **재설치가 유일한 해결책**입니다.
 5. 설치 완료 후 **`Reboot` 누르지 말고 전원 끄기**
 
 **전원 끈 뒤 VM 설정에서 ISO 마운트 해제** 후 다시 켭니다.
@@ -294,6 +306,14 @@ wm density                           → Physical density: 160
 ---
 
 ## 10단계 — 🚧 관문 B: 카카오톡 설치 & QR 로그인
+
+> 📌 **호환성 메모 (2026-08 확인)**
+> 카카오톡 최신 버전은 `arm64-v8a + armeabi-v7a` 를 모두 제공하고 최소 **Android 9.0+** 를 요구합니다.
+> Android-x86 9.0-r2 는 Android 9 이므로 조건을 아슬아슬하게 만족하며,
+> 공식 houdini(`9_y/houdini.sfs`)는 **32비트 ARM 전용**이라 armeabi-v7a 쪽으로 동작합니다.
+> 나중에 카톡이 Android 10+ 를 요구하면 이 구성은 쓸 수 없게 됩니다.
+
+
 
 1. Play 스토어에서 **"카카오톡 for Tablet"** 검색 → 설치
    - 검색 결과에 안 나오면 태블릿 인식이 안 된 것 → 9단계 다시 확인
