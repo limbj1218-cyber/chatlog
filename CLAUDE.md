@@ -16,6 +16,8 @@
   메신저봇R 신버전(API2 `BotManager.getCurrentBot().addListener`)과 구버전·다크토네이도(API1 `response`)를 **둘 다 등록**해 자동 대응 (중복 처리 방지 내장).
   본체 로드도 ① 동적 평가 → ② `modules/`에 CommonJS 저장 후 `require()` 순으로 시도 — 메신저봇R API2는 `eval`/`new Function`이 차단(`EvalError: dynamic evaluation of code is disabled`)이라 ②로 동작. `/로더`로 API 방식·로드 방식 확인 가능
 - `bot/봇설치가이드.md` — 봇 설치/연동 가이드
+- `bot/제련봇.js` + `bot/제련봇로더.js` — 별개의 제련(장비 강화) 미니게임 봇. 단톡봇과 독립적으로 동작하며
+  같은 로더 구조(원격 로드 + `/제련업데이트`)를 쓴다. 데이터는 `Database.json` 하나에 방별로 분리 저장
 - `index.html` — 루트 페이지 (구버전 단일 페이지, 추후 방 목록 페이지로 전환 예정)
 - `.github/workflows/summarize.yml` — 벽타기 워크플로우 (chats/** push 시 실행)
 
