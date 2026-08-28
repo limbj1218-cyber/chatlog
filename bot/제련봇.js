@@ -6,8 +6,7 @@
  *    제련가즈아 / 재련가즈아 → 제련 시도 (하루 2회)
  *    (파괴 시 지정된 수리 문구를 외치면 복구)
  *    /랭킹 /확률
- *    /로드 /초기화 /삭제 /삭제_이름 /복구_이름 /지정_이름_숫자   (관리자)
- *    /확률업_배수_시간
+ *    /로드 /초기화 /삭제 /삭제_이름 /복구_이름 /지정_이름_숫자 /확률업_배수_시간   (관리자)
  *
  *  ◆ 호환성
  *    - 메신저봇R 신버전(API2) / 구버전(API1) / 다크토네이도 챗봇 모두 동작
@@ -19,7 +18,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "제련봇";
-var BOT_VER = "0716-1";
+var BOT_VER = "0716-2";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -369,6 +368,7 @@ function response(room, msg, sender, isGroupChat, replier) {
         }
 
         if (msg.indexOf("/확률업_") === 0) {
+            if (!isAdmin(sender)) return replier.reply("권한이 없습니다");
             var bp = msg.split("_");
             var mult = parseFloat(bp[1]);
             var hour = parseFloat(bp[2]);
