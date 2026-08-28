@@ -141,7 +141,7 @@ function pickBaseDir() {
     }
     return "/sdcard/dantalkbot";   // 전부 실패 → 어차피 메모리 모드
 }
-var BOT_VER = "0716-5";   // /방이름 으로 업데이트 적용 여부 확인용
+var BOT_VER = "0716-6";   // /방이름 으로 업데이트 적용 여부 확인용
 
 var BASE_DIR = pickBaseDir();
 // 하위 폴더 없이 BASE_DIR 바로 아래에 저장 — 시작할 때 쓰기 성공을 확인한
@@ -191,8 +191,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (cmds.hasOwnProperty(text)) replier.reply(cmds[text]);
 
     } catch (e) {
-        try { replier.reply("⚠️ 봇 오류: " + e); } catch (e2) {}
+        LAST_ERR = { time: kakaoTime(), msg: String(e) };
+        // 일반 대화 중에는 조용히 넘어간다 (명령어일 때만, 1분에 한 번까지 알림)
+        try {
+            if (String(msg).trim().indexOf(PREFIX) === 0 && shouldReportError()) {
+                replier.reply("⚠️ 봇 오류: " + e);
+            }
+        } catch (e2) {}
     }
+}
+
+var LAST_ERR = null;          // 마지막 오류 (/방이름 진단에서 확인)
+var LAST_ERR_REPORT_AT = 0;   // 오류 알림 도배 방지
+
+function shouldReportError() {
+    var now = new Date().getTime();
+    if (now - LAST_ERR_REPORT_AT < 60000) return false;
+    LAST_ERR_REPORT_AT = now;
+    return true;
 }
 
 // ═══════════════ 진단 ═══════════════
@@ -212,6 +228,7 @@ function diagText(room, sender) {
         "벽타기 전체 스위치: " + (WALLCLIMB_ENABLED ? "켜짐 ✅" : "꺼짐 ⏸️ (모든 방 공통)") + "\n" +
         saved + "\n저장 위치: " + BASE_DIR + "\n" +
         "타이머: " + TIMER_KIND + "\n" +
+        (LAST_ERR ? "최근 오류: " + LAST_ERR.time + " " + LAST_ERR.msg + "\n" : "") +
         "마지막 업로드 시도: " + (LAST_UP
             ? LAST_UP.time + " → " + (LAST_UP.ok ? "성공 ✅" : "실패 ❌ HTTP " + LAST_UP.code + " " + LAST_UP.note)
             : "(이번 실행에서 아직 없음)");

@@ -19,6 +19,7 @@
  */
 var scriptName = "단톡봇";
 var GLOBAL_SCOPE = this;   // 최상위 this = 전역 스코프 (동적 평가 우회에 사용)
+var PREFIX_CHAR = "/";     // 명령어 접두사 (오류 알림 여부 판단용)
 
 // ── 폰에만 두는 설정 (여기만 수정) ──────────────────────────
 var TOKEN = "";                     // ← GitHub Personal Access Token
@@ -191,10 +192,23 @@ function loadRemote() {
     lastError = null;
 }
 
+var lastErrorReportAt = 0;   // 오류 알림 도배 방지
+var lastLoadTryAt = 0;       // 본체 로드 재시도 간격 제한
+
+/** 오류를 방에 알릴지 판단 — 명령어일 때만, 그것도 1분에 한 번까지 */
+function shouldReportError(text) {
+    if (String(text).indexOf(PREFIX_CHAR) !== 0) return false;   // 일반 대화면 조용히
+    var now = new Date().getTime();
+    if (now - lastErrorReportAt < 60000) return false;
+    lastErrorReportAt = now;
+    return true;
+}
+
 /** 실제 처리 (API1/API2 공통 진입점) */
 function handle(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+    var text = "";
     try {
-        var text = String(msg).trim();
+        text = String(msg).trim();
 
         // 같은 메시지가 두 API로 중복 전달되는 경우 방지 (1초 이내 동일 내용 무시)
         var key = room + " " + sender + " " + text;
@@ -222,12 +236,21 @@ function handle(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
         }
 
         // 본체가 아직 없으면 지금 불러오기 (컴파일 직후 네트워크 실패 대비)
-        if (remoteResponse === null) loadRemote();
+        // 실패가 반복될 때 매 메시지마다 재시도하지 않도록 1분 간격으로 제한
+        if (remoteResponse === null) {
+            var t = new Date().getTime();
+            if (t - lastLoadTryAt < 60000) return;
+            lastLoadTryAt = t;
+            loadRemote();
+        }
 
         remoteResponse(room, msg, sender, isGroupChat, replier, imageDB, packageName);
     } catch (e) {
         lastError = String(e);
-        try { replier.reply("⚠️ 로더 오류: " + e); } catch (e2) {}
+        // 일반 대화 중에는 조용히 넘어간다 (오류는 /로더 로 확인)
+        if (shouldReportError(text)) {
+            try { replier.reply("⚠️ 로더 오류: " + e); } catch (e2) {}
+        }
     }
 }
 
