@@ -102,19 +102,50 @@ https://sourceforge.net/projects/blissos-dev/files/
 ## 4단계 — 설치
 
 부팅 메뉴에서 **Installation - Install Android-x86 to harddisk** 선택
+→ **Create/Modify partitions** → `Do you want to use GPT?` **`Yes`**
 
-1. **Create/Modify partitions** → GPT 사용 `Yes`
-2. 파티션 생성:
+그러면 **cgdisk** 파티션 편집기가 뜹니다.
+위/아래 화살표로 **줄(파티션)** 을, 좌우 화살표로 **아래쪽 메뉴**를 고르고 Enter 로 실행합니다.
 
-   | 파티션 | 크기 | 타입 |
-   |---|---|---|
-   | 1번 | **512 MB** | EFI System (`ef00`) |
-   | 2번 | 나머지 전부 | Linux filesystem |
+### ① EFI System 파티션 (512MB)
 
-3. 2번 파티션 선택 → **ext4 로 포맷** (`Yes`)
-4. **GRUB(EFI) 부트로더 설치** (`Yes`)
-5. **`/system` 을 읽기·쓰기로 마운트** (`Yes`) ← ⚠️ ARM 변환기 설치에 필수
-6. 설치 완료 후 **`Reboot` 누르지 말고 전원 끄기**
+`free space` 줄을 선택한 뒤 **`[ New ]`** → Enter
+
+| 질문 | 입력 |
+|---|---|
+| `First sector` | 그냥 **Enter** |
+| `Size in sectors or {KMGTP}` | **`512M`** |
+| `Hex code or GUID` | **`EF00`** ← ⚠️ EFI System |
+| `Enter name` | `EFI` (비워도 됨) |
+
+> `L` 을 누르면 전체 코드 목록을 볼 수 있습니다.
+> `EF02`(BIOS boot) 나 `8300` 으로 만들면 **UEFI 부팅이 안 됩니다.**
+
+### ② 안드로이드 파티션 (나머지 전부)
+
+남은 `free space` 줄 선택 → **`[ New ]`** → Enter
+
+| 질문 | 입력 |
+|---|---|
+| `First sector` | 그냥 **Enter** |
+| `Size in sectors` | 그냥 **Enter** (남은 공간 전부) |
+| `Hex code or GUID` | 그냥 **Enter** (기본 `8300`) |
+| `Enter name` | `Android` |
+
+### ③ 저장 후 종료
+
+1. **`[ Write ]`** → Enter
+2. 확인 문구에 **`yes`** 를 전부 타이핑 (y 만 치면 안 됨) → Enter
+3. **`[ Quit ]`** → Enter
+
+### ④ 설치 진행
+
+1. 파티션 목록에서 **`sda2`** (Android, 8300) 선택
+2. 파일시스템 **`ext4`** → `Yes` (포맷)
+3. `Do you want to install EFI GRUB2?` → **`Yes`**
+4. `Do you want to install /system directory as read-write?` → **⚠️ 반드시 `Yes`**
+   (`No` 로 하면 8단계 ARM 변환기 설치가 불가능합니다)
+5. 설치 완료 후 **`Reboot` 누르지 말고 전원 끄기**
 
 **전원 끈 뒤 VM 설정에서 ISO 마운트 해제** 후 다시 켭니다.
 (ISO 가 붙어 있으면 계속 설치 화면으로 부팅됩니다)
@@ -279,6 +310,8 @@ wm density                           → Physical density: 160
 |---|---|
 | 부팅 시 검은 화면 | GRUB 에서 `nomodeset video=1024x768` 추가 |
 | 설치 화면만 반복 | VM 설정에서 **ISO 마운트 해제** 안 함 |
+| UEFI 부팅 실패 / GRUB 안 뜸 | EFI 파티션을 `EF00` 이 아닌 코드로 만든 것. 재설치 필요 |
+| cgdisk 에서 Write 가 안 됨 | 확인 문구에 `y` 가 아니라 **`yes`** 를 전부 입력해야 함 |
 | `enable_nativebridge` 실패 | `/system` 을 쓰기 가능으로 마운트했는지 확인 (4단계 5번) |
 | 마우스가 어긋남 | 해상도를 `1024x768` 로 낮춰 부팅 |
 | 극도로 느림 | 정상 (GPU 가속 없음). 코어/메모리 조정하되 NAS 부하 주의 |
