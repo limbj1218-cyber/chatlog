@@ -69,13 +69,34 @@ fi
 
 say "[5/7] 파일 복사"
 mkdir -p /system/lib/arm /system/bin
-cp -a "$MNT"/* /system/lib/arm/ || die "복사 실패"
+echo "  --- 복사 전 여유 공간 ---"
+df -h /system 2>/dev/null | tail -2
+df -h / 2>/dev/null | tail -1
+echo "  --- 원본 파일 수: $(ls -A "$MNT" 2>/dev/null | wc -l) ---"
+
+cp -a "$MNT"/* /system/lib/arm/ 2>/data/cp_err.txt
+COPIED=$(ls /system/lib/arm/ 2>/dev/null | wc -l)
+echo "  복사된 파일: $COPIED 개"
+
+if [ -s /data/cp_err.txt ]; then
+  echo "  --- 오류 내용 (앞 15줄) ---"
+  head -15 /data/cp_err.txt
+  echo "  ---------------------------"
+  echo "  전체 오류: /data/cp_err.txt ($(wc -l < /data/cp_err.txt) 줄)"
+  echo "  --- 복사 후 여유 공간 ---"
+  df -h /system 2>/dev/null | tail -2
+fi
+
+if [ "$COPIED" -lt 100 ]; then
+  die "복사가 거의 안 됐습니다 ($COPIED 개). 위 오류 내용을 확인하세요."
+fi
+
 [ -f /system/lib/arm/houdini ] && mv -f /system/lib/arm/houdini /system/bin/houdini
 [ -f /system/lib/arm/libhoudini.so ] && mv -f /system/lib/arm/libhoudini.so /system/lib/libhoudini.so
 chmod 755 /system/bin/houdini 2>/dev/null
 chmod 644 /system/lib/libhoudini.so 2>/dev/null
 chmod -R 755 /system/lib/arm 2>/dev/null
-echo "  라이브러리 $(ls /system/lib/arm/ 2>/dev/null | wc -l) 개"
+echo "  최종 라이브러리: $(ls /system/lib/arm/ 2>/dev/null | wc -l) 개"
 
 say "[6/7] 속성 설정 (재부팅 후에도 유지)"
 setprop ro.dalvik.vm.native.bridge libhoudini.so
