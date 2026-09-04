@@ -37,6 +37,10 @@ jobs:
             exit 1
           fi
 
+          # 카톡 명령어까지 같이 붙여넣은 경우를 대비해 접두사를 떼어낸다
+          NAVER_COOKIE="${NAVER_COOKIE#/쿠키 }"
+          NAVER_COOKIE="${NAVER_COOKIE#Cookie: }"
+
           # 쿠키의 "모양"만 출력한다 — 이름과 길이뿐, 값은 찍지 않는다.
           # (두 저장소의 시크릿이 같은 값인지 이 줄로 비교할 수 있다)
           echo "쿠키 전체 길이: ${#NAVER_COOKIE}"
