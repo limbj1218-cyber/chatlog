@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-14";
+var BOT_VER = "0904-15";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -345,25 +345,98 @@ var cafeUpdatedAt = "";    // 깃헙이 목록을 갱신한 시각
  * (메신저봇R 구버전 Api.replyRoom / 신버전 Bot·bot.send)
  */
 var SEND_KIND = "(아직 시도 안 함)";   // 어떤 방식으로 발송됐는지 (진단용)
+var SEND_TRIED = "";                   // 시도한 방식별 결과 (진단용)
 
-function sendToRoom(room, text) {
+// 방마다 마지막으로 받은 답장 객체를 기억해 둔다.
+// 앱이 "먼저 말 걸기"를 지원하지 않을 때 최후 수단으로 이걸 재사용한다.
+var LAST_REPLIER = {};
+
+/** 메신저봇R API2 의 봇 객체 (전역 bot 이 아니라 BotManager 로 가져와야 한다) */
+function currentBot() {
     try {
-        if (typeof Api !== "undefined" && Api.replyRoom) {
+        if (typeof BotManager !== "undefined" && BotManager && BotManager.getCurrentBot) {
+            return BotManager.getCurrentBot();
+        }
+    } catch (e) {}
+    try { if (typeof bot !== "undefined" && bot) return bot; } catch (e) {}
+    return null;
+}
+
+/**
+ * 봇이 먼저 말 걸기 — 앱마다 API가 달라서 되는 것을 순서대로 시도한다.
+ * 전부 실패하면 그 방에서 마지막으로 받은 답장 객체를 재사용한다.
+ */
+function sendToRoom(room, text) {
+    var tried = [];
+
+    try {
+        if (typeof Api !== "undefined" && Api && Api.replyRoom) {
             Api.replyRoom(room, text); SEND_KIND = "Api.replyRoom"; return true;
         }
-    } catch (e) {}
+        tried.push("Api.replyRoom 없음");
+    } catch (e) { tried.push("Api.replyRoom 오류"); }
+
     try {
-        if (typeof bot !== "undefined" && bot && bot.send) {
-            bot.send(room, text); SEND_KIND = "bot.send"; return true;
+        var b = currentBot();
+        if (b && typeof b.send === "function") {
+            b.send(room, text); SEND_KIND = "bot.send (BotManager)"; return true;
         }
-    } catch (e) {}
+        tried.push(b ? "bot.send 없음" : "봇 객체 없음");
+    } catch (e) { tried.push("bot.send 오류"); }
+
     try {
         if (typeof Bot !== "undefined" && Bot && Bot.send) {
             Bot.send(room, text); SEND_KIND = "Bot.send"; return true;
         }
-    } catch (e) {}
-    SEND_KIND = "실패 ❌ (이 앱은 먼저 말 걸기를 지원하지 않음)";
+        tried.push("Bot.send 없음");
+    } catch (e) { tried.push("Bot.send 오류"); }
+
+    try {
+        if (typeof Api !== "undefined" && Api && Api.reply) {
+            Api.reply(room, text); SEND_KIND = "Api.reply"; return true;
+        }
+        tried.push("Api.reply 없음");
+    } catch (e) { tried.push("Api.reply 오류"); }
+
+    // 최후 수단 — 그 방에서 마지막으로 받은 답장 객체 재사용
+    try {
+        var r = LAST_REPLIER[room];
+        if (r && typeof r.reply === "function") {
+            r.reply(text); SEND_KIND = "저장해둔 답장 객체"; return true;
+        }
+        tried.push("저장된 답장 객체 없음");
+    } catch (e) { tried.push("저장된 답장 객체 만료"); }
+
+    SEND_TRIED = tried.join(" / ");
+    SEND_KIND = "실패 ❌";
     return false;
+}
+
+/** 이 앱이 어떤 발송 수단을 제공하는지 그대로 보여준다 */
+function apiProbe(room) {
+    var out = [];
+    try { out.push("Api: " + (typeof Api)); } catch (e) { out.push("Api: 접근 불가"); }
+    try {
+        if (typeof Api !== "undefined" && Api) {
+            out.push("  · Api.replyRoom: " + (typeof Api.replyRoom));
+            out.push("  · Api.reply: " + (typeof Api.reply));
+        }
+    } catch (e) {}
+    try { out.push("BotManager: " + (typeof BotManager)); } catch (e) { out.push("BotManager: 접근 불가"); }
+    try {
+        var b = currentBot();
+        out.push("봇 객체: " + (b ? "있음" : "없음"));
+        if (b) {
+            out.push("  · send: " + (typeof b.send));
+            out.push("  · canReply: " + (typeof b.canReply));
+            try { if (b.canReply) out.push("  · canReply(이 방): " + b.canReply(room)); } catch (e) {}
+            try { if (b.getName) out.push("  · 이름: " + b.getName()); } catch (e) {}
+        }
+    } catch (e) { out.push("봇 객체: 오류 " + e); }
+    try { out.push("전역 bot: " + (typeof bot)); } catch (e) { out.push("전역 bot: 접근 불가"); }
+    try { out.push("전역 Bot: " + (typeof Bot)); } catch (e) { out.push("전역 Bot: 접근 불가"); }
+    out.push("저장된 답장 객체: " + (LAST_REPLIER[room] ? "있음" : "없음"));
+    return out.join("\n");
 }
 
 /** /발송테스트 — 봇이 "먼저 말 걸기"가 되는지 확인한다 (관리자만) */
@@ -372,9 +445,11 @@ function sendTestCmd(room, sender) {
     var ok = sendToRoom(room, "🔔 발송 테스트 — 이 줄이 보이면 알림이 정상 동작합니다.");
     return "📤 발송 테스트\n─────────────\n" +
         "결과: " + (ok ? "성공 ✅" : "실패 ❌") + "\n" +
-        "방식: " + SEND_KIND + "\n\n" +
-        (ok ? "위에 🔔 줄이 따로 올라왔으면 새 글 알림도 정상적으로 갑니다."
-            : "이 앱에서는 봇이 먼저 말을 걸 수 없어, 새 글 알림을 보낼 방법이 없습니다.");
+        "방식: " + SEND_KIND + "\n" +
+        (ok ? "" : "시도 내역: " + SEND_TRIED + "\n") +
+        "\n── 이 앱이 제공하는 것 ──\n" + apiProbe(room) +
+        "\n\n" + (ok ? "위에 🔔 줄이 따로 올라왔으면 새 글 알림도 정상적으로 갑니다."
+                     : "위 목록을 보고 다른 방법을 찾아야 합니다.");
 }
 
 /** 깃헙 토큰 — ① 로더 주입 ② 폰의 gh_token.txt */
@@ -924,6 +999,9 @@ function response(room, msg, sender, isGroupChat, replier) {
     try {
         text = String(msg).trim();
         if (!text) return;
+
+        // 나중에 봇이 먼저 말을 걸어야 할 때 쓸 수 있게 이 방의 답장 객체를 기억해 둔다
+        try { if (replier && replier.reply) LAST_REPLIER[room] = replier; } catch (e) {}
 
         // ⓪ 진단 — 등록 여부와 무관하게 모든 방에서 동작
         if (text === PREFIX + "오토") {
