@@ -31,7 +31,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-7";
+var BOT_VER = "0904-8";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -183,7 +183,12 @@ function fetchText(url, opt) {
 
     var conn = new java.net.URL(url).openConnection();
     conn.setRequestProperty("User-Agent", currentUA());
-    if (opt.cookie) conn.setRequestProperty("Cookie", opt.cookie);
+    if (opt.cookie) {
+        // 브라우저가 보내는 것과 최대한 비슷하게 맞춘다
+        conn.setRequestProperty("Cookie", opt.cookie);
+        conn.setRequestProperty("Accept", "application/json, text/plain, */*");
+        conn.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7");
+    }
     if (opt.referer) conn.setRequestProperty("Referer", opt.referer);
     conn.setConnectTimeout(15000);
     conn.setReadTimeout(20000);
@@ -449,14 +454,26 @@ function cookieShape() {
 }
 
 /** /카페확인 — 지금 즉시 확인하고 원인 파악용 정보까지 보여준다 (관리자만) */
+/** 봇이 실제로 어떤 공인 IP로 나가는지 (노트북 IP와 비교용) */
+function myPublicIp() {
+    try {
+        var ip = fetchText("https://api.ipify.org?format=text");
+        return String(ip).replace(/[\r\n]+/g, "").replace(/^\s+|\s+$/g, "") || "(빈 응답)";
+    } catch (e) {
+        return "(확인 실패: " + e + ")";
+    }
+}
+
 function cafeDebugCmd(sender) {
     if (!isAdmin(sender)) return null;
     cafeCheck();
+    var ip = myPublicIp();
     return cafeText() +
         "\n\n── 진단 ──\nHTTP: " + (LAST_HTTP || "(모름)") +
         "\n쿠키 구성: " + cookieShape() +
         "\n앱 쿠키핸들러: " + (COOKIE_HANDLER_SEEN ? "있었음 (요청 동안 껐다 켬)" : "없음") +
         "\nUser-Agent: " + (UA_OVERRIDE ? "지정됨 (" + UA_OVERRIDE.length + "자)" : "기본값") +
+        "\n봇 공인 IP: " + ip +
         "\n응답 앞부분:\n" + (cafeRawHead || "(없음)");
 }
 
