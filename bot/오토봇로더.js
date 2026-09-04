@@ -22,7 +22,9 @@ var MY_ROOMS = [
 var SUPER_ADMINS = ["후파", "임병진"];   // /오토업데이트 를 쓸 수 있는 사람 (대화명에 포함되면 허용)
 
 // 네이버 카페 새글 알림용 로그인 쿠키 (비공개 카페일 때만 필요).
-// PC 브라우저에서 카페에 로그인한 뒤 NID_AUT 와 NID_SES 값을 아래 형식으로 넣는다.
+// ※ 보통은 여기 두지 않고, 카톡에서 /쿠키 NID_AUT=값; NID_SES=값 으로 넣는 게 편하다.
+//    (봇이 폰 파일에 저장하므로 앱을 껐다 켜도 유지된다)
+// 굳이 여기 넣으려면: PC 크롬 F12 → Application → Cookies → cafe.naver.com 에서 두 값을 복사
 // 예) var MY_COOKIE = "NID_AUT=abcd...; NID_SES=efgh...";
 // ★ 이 값은 폰에만 두고 절대 깃헙에 올리지 않는다.
 var MY_COOKIE = "";
@@ -136,8 +138,9 @@ function loadViaRequire(code) {
     try { new java.io.File(dir).mkdirs(); } catch (e) {}
 
     var fname = "autobot_core_" + new Date().getTime();
-    var body = "module.exports = function (__ROOMS__, __COOKIE__) {\n" + code +
+    var body = "module.exports = function (__ROOMS__, __COOKIE__, __ADMINS__) {\n" + code +
         "\nif (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;" +
+        "\nif (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;" +
         "\nif (__COOKIE__) NAVER_COOKIE = __COOKIE__;" +
         "\nreturn response;\n};";
     if (typeof FileStream !== "undefined" && FileStream && FileStream.write) {
@@ -177,8 +180,9 @@ function loadRemote() {
     var factory = null, evalErr = null, reqErr = null;
 
     // ① 동적 평가 허용 앱
-    var wrapped = "(function (__ROOMS__, __COOKIE__) {\n" + code +
+    var wrapped = "(function (__ROOMS__, __COOKIE__, __ADMINS__) {\n" + code +
         "\nif (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;" +
+        "\nif (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;" +
         "\nif (__COOKIE__) NAVER_COOKIE = __COOKIE__;" +
         "\nreturn response;\n})";
     try { factory = evalCode(wrapped); loadMethod = "동적 평가"; }
@@ -194,7 +198,7 @@ function loadRemote() {
         throw "본체 실행 실패\n· 평가: " + evalErr + "\n· 모듈: " + reqErr;
     }
 
-    remoteResponse = factory(MY_ROOMS, MY_COOKIE);
+    remoteResponse = factory(MY_ROOMS, MY_COOKIE, SUPER_ADMINS);
     loadedAt = new Date();
     lastError = null;
 }

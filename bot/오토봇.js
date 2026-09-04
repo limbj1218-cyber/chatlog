@@ -6,12 +6,15 @@
  *    /리스트   → 이 방에서 반응하는 트리거 목록 (누구나)
  *    /오토     → 진단 (방 인식·데이터 상태·버전) — 모든 방에서 동작
  *    /카페     → 카페 새글 알림 상태 진단
+ *    /쿠키 ... → 네이버 로그인 쿠키 등록 (관리자만, 아래 참고)
+ *    /쿠키삭제 → 등록한 쿠키 지우기 (관리자만)
  *    ※ 등록/삭제 명령은 없다. 내용은 깃헙의 bot/오토봇데이터.json 을 고쳐서 관리한다.
  *
  *  ◆ 네이버 카페 새글 알림
  *    CHECK_MIN 분마다 카페 글 목록 API를 확인해 새 글을 방에 알린다 (제목 + 링크).
  *    비공개 카페는 네이버 로그인 쿠키가 있어야 읽힌다. 쿠키는 깃헙에 올리지 않고
- *    ① 로더의 MY_COOKIE 또는 ② 폰의 <캐시폴더>/naver_cookie.txt 에 둔다.
+ *    ① 방에서 /쿠키 명령 ② 로더의 MY_COOKIE ③ 폰의 <캐시폴더>/naver_cookie.txt 중 하나로 넣는다.
+ *    (①로 넣으면 폰 파일에 저장되므로 앱을 껐다 켜도 유지된다)
  *
  *  ◆ 데이터
  *    깃헙에서 오토봇데이터.json 을 받아 쓰고, 받은 내용을 폰에 캐시한다.
@@ -27,7 +30,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-1";
+var BOT_VER = "0904-2";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -62,6 +65,9 @@ var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
 
 // 로더에서 주입한다 (폰에만 두는 값 — 깃헙에는 올리지 않는다)
 var NAVER_COOKIE = "";
+
+// /쿠키 명령을 쓸 수 있는 사람 (대화명에 이 문자열이 포함되면 관리자). 로더가 덮어쓴다.
+var ADMINS = ["후파", "임병진"];
 
 // ═══════════════ 앱 호환 계층 ═══════════════
 // 봇 앱마다 제공하는 전역이 다르다 (메신저봇R API2에는 FileStream 이 없다).
@@ -269,6 +275,55 @@ function naverCookie() {
         if (c) return String(c).replace(/[\r\n]+/g, " ").trim();
     }
     return "";
+}
+
+function isAdmin(sender) {
+    for (var i = 0; i < ADMINS.length; i++) {
+        if (String(sender).indexOf(ADMINS[i]) !== -1) return true;
+    }
+    return false;
+}
+
+/**
+ * /쿠키 NID_AUT=...; NID_SES=...  → 폰에 저장하고 곧바로 카페를 확인해 결과를 알려준다.
+ * 관리자가 아니면 조용히 무시한다 (남이 떠보는 것 방지).
+ * 쿠키 값 자체는 응답에 절대 되돌려 쓰지 않는다.
+ */
+function setCookieCmd(arg, sender, isGroupChat) {
+    if (!isAdmin(sender)) return null;
+
+    var v = String(arg || "").replace(/[\r\n]+/g, " ").trim();
+    if (!v) {
+        return "사용법: " + PREFIX + "쿠키 NID_AUT=값; NID_SES=값\n" +
+            "(PC 크롬 F12 → Application → Cookies → cafe.naver.com 에서 복사)";
+    }
+    if (v.indexOf("NID_AUT") === -1 || v.indexOf("NID_SES") === -1) {
+        return "⛔ NID_AUT 와 NID_SES 가 모두 있어야 해요.\n" +
+            "형식: NID_AUT=값; NID_SES=값";
+    }
+
+    NAVER_COOKIE = v;
+    var saved = false;
+    if (COOKIE_FILE) saved = fileWrite(COOKIE_FILE, v);
+
+    var head = "🔑 쿠키를 등록했어요." +
+        (saved ? "" : "\n⚠️ 파일 저장에 실패해 메모리에만 있어요 (앱을 껐다 켜면 사라집니다)") +
+        (isGroupChat ? "\n⚠️ 여기는 단톡방이에요 — 방금 보낸 쿠키 메시지를 꼭 삭제하세요!" : "");
+
+    // 바로 확인해서 되는지 알려준다 (첫 확인이면 기준만 잡고 알림은 안 보낸다)
+    var wasFirst = (cafeLastId === 0);
+    cafeCheck();
+    if (cafeErr) return head + "\n\n❌ 카페 확인 실패: " + cafeErr;
+    return head + "\n\n✅ 카페 확인 성공!" +
+        (wasFirst ? "\n지금부터 올라오는 새 글만 알려드릴게요 (기준 글번호 " + cafeLastId + ")"
+                  : "\n마지막 글번호: " + cafeLastId);
+}
+
+function clearCookieCmd(sender) {
+    if (!isAdmin(sender)) return null;
+    NAVER_COOKIE = "";
+    if (COOKIE_FILE) fileWrite(COOKIE_FILE, "");
+    return "🗑️ 등록된 쿠키를 지웠어요.";
 }
 
 function loadState() {
@@ -507,6 +562,18 @@ function response(room, msg, sender, isGroupChat, replier) {
         // ⓪ 진단 — 등록 여부와 무관하게 모든 방에서 동작
         if (text === PREFIX + "오토") {
             replier.reply(diagText(room, sender));
+            return;
+        }
+
+        // ⓪-1 쿠키 등록 — 어느 방에서든(1:1 포함) 관리자만. 권한 없으면 조용히 무시
+        if (text === PREFIX + "쿠키삭제") {
+            var cr = clearCookieCmd(sender);
+            if (cr) replier.reply(cr);
+            return;
+        }
+        if (text === PREFIX + "쿠키" || text.indexOf(PREFIX + "쿠키 ") === 0) {
+            var sr = setCookieCmd(text.substring((PREFIX + "쿠키").length), sender, isGroupChat);
+            if (sr) replier.reply(sr);
             return;
         }
 
