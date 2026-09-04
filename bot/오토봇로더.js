@@ -20,6 +20,12 @@ var MY_ROOMS = [
     "오토2"
 ];
 var SUPER_ADMINS = ["후파", "임병진"];   // /오토업데이트 를 쓸 수 있는 사람 (대화명에 포함되면 허용)
+
+// 네이버 카페 새글 알림용 로그인 쿠키 (비공개 카페일 때만 필요).
+// PC 브라우저에서 카페에 로그인한 뒤 NID_AUT 와 NID_SES 값을 아래 형식으로 넣는다.
+// 예) var MY_COOKIE = "NID_AUT=abcd...; NID_SES=efgh...";
+// ★ 이 값은 폰에만 두고 절대 깃헙에 올리지 않는다.
+var MY_COOKIE = "";
 // ────────────────────────────────────────────────────────────
 
 var SRC_URL = "https://raw.githubusercontent.com/limbj1218-cyber/chatlog/main/bot/" +
@@ -130,8 +136,9 @@ function loadViaRequire(code) {
     try { new java.io.File(dir).mkdirs(); } catch (e) {}
 
     var fname = "autobot_core_" + new Date().getTime();
-    var body = "module.exports = function (__ROOMS__) {\n" + code +
+    var body = "module.exports = function (__ROOMS__, __COOKIE__) {\n" + code +
         "\nif (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;" +
+        "\nif (__COOKIE__) NAVER_COOKIE = __COOKIE__;" +
         "\nreturn response;\n};";
     if (typeof FileStream !== "undefined" && FileStream && FileStream.write) {
         FileStream.write(dir + "/" + fname + ".js", body);
@@ -170,8 +177,9 @@ function loadRemote() {
     var factory = null, evalErr = null, reqErr = null;
 
     // ① 동적 평가 허용 앱
-    var wrapped = "(function (__ROOMS__) {\n" + code +
+    var wrapped = "(function (__ROOMS__, __COOKIE__) {\n" + code +
         "\nif (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;" +
+        "\nif (__COOKIE__) NAVER_COOKIE = __COOKIE__;" +
         "\nreturn response;\n})";
     try { factory = evalCode(wrapped); loadMethod = "동적 평가"; }
     catch (e) { evalErr = String(e); }
@@ -186,7 +194,7 @@ function loadRemote() {
         throw "본체 실행 실패\n· 평가: " + evalErr + "\n· 모듈: " + reqErr;
     }
 
-    remoteResponse = factory(MY_ROOMS);
+    remoteResponse = factory(MY_ROOMS, MY_COOKIE);
     loadedAt = new Date();
     lastError = null;
 }

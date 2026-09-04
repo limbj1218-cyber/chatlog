@@ -5,7 +5,13 @@
  *  ◆ 명령어
  *    /리스트   → 이 방에서 반응하는 트리거 목록 (누구나)
  *    /오토     → 진단 (방 인식·데이터 상태·버전) — 모든 방에서 동작
+ *    /카페     → 카페 새글 알림 상태 진단
  *    ※ 등록/삭제 명령은 없다. 내용은 깃헙의 bot/오토봇데이터.json 을 고쳐서 관리한다.
+ *
+ *  ◆ 네이버 카페 새글 알림
+ *    CHECK_MIN 분마다 카페 글 목록 API를 확인해 새 글을 방에 알린다 (제목 + 링크).
+ *    비공개 카페는 네이버 로그인 쿠키가 있어야 읽힌다. 쿠키는 깃헙에 올리지 않고
+ *    ① 로더의 MY_COOKIE 또는 ② 폰의 <캐시폴더>/naver_cookie.txt 에 둔다.
  *
  *  ◆ 데이터
  *    깃헙에서 오토봇데이터.json 을 받아 쓰고, 받은 내용을 폰에 캐시한다.
@@ -21,7 +27,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0828-1";
+var BOT_VER = "0904-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -35,9 +41,27 @@ var REFRESH_MIN = 30;              // 데이터 자동 갱신 주기 (분)
 var LIST_MAX = 30;                 // /리스트 에 한 번에 보여줄 최대 개수
 var DATA_URL = "https://raw.githubusercontent.com/limbj1218-cyber/chatlog/main/bot/" +
     encodeURIComponent("오토봇데이터.json");
+
+// ── 네이버 카페 새글 알림 ──
+var CAFE = {
+    on: true,                       // false 로 두면 알림 기능 전체 정지
+    clubId: 31766195,               // 카페 고유 번호
+    cafeUrl: "autoworker2",         // 링크 만들 때 쓰는 주소 (cafe.naver.com/이것/글번호)
+    name: "오토워커",                // 알림 제목에 쓰는 이름
+    rooms: ["오토2프프", "오토2"],   // 알림 보낼 방 (ROOMS 안에 있어야 함)
+    checkMin: 10,                   // 확인 주기 (분)
+    perPage: 20,                    // 한 번에 확인할 글 수
+    maxNotify: 5,                   // 한 번에 알릴 최대 글 수 (넘으면 "외 N건")
+    menuIds: []                     // 특정 게시판만 알리려면 menuId 를 넣는다 (빈 배열 = 전체)
+};
 // ────────────────────────────────────────────────────────
 
 var REFRESH_MS = REFRESH_MIN * 60 * 1000;
+var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+// 로더에서 주입한다 (폰에만 두는 값 — 깃헙에는 올리지 않는다)
+var NAVER_COOKIE = "";
 
 // ═══════════════ 앱 호환 계층 ═══════════════
 // 봇 앱마다 제공하는 전역이 다르다 (메신저봇R API2에는 FileStream 이 없다).
@@ -102,22 +126,33 @@ function pickBaseDir() {
 
 var BASE_DIR = pickBaseDir();
 var CACHE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇캐시.json") : null;
+var STATE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇상태.json") : null;
+var COOKIE_FILE = BASE_DIR ? (BASE_DIR + "/naver_cookie.txt") : null;
 
-/** 깃헙에서 텍스트 가져오기 — jsoup 우선, 없으면 순수 자바 HTTP */
-function fetchText(url) {
+/**
+ * 텍스트 가져오기 — jsoup 우선, 없으면 순수 자바 HTTP.
+ * opt: { cookie: "...", referer: "..." } (없으면 그냥 평범한 GET)
+ */
+function fetchText(url, opt) {
+    opt = opt || {};
     try {
         if (typeof org !== "undefined" && org.jsoup) {
-            return String(org.jsoup.Jsoup.connect(url)
+            var c = org.jsoup.Jsoup.connect(url)
                 .ignoreContentType(true)
-                .userAgent("autobot")
+                .ignoreHttpErrors(true)
+                .userAgent(UA)
                 .timeout(15000)
-                .maxBodySize(0)
-                .execute().body());
+                .maxBodySize(0);
+            if (opt.cookie) c = c.header("Cookie", opt.cookie);
+            if (opt.referer) c = c.header("Referer", opt.referer);
+            return String(c.execute().body());
         }
     } catch (e) {}
 
     var conn = new java.net.URL(url).openConnection();
-    conn.setRequestProperty("User-Agent", "autobot");
+    conn.setRequestProperty("User-Agent", UA);
+    if (opt.cookie) conn.setRequestProperty("Cookie", opt.cookie);
+    if (opt.referer) conn.setRequestProperty("Referer", opt.referer);
     conn.setConnectTimeout(15000);
     conn.setReadTimeout(20000);
     var br = new java.io.BufferedReader(
@@ -206,6 +241,220 @@ function triggersOf(table) {
     return keys;
 }
 
+// ═══════════════ 네이버 카페 새글 알림 ═══════════════
+
+var cafeLastId = 0;        // 마지막으로 알린 글 번호
+var cafeCheckedAt = null;  // 마지막 확인 시각
+var cafeOkAt = null;       // 마지막 성공 시각
+var cafeErr = null;
+var cafeSentTotal = 0;
+var cafeWarnAt = 0;        // 로그인 만료 경고 도배 방지
+
+/**
+ * 봇이 먼저 말 걸기 — 앱마다 API가 달라서 되는 것을 순서대로 시도한다.
+ * (메신저봇R 구버전 Api.replyRoom / 신버전 Bot·bot.send)
+ */
+function sendToRoom(room, text) {
+    try { if (typeof Api !== "undefined" && Api.replyRoom) { Api.replyRoom(room, text); return true; } } catch (e) {}
+    try { if (typeof bot !== "undefined" && bot && bot.send) { bot.send(room, text); return true; } } catch (e) {}
+    try { if (typeof Bot !== "undefined" && Bot && Bot.send) { Bot.send(room, text); return true; } } catch (e) {}
+    return false;
+}
+
+/** 네이버 로그인 쿠키 — ① 로더 주입 ② 폰의 naver_cookie.txt */
+function naverCookie() {
+    if (NAVER_COOKIE) return NAVER_COOKIE;
+    if (COOKIE_FILE) {
+        var c = fileRead(COOKIE_FILE);
+        if (c) return String(c).replace(/[\r\n]+/g, " ").trim();
+    }
+    return "";
+}
+
+function loadState() {
+    if (!STATE_FILE) return;
+    try {
+        var s = fileRead(STATE_FILE);
+        if (!s) return;
+        var o = JSON.parse(s);
+        if (o && o.cafeLastId) cafeLastId = Number(o.cafeLastId);
+    } catch (e) {}
+}
+
+function saveState() {
+    if (!STATE_FILE) return;
+    try { fileWrite(STATE_FILE, JSON.stringify({ cafeLastId: cafeLastId })); } catch (e) {}
+}
+
+function cafeArticleUrl(id) {
+    return "https://cafe.naver.com/" + CAFE.cafeUrl + "/" + id;
+}
+
+/** 알릴 대상 글인지 — 새 글이고, 가려진 글이 아니고, 지정 게시판이면 그 게시판 */
+function cafeWanted(a) {
+    if (!a || !a.articleId) return false;
+    if (Number(a.articleId) <= cafeLastId) return false;
+    if (a.blindArticle) return false;
+    if (CAFE.menuIds.length > 0 && CAFE.menuIds.indexOf(Number(a.menuId)) === -1) return false;
+    return true;
+}
+
+function cafeMessage(list) {
+    var head = "📢 " + CAFE.name + " 카페 새글";
+    if (list.length === 1) {
+        var a = list[0];
+        return head + "\n\n[" + String(a.menuName || "") + "] " + String(a.subject) +
+            "\n✍️ " + String(a.writerNickname || "") + "\n" + cafeArticleUrl(a.articleId);
+    }
+    var shown = list.slice(0, CAFE.maxNotify);
+    var out = head + " " + list.length + "건\n";
+    for (var i = 0; i < shown.length; i++) {
+        var b = shown[i];
+        out += "\n[" + String(b.menuName || "") + "] " + String(b.subject) +
+            "\n" + cafeArticleUrl(b.articleId) + "\n";
+    }
+    if (list.length > shown.length) out += "\n… 외 " + (list.length - shown.length) + "건";
+    return out;
+}
+
+/**
+ * 카페를 한 번 확인한다.
+ * 처음 실행이면(기록 없음) 알리지 않고 현재 최신 글 번호만 기억한다 — 밀린 글 도배 방지.
+ */
+function cafeCheck() {
+    if (!CAFE.on) return;
+    cafeCheckedAt = new Date();
+    try {
+        var url = "https://apis.naver.com/cafe-web/cafe2/ArticleListV2dot1.json" +
+            "?search.clubid=" + CAFE.clubId +
+            "&search.queryType=lastArticle&search.page=1" +
+            "&search.perPage=" + CAFE.perPage + "&ad=false";
+        var txt = fetchText(url, {
+            cookie: naverCookie(),
+            referer: "https://cafe.naver.com/" + CAFE.cafeUrl
+        });
+        var j = JSON.parse(txt);
+        var m = j ? j.message : null;
+        if (!m || String(m.status) !== "200") {
+            var em = (m && m.error && m.error.msg) ? String(m.error.msg) : "알 수 없는 응답";
+            cafeErr = em;
+            // 로그인 만료는 조용히 멈추면 모르니 6시간에 한 번 방에 알린다
+            if (em.indexOf("로그인") !== -1 && new Date().getTime() - cafeWarnAt > 6 * 3600 * 1000) {
+                cafeWarnAt = new Date().getTime();
+                cafeBroadcast("⚠️ 카페 새글 알림이 멈췄어요 — 네이버 로그인이 만료됐습니다.\n" +
+                    "(쿠키를 다시 넣어주세요)");
+            }
+            return;
+        }
+
+        var list = (m.result && m.result.articleList) ? m.result.articleList : [];
+        var fresh = [], i;
+        for (i = 0; i < list.length; i++) if (cafeWanted(list[i])) fresh.push(list[i]);
+
+        // 이번에 본 것 중 가장 큰 글 번호 (알림 여부와 무관하게 갱신)
+        var maxId = cafeLastId;
+        for (i = 0; i < list.length; i++) {
+            var n = Number(list[i].articleId);
+            if (n > maxId) maxId = n;
+        }
+
+        var first = (cafeLastId === 0);
+        cafeLastId = maxId;
+        saveState();
+        cafeErr = null;
+        cafeOkAt = new Date();
+        if (first || fresh.length === 0) return;   // 첫 가동이면 기준만 잡고 끝
+
+        fresh.sort(function (x, y) { return Number(x.articleId) - Number(y.articleId); });
+        cafeBroadcast(cafeMessage(fresh));
+        cafeSentTotal += fresh.length;
+
+    } catch (e) {
+        cafeErr = String(e);
+    }
+}
+
+/** 알림 대상 방에만 발송 (ROOMS 밖의 방은 건너뜀) */
+function cafeBroadcast(text) {
+    for (var i = 0; i < CAFE.rooms.length; i++) {
+        var r = CAFE.rooms[i];
+        if (ROOMS.indexOf(r) === -1) continue;
+        try { sendToRoom(r, text); } catch (e) {}
+    }
+}
+
+function cafeText() {
+    return "📰 카페 새글 알림 (" + CAFE.name + ")\n─────────────\n" +
+        "상태: " + (CAFE.on ? "켜짐 ✅" : "꺼짐 ⏸️") + "\n" +
+        "확인 주기: " + CAFE.checkMin + "분 (타이머: " + TIMER_KIND + ")\n" +
+        "쿠키: " + (naverCookie() ? "있음 ✅" : "없음 ❌ (비공개 카페는 필요)") + "\n" +
+        "마지막 글 번호: " + (cafeLastId || "(아직 없음)") + "\n" +
+        "마지막 확인: " + (cafeCheckedAt ? cafeCheckedAt.toLocaleString() : "(아직 없음)") + "\n" +
+        "마지막 성공: " + (cafeOkAt ? cafeOkAt.toLocaleString() : "(아직 없음)") + "\n" +
+        "보낸 글 수: " + cafeSentTotal + "\n" +
+        "알림 방: " + CAFE.rooms.join(", ") +
+        (cafeErr ? "\n최근 오류: " + cafeErr : "");
+}
+
+// ═══════════════ 타이머 ═══════════════
+// 앱마다 쓸 수 있는 방식이 달라 순서대로 시도한다.
+// /오토업데이트 로 코드를 다시 불러와도 옛 타이머가 남지 않도록 세대를 관리한다.
+
+var TIMER_GEN = String(new Date().getTime());
+try { java.lang.System.setProperty("autobot.timer.gen", TIMER_GEN); } catch (e) {}
+var TIMER_KIND = "없음 (알림 불가)";
+
+var lastCafeTickAt = 0;
+
+/** 1분마다 할 일. 새 코드가 로드됐으면 false를 돌려 이 (옛) 타이머를 멈춘다. */
+function timerBeat() {
+    try {
+        if (String(java.lang.System.getProperty("autobot.timer.gen")) !== TIMER_GEN) return false;
+        var now = new Date().getTime();
+        if (now - lastCafeTickAt >= CAFE.checkMin * 60 * 1000) {
+            lastCafeTickAt = now;
+            cafeCheck();
+        }
+    } catch (e) {}
+    return true;
+}
+
+(function startTimer() {
+    // ① setInterval — 앱이 제공하면 가장 간단
+    try {
+        if (typeof setInterval === "function") {
+            var h = setInterval(function () {
+                if (!timerBeat() && typeof clearInterval === "function") clearInterval(h);
+            }, 60000);
+            TIMER_KIND = "setInterval";
+            return;
+        }
+    } catch (e) {}
+
+    // ② JavaAdapter + java.util.Timer (Rhino 계열)
+    try {
+        if (typeof JavaAdapter !== "undefined") {
+            var timer = new java.util.Timer("autobot-timer", true);
+            timer.schedule(new JavaAdapter(java.util.TimerTask, {
+                run: function () { if (!timerBeat()) { try { this.cancel(); } catch (e2) {} } }
+            }), 30000, 60000);
+            TIMER_KIND = "JavaAdapter";
+            return;
+        }
+    } catch (e) {}
+
+    // ③ 스레드 직접 돌리기
+    try {
+        var th = new java.lang.Thread(function () {
+            java.lang.Thread.sleep(30000);
+            while (timerBeat()) java.lang.Thread.sleep(60000);
+        });
+        th.setDaemon(true);
+        th.start();
+        TIMER_KIND = "Thread";
+    } catch (e) {}
+})();
+
 // ═══════════════ 명령어 ═══════════════
 
 function listText(room) {
@@ -268,9 +517,13 @@ function response(room, msg, sender, isGroupChat, replier) {
         if (DATA === null) loadData();
         else refreshIfStale();
 
-        // ③ /리스트
+        // ③ /리스트 · /카페
         if (text === PREFIX + "리스트") {
             replier.reply(listText(room));
+            return;
+        }
+        if (text === PREFIX + "카페") {
+            replier.reply(cafeText());
             return;
         }
 
@@ -289,6 +542,8 @@ function response(room, msg, sender, isGroupChat, replier) {
 
 // 본체가 로드될 때 데이터 미리 받아두기 (실패해도 첫 메시지 때 다시 시도)
 try { loadData(); } catch (e) {}
+// 마지막으로 알린 카페 글 번호 복원 (앱을 껐다 켜도 같은 글을 다시 알리지 않게)
+try { loadState(); } catch (e) {}
 
 // ═══════════════ 앱 API 연결 (직접 붙여넣기용) ═══════════════
 //
