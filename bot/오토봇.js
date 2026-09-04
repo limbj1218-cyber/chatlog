@@ -31,7 +31,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-8";
+var BOT_VER = "0904-9";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -454,6 +454,28 @@ function cookieShape() {
 }
 
 /** /카페확인 — 지금 즉시 확인하고 원인 파악용 정보까지 보여준다 (관리자만) */
+/**
+ * /헤더테스트 — 우리가 넣은 헤더가 실제로 서버까지 가는지 확인한다.
+ * ※ 진짜 쿠키는 절대 보내지 않는다. 같은 모양의 가짜 값으로만 시험한다.
+ */
+function headerTestCmd(sender) {
+    if (!isAdmin(sender)) return null;
+    try {
+        var txt = fetchText("https://httpbin.org/headers", {
+            cookie: "TEST_A=1; TEST_B=222222",
+            referer: ""
+        });
+        var seenCookie = txt.indexOf("TEST_A=1") !== -1 && txt.indexOf("TEST_B=222222") !== -1;
+        var seenUA = txt.indexOf("Chrome") !== -1;
+        return "🧪 헤더 전달 테스트 (가짜 값으로 시험)\n─────────────\n" +
+            "Cookie 헤더 도달: " + (seenCookie ? "예 ✅" : "아니오 ❌") + "\n" +
+            "User-Agent 도달: " + (seenUA ? "예 ✅" : "아니오 ❌") + "\n" +
+            "HTTP: " + LAST_HTTP + "\n\n응답 앞부분:\n" + String(txt).substring(0, 300);
+    } catch (e) {
+        return "🧪 헤더 전달 테스트 실패: " + e;
+    }
+}
+
 /** 봇이 실제로 어떤 공인 IP로 나가는지 (노트북 IP와 비교용) */
 function myPublicIp() {
     try {
@@ -589,7 +611,9 @@ function cafeCheck() {
             "&search.perPage=" + CAFE.perPage + "&ad=false";
         var txt = fetchText(url, {
             cookie: naverCookie(),
-            referer: "https://cafe.naver.com/" + CAFE.cafeUrl
+            // Referer 는 일부러 넣지 않는다 — 브라우저 주소창으로 열었을 때(정상 동작)와
+            // 똑같은 모양의 요청을 만들기 위해서다.
+            referer: ""
         });
         cafeRawHead = String(txt).substring(0, 200);
         var j = JSON.parse(txt);
@@ -788,6 +812,11 @@ function response(room, msg, sender, isGroupChat, replier) {
             text.indexOf(PREFIX + "UA ") === 0 || text.indexOf(PREFIX + "ua ") === 0) {
             var ur = setUACmd(text.substring((PREFIX + "UA").length), sender);
             if (ur) replier.reply(ur);
+            return;
+        }
+        if (text === PREFIX + "헤더테스트") {
+            var hr = headerTestCmd(sender);
+            if (hr) replier.reply(hr);
             return;
         }
         if (text === PREFIX + "카페확인") {
