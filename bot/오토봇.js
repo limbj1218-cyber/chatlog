@@ -337,7 +337,6 @@ var cafeCheckedAt = null;  // 마지막 확인 시각
 var cafeOkAt = null;       // 마지막 성공 시각
 var cafeErr = null;
 var cafeSentTotal = 0;
-var cafeWarnAt = 0;        // 로그인 만료 경고 도배 방지
 var cafeRawHead = "";      // 마지막 응답 앞부분 (진단용)
 var cafeUpdatedAt = "";    // 깃헙이 목록을 갱신한 시각
 
