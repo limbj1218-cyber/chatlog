@@ -30,12 +30,17 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-3";
+var BOT_VER = "0904-4";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
     "오토2프프",
     "오토2"
+];
+
+// 로더(MY_ROOMS)가 위 ROOMS 를 덮어쓰므로, 로더를 다시 붙여넣지 않고 방을 늘리려면 여기에 적는다.
+var EXTRA_ROOMS = [
+    "[오차율 계산봇]"
 ];
 
 var PREFIX = "/";                  // 명령어 접두사
@@ -70,6 +75,16 @@ var NAVER_COOKIE = "";
 
 // /쿠키 명령을 쓸 수 있는 사람 (대화명에 이 문자열이 포함되면 관리자). 로더가 덮어쓴다.
 var ADMINS = ["후파", "임병진"];
+
+// 로더가 ADMINS 를 덮어쓰므로, 로더를 다시 붙여넣지 않고 관리자를 늘리려면 여기에 적는다.
+var EXTRA_ADMINS = [
+    "[오차율 계산봇]"
+];
+
+/** 이 방에서 동작해야 하는지 (로더 목록 + 추가 목록) */
+function inRooms(room) {
+    return ROOMS.indexOf(room) !== -1 || EXTRA_ROOMS.indexOf(room) !== -1;
+}
 
 // ═══════════════ 앱 호환 계층 ═══════════════
 // 봇 앱마다 제공하는 전역이 다르다 (메신저봇R API2에는 FileStream 이 없다).
@@ -284,8 +299,9 @@ function naverCookie() {
 }
 
 function isAdmin(sender) {
-    for (var i = 0; i < ADMINS.length; i++) {
-        if (String(sender).indexOf(ADMINS[i]) !== -1) return true;
+    var all = ADMINS.concat(EXTRA_ADMINS), i;
+    for (i = 0; i < all.length; i++) {
+        if (String(sender).indexOf(all[i]) !== -1) return true;
     }
     return false;
 }
@@ -464,7 +480,7 @@ function cafeCheck() {
 function cafeBroadcast(text) {
     for (var i = 0; i < CAFE.rooms.length; i++) {
         var r = CAFE.rooms[i];
-        if (ROOMS.indexOf(r) === -1) continue;
+        if (!inRooms(r)) continue;
         try { sendToRoom(r, text); } catch (e) {}
     }
 }
@@ -558,7 +574,7 @@ function listText(room) {
 }
 
 function diagText(room, sender) {
-    var active = ROOMS.indexOf(room) !== -1;
+    var active = inRooms(room);
     var n = triggersOf(tableFor(room)).length;
     return "🤖 오토봇 진단 (v" + BOT_VER + ")\n─────────────\n" +
         "방 이름: [" + room + "]\n" +
@@ -614,7 +630,7 @@ function response(room, msg, sender, isGroupChat, replier) {
         }
 
         // ① 목록에 없는 방은 완전히 무시
-        if (ROOMS.indexOf(room) === -1) return;
+        if (!inRooms(room)) return;
 
         // ② 데이터 준비 (없으면 바로, 있으면 주기마다 백그라운드로 갱신)
         if (DATA === null) loadData();
