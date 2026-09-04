@@ -31,7 +31,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-10";
+var BOT_VER = "0904-11";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -651,8 +651,10 @@ function cafeCheck() {
 
         if (!m) {
             cafeErr = em;
-            // 로그인 만료는 조용히 멈추면 모르니 6시간에 한 번 방에 알린다
-            if (em.indexOf("로그인") !== -1 && new Date().getTime() - cafeWarnAt > 6 * 3600 * 1000) {
+            // 로그인 만료는 조용히 멈추면 모르니 6시간에 한 번 방에 알린다.
+            // 단, 한 번이라도 성공한 적이 있을 때만 — 아직 연결된 적 없으면 방에 알리지 않는다.
+            if (cafeOkAt && em.indexOf("로그인") !== -1 &&
+                new Date().getTime() - cafeWarnAt > 6 * 3600 * 1000) {
                 cafeWarnAt = new Date().getTime();
                 cafeBroadcast("⚠️ 카페 새글 알림이 멈췄어요 — 네이버 로그인이 만료됐습니다.\n" +
                     "(쿠키를 다시 넣어주세요)");
