@@ -31,7 +31,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-9";
+var BOT_VER = "0904-10";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -75,6 +75,13 @@ var UA_OVERRIDE = "";              // /UA 로 지정한 브라우저 문자열 (
 
 /** 실제로 보낼 User-Agent */
 function currentUA() { return UA_OVERRIDE || UA; }
+
+/** User-Agent 의 크롬 버전에 맞춘 sec-ch-ua 헤더 값 */
+function secChUa() {
+    var m = String(currentUA()).match(/Chrome\/(\d+)/);
+    var v = m ? m[1] : "120";
+    return '"Chromium";v="' + v + '", "Google Chrome";v="' + v + '", "Not.A/Brand";v="24"';
+}
 
 // 로더에서 주입한다 (폰에만 두는 값 — 깃헙에는 올리지 않는다)
 var NAVER_COOKIE = "";
@@ -184,10 +191,20 @@ function fetchText(url, opt) {
     var conn = new java.net.URL(url).openConnection();
     conn.setRequestProperty("User-Agent", currentUA());
     if (opt.cookie) {
-        // 브라우저가 보내는 것과 최대한 비슷하게 맞춘다
+        // 브라우저가 주소창으로 여는 요청과 최대한 똑같이 맞춘다
         conn.setRequestProperty("Cookie", opt.cookie);
-        conn.setRequestProperty("Accept", "application/json, text/plain, */*");
+        conn.setRequestProperty("Accept",
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp," +
+            "image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
         conn.setRequestProperty("Accept-Language", "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7");
+        conn.setRequestProperty("Upgrade-Insecure-Requests", "1");
+        conn.setRequestProperty("Sec-Fetch-Site", "none");
+        conn.setRequestProperty("Sec-Fetch-Mode", "navigate");
+        conn.setRequestProperty("Sec-Fetch-User", "?1");
+        conn.setRequestProperty("Sec-Fetch-Dest", "document");
+        conn.setRequestProperty("sec-ch-ua", secChUa());
+        conn.setRequestProperty("sec-ch-ua-mobile", "?0");
+        conn.setRequestProperty("sec-ch-ua-platform", "\"Windows\"");
     }
     if (opt.referer) conn.setRequestProperty("Referer", opt.referer);
     conn.setConnectTimeout(15000);
@@ -307,6 +324,17 @@ var cafeErr = null;
 var cafeSentTotal = 0;
 var cafeWarnAt = 0;        // 로그인 만료 경고 도배 방지
 var cafeRawHead = "";      // 마지막 응답 앞부분 (진단용)
+var cafeApiUsed = "";      // 마지막으로 시도한 API 이름 (진단용)
+
+// 글 목록 API 후보 — 앞에서부터 차례로 시도한다 (응답 모양은 같다)
+var CAFE_APIS = ["ArticleListV2dot1", "ArticleListV2"];
+
+function cafeApiUrl(name) {
+    return "https://apis.naver.com/cafe-web/cafe2/" + name + ".json" +
+        "?search.clubid=" + CAFE.clubId +
+        "&search.queryType=lastArticle&search.page=1" +
+        "&search.perPage=" + CAFE.perPage + "&ad=false";
+}
 
 /**
  * 봇이 먼저 말 걸기 — 앱마다 API가 달라서 되는 것을 순서대로 시도한다.
@@ -496,6 +524,7 @@ function cafeDebugCmd(sender) {
         "\n앱 쿠키핸들러: " + (COOKIE_HANDLER_SEEN ? "있었음 (요청 동안 껐다 켬)" : "없음") +
         "\nUser-Agent: " + (UA_OVERRIDE ? "지정됨 (" + UA_OVERRIDE.length + "자)" : "기본값") +
         "\n봇 공인 IP: " + ip +
+        "\n사용 API: " + (cafeApiUsed || "(아직 없음)") +
         "\n응답 앞부분:\n" + (cafeRawHead || "(없음)");
 }
 
@@ -605,21 +634,22 @@ function cafeCheck() {
     if (!CAFE.on) return;
     cafeCheckedAt = new Date();
     try {
-        var url = "https://apis.naver.com/cafe-web/cafe2/ArticleListV2dot1.json" +
-            "?search.clubid=" + CAFE.clubId +
-            "&search.queryType=lastArticle&search.page=1" +
-            "&search.perPage=" + CAFE.perPage + "&ad=false";
-        var txt = fetchText(url, {
-            cookie: naverCookie(),
-            // Referer 는 일부러 넣지 않는다 — 브라우저 주소창으로 열었을 때(정상 동작)와
-            // 똑같은 모양의 요청을 만들기 위해서다.
-            referer: ""
-        });
-        cafeRawHead = String(txt).substring(0, 200);
-        var j = JSON.parse(txt);
-        var m = j ? j.message : null;
-        if (!m || String(m.status) !== "200") {
-            var em = (m && m.error && m.error.msg) ? String(m.error.msg) : "알 수 없는 응답";
+        // 주소를 차례로 시도한다 (하나가 막혀도 다른 게 열려 있을 수 있다).
+        // Referer 는 일부러 넣지 않는다 — 브라우저 주소창으로 열었을 때(정상 동작)와
+        // 똑같은 모양의 요청을 만들기 위해서다.
+        var m = null, txt = "", em = "알 수 없는 응답", j;
+        for (var e = 0; e < CAFE_APIS.length; e++) {
+            txt = fetchText(cafeApiUrl(CAFE_APIS[e]), { cookie: naverCookie(), referer: "" });
+            cafeRawHead = String(txt).substring(0, 200);
+            cafeApiUsed = CAFE_APIS[e];
+            try { j = JSON.parse(txt); } catch (pe) { j = null; }
+            m = j ? j.message : null;
+            if (m && String(m.status) === "200") break;
+            em = (m && m.error && m.error.msg) ? String(m.error.msg) : "알 수 없는 응답";
+            m = null;
+        }
+
+        if (!m) {
             cafeErr = em;
             // 로그인 만료는 조용히 멈추면 모르니 6시간에 한 번 방에 알린다
             if (em.indexOf("로그인") !== -1 && new Date().getTime() - cafeWarnAt > 6 * 3600 * 1000) {
