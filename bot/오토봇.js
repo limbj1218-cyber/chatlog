@@ -450,6 +450,7 @@ function cafeDebugCmd(sender) {
     return cafeText() +
         "\n\n── 진단 ──\nHTTP: " + (LAST_HTTP || "(모름)") +
         "\n쿠키 구성: " + cookieShape() +
+        "\n앱 쿠키핸들러: " + (COOKIE_HANDLER_SEEN ? "있었음 (요청 동안 껐다 켬)" : "없음") +
         "\n응답 앞부분:\n" + (cafeRawHead || "(없음)");
 }
 
