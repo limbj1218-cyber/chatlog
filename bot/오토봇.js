@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-13";
+var BOT_VER = "0904-14";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -344,11 +344,37 @@ var cafeUpdatedAt = "";    // 깃헙이 목록을 갱신한 시각
  * 봇이 먼저 말 걸기 — 앱마다 API가 달라서 되는 것을 순서대로 시도한다.
  * (메신저봇R 구버전 Api.replyRoom / 신버전 Bot·bot.send)
  */
+var SEND_KIND = "(아직 시도 안 함)";   // 어떤 방식으로 발송됐는지 (진단용)
+
 function sendToRoom(room, text) {
-    try { if (typeof Api !== "undefined" && Api.replyRoom) { Api.replyRoom(room, text); return true; } } catch (e) {}
-    try { if (typeof bot !== "undefined" && bot && bot.send) { bot.send(room, text); return true; } } catch (e) {}
-    try { if (typeof Bot !== "undefined" && Bot && Bot.send) { Bot.send(room, text); return true; } } catch (e) {}
+    try {
+        if (typeof Api !== "undefined" && Api.replyRoom) {
+            Api.replyRoom(room, text); SEND_KIND = "Api.replyRoom"; return true;
+        }
+    } catch (e) {}
+    try {
+        if (typeof bot !== "undefined" && bot && bot.send) {
+            bot.send(room, text); SEND_KIND = "bot.send"; return true;
+        }
+    } catch (e) {}
+    try {
+        if (typeof Bot !== "undefined" && Bot && Bot.send) {
+            Bot.send(room, text); SEND_KIND = "Bot.send"; return true;
+        }
+    } catch (e) {}
+    SEND_KIND = "실패 ❌ (이 앱은 먼저 말 걸기를 지원하지 않음)";
     return false;
+}
+
+/** /발송테스트 — 봇이 "먼저 말 걸기"가 되는지 확인한다 (관리자만) */
+function sendTestCmd(room, sender) {
+    if (!isAdmin(sender)) return null;
+    var ok = sendToRoom(room, "🔔 발송 테스트 — 이 줄이 보이면 알림이 정상 동작합니다.");
+    return "📤 발송 테스트\n─────────────\n" +
+        "결과: " + (ok ? "성공 ✅" : "실패 ❌") + "\n" +
+        "방식: " + SEND_KIND + "\n\n" +
+        (ok ? "위에 🔔 줄이 따로 올라왔으면 새 글 알림도 정상적으로 갑니다."
+            : "이 앱에서는 봇이 먼저 말을 걸 수 없어, 새 글 알림을 보낼 방법이 없습니다.");
 }
 
 /** 깃헙 토큰 — ① 로더 주입 ② 폰의 gh_token.txt */
@@ -786,7 +812,7 @@ function cafeText() {
         "마지막 글 번호: " + (cafeLastId || "(아직 없음)") + "\n" +
         "마지막 확인: " + (cafeCheckedAt ? cafeCheckedAt.toLocaleString() : "(아직 없음)") + "\n" +
         "마지막 성공: " + (cafeOkAt ? cafeOkAt.toLocaleString() : "(아직 없음)") + "\n" +
-        "보낸 글 수: " + cafeSentTotal + "\n" +
+        "보낸 글 수: " + cafeSentTotal + " (발송 방식: " + SEND_KIND + ")\n" +
         "알림 방: " + CAFE.rooms.join(", ") +
         (cafeErr ? "\n최근 오류: " + cafeErr : "");
 }
@@ -961,6 +987,11 @@ function response(room, msg, sender, isGroupChat, replier) {
         }
         if (text === PREFIX + "카페") {
             replier.reply(cafeText());
+            return;
+        }
+        if (text === PREFIX + "발송테스트") {
+            var st = sendTestCmd(room, sender);
+            if (st) replier.reply(st);
             return;
         }
         if (text === PREFIX + "새글테스트") {
