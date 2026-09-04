@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-15";
+var BOT_VER = "0904-16";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -852,15 +852,26 @@ function cafeCheck() {
             if (n > maxId) maxId = n;
         }
 
-        var first = (cafeLastId === 0);
-        cafeLastId = maxId;
-        saveState();
         cafeErr = null;
         cafeOkAt = new Date();
-        if (first || fresh.length === 0) return;   // 첫 가동이면 기준만 잡고 끝
 
+        // 첫 가동이거나 새 글이 없으면 기준만 잡고 끝 (밀린 글 도배 방지)
+        var first = (cafeLastId === 0);
+        if (first || fresh.length === 0) {
+            cafeLastId = maxId;
+            saveState();
+            return;
+        }
+
+        // 발송이 실패하면 기준을 올리지 않는다 — 다음 확인 때 다시 시도한다.
+        // (기준만 올려두면 알리지도 못한 글이 영영 묻힌다)
         fresh.sort(function (x, y) { return Number(x.id) - Number(y.id); });
-        cafeBroadcast(cafeMessage(fresh));
+        if (!cafeBroadcast(cafeMessage(fresh))) {
+            cafeErr = "발송 실패 — 다음 확인 때 다시 시도합니다 (" + SEND_KIND + ")";
+            return;
+        }
+        cafeLastId = maxId;
+        saveState();
         cafeSentTotal += fresh.length;
 
     } catch (e) {
@@ -870,11 +881,13 @@ function cafeCheck() {
 
 /** 알림 대상 방에만 발송 (ROOMS 밖의 방은 건너뜀) */
 function cafeBroadcast(text) {
+    var any = false;
     for (var i = 0; i < CAFE.rooms.length; i++) {
         var r = CAFE.rooms[i];
         if (!inRooms(r)) continue;
-        try { sendToRoom(r, text); } catch (e) {}
+        try { if (sendToRoom(r, text)) any = true; } catch (e) {}
     }
+    return any;
 }
 
 function cafeText() {
