@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-12";
+var BOT_VER = "0904-13";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -686,6 +686,44 @@ function cafeMessage(list) {
  * 카페를 한 번 확인한다.
  * 처음 실행이면(기록 없음) 알리지 않고 현재 최신 글 번호만 기억한다 — 밀린 글 도배 방지.
  */
+/**
+ * 깃헙 Actions 가 만들어 둔 최신 글 목록을 비공개 저장소에서 읽어온다.
+ * (네이버를 폰에서 직접 부르면 세션이 거부되므로 깃헙을 거친다)
+ */
+function fetchCafeFeed(token) {
+    var url = "https://api.github.com/repos/" + GH_REPO + "/contents/" + GH_PATH +
+        "?t=" + new Date().getTime();
+    var txt = fetchText(url, {
+        headers: [
+            ["Authorization", "token " + token],
+            ["Accept", "application/vnd.github.raw"],
+            ["X-GitHub-Api-Version", "2022-11-28"]
+        ]
+    });
+    cafeRawHead = String(txt).substring(0, 200);
+    return JSON.parse(txt);
+}
+
+/** /새글테스트 — 가장 최근 글 하나를 실제 알림과 같은 모양으로 보여준다 (기준 글번호는 건드리지 않음) */
+function cafeTestCmd(sender) {
+    if (!isAdmin(sender)) return null;
+    var token = ghToken();
+    if (!token) return "❌ 깃헙 토큰이 없어요 (" + PREFIX + "깃토큰 으로 등록하세요)";
+    try {
+        var j = fetchCafeFeed(token);
+        var list = (j && j.articles) ? j.articles : [];
+        if (list.length === 0) return "받아온 글이 없어요.";
+
+        var newest = list[0], i;
+        for (i = 1; i < list.length; i++) {
+            if (Number(list[i].id) > Number(newest.id)) newest = list[i];
+        }
+        return cafeMessage([newest]);
+    } catch (e) {
+        return "❌ 목록 읽기 실패: " + e;
+    }
+}
+
 function cafeCheck() {
     if (!CAFE.on) return;
     cafeCheckedAt = new Date();
@@ -696,20 +734,7 @@ function cafeCheck() {
     }
 
     try {
-        // 깃헙 Actions 가 만들어 둔 최신 글 목록을 비공개 저장소에서 읽어온다.
-        // (네이버를 폰에서 직접 부르면 세션이 거부되므로 깃헙을 거친다)
-        var url = "https://api.github.com/repos/" + GH_REPO + "/contents/" + GH_PATH +
-            "?t=" + new Date().getTime();
-        var txt = fetchText(url, {
-            headers: [
-                ["Authorization", "token " + token],
-                ["Accept", "application/vnd.github.raw"],
-                ["X-GitHub-Api-Version", "2022-11-28"]
-            ]
-        });
-        cafeRawHead = String(txt).substring(0, 200);
-
-        var j = JSON.parse(txt);
+        var j = fetchCafeFeed(token);
         if (!j || !j.articles) {
             cafeErr = "받은 내용이 올바르지 않아요";
             return;
@@ -936,6 +961,11 @@ function response(room, msg, sender, isGroupChat, replier) {
         }
         if (text === PREFIX + "카페") {
             replier.reply(cafeText());
+            return;
+        }
+        if (text === PREFIX + "새글테스트") {
+            var nt = cafeTestCmd(sender);
+            if (nt) replier.reply(nt);
             return;
         }
 
