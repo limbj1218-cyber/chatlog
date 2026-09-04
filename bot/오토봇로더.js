@@ -174,7 +174,8 @@ function loadViaRequire(code) {
 // ─── 본체 불러오기 ───
 
 function loadRemote() {
-    var code = fetchText(SRC_URL);
+    // 깃헙 raw 에 잠깐 캐시가 걸려 옛 코드가 오는 일이 있어 시각을 붙인다
+    var code = fetchText(SRC_URL + "?t=" + new Date().getTime());
     if (code.indexOf("function response") === -1) {
         throw "받아온 코드가 올바르지 않아요 (URL 확인 필요)";
     }
