@@ -6,7 +6,8 @@
  *    /리스트   → 이 방에서 반응하는 트리거 목록 (누구나)
  *    /오토     → 진단 (방 인식·데이터 상태·버전) — 모든 방에서 동작
  *    /카페     → 카페 새글 알림 상태 진단
- *    /쿠키 ... → 네이버 로그인 쿠키 등록 (관리자만, 아래 참고)
+ *    /쿠키     → 네이버 로그인 쿠키 등록 (관리자만). NID_AUT → NID_SES 순으로 하나씩 물어본다
+ *                (한 줄로 넣으려면 /쿠키 NID_AUT=값; NID_SES=값, 중간에 그만두려면 /취소)
  *    /쿠키삭제 → 등록한 쿠키 지우기 (관리자만)
  *    ※ 등록/삭제 명령은 없다. 내용은 깃헙의 bot/오토봇데이터.json 을 고쳐서 관리한다.
  *
@@ -30,7 +31,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-4";
+var BOT_VER = "0904-5";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -311,19 +312,86 @@ function isAdmin(sender) {
  * 관리자가 아니면 조용히 무시한다 (남이 떠보는 것 방지).
  * 쿠키 값 자체는 응답에 절대 되돌려 쓰지 않는다.
  */
-function setCookieCmd(arg, sender, isGroupChat) {
+/**
+ * /쿠키 → 두 번에 나눠 받는다 (NID_AUT 먼저, 그 다음 NID_SES).
+ * 값에 "/" 가 들어갈 수 있어서, 진행 중에는 /취소 외에는 전부 값으로 취급한다.
+ */
+var pending = null;                    // { room, sender, step, aut, at }
+var PENDING_MS = 5 * 60 * 1000;        // 5분 지나면 자동 종료
+
+function pendingAlive(room, sender) {
+    if (!pending) return false;
+    if (new Date().getTime() - pending.at > PENDING_MS) { pending = null; return false; }
+    return pending.room === room && pending.sender === sender;
+}
+
+function startCookieFlow(room, sender) {
+    pending = { room: room, sender: sender, step: 1, aut: "", at: new Date().getTime() };
+    return "🔑 네이버 쿠키 등록 (1/2)\n─────────────\n" +
+        "NID_AUT 값을 입력해주세요.\n\n" +
+        "· 값만 붙여넣으면 됩니다 (NID_AUT= 를 같이 붙여넣어도 괜찮아요)\n" +
+        "· 그만하려면 " + PREFIX + "취소";
+}
+
+/** "NID_AUT=값" / "값" / "NID_AUT=값; NID_SES=..." 어느 형태로 붙여넣어도 값만 뽑아낸다 */
+function cleanVal(name, raw) {
+    var s = String(raw).replace(/[\r\n]+/g, " ").replace(/^\s+|\s+$/g, "");
+    if (s.indexOf(name) === 0) {
+        var eq = s.indexOf("=");
+        if (eq !== -1) s = s.substring(eq + 1);
+    }
+    var sc = s.indexOf(";");
+    if (sc !== -1) s = s.substring(0, sc);
+    return s.replace(/^\s+|\s+$/g, "");
+}
+
+function stepCookieFlow(text, isGroupChat) {
+    var t = String(text).replace(/[\r\n]+/g, " ").replace(/^\s+|\s+$/g, "");
+
+    if (pending.step === 1) {
+        // 둘 다 한 번에 붙여넣었으면 그대로 끝낸다
+        if (t.indexOf("NID_AUT") !== -1 && t.indexOf("NID_SES") !== -1) {
+            pending = null;
+            return applyCookie(t, isGroupChat);
+        }
+        var aut = cleanVal("NID_AUT", t);
+        if (!aut) return "값이 비어 있어요. NID_AUT 값을 다시 입력해주세요.";
+        pending.aut = aut;
+        pending.step = 2;
+        pending.at = new Date().getTime();
+        return "✅ NID_AUT 받았어요 (" + aut.length + "자)\n\n" +
+            "🔑 네이버 쿠키 등록 (2/2)\n─────────────\n" +
+            "이제 NID_SES 값을 입력해주세요.";
+    }
+
+    var ses = cleanVal("NID_SES", t);
+    if (!ses) return "값이 비어 있어요. NID_SES 값을 다시 입력해주세요.";
+    var cookie = "NID_AUT=" + pending.aut + "; NID_SES=" + ses;
+    pending = null;
+    return applyCookie(cookie, isGroupChat);
+}
+
+function cancelCookieFlow() {
+    pending = null;
+    return "🚫 쿠키 등록을 취소했어요.";
+}
+
+function setCookieCmd(arg, sender, isGroupChat, room) {
     if (!isAdmin(sender)) return null;
 
     var v = String(arg || "").replace(/[\r\n]+/g, " ").trim();
-    if (!v) {
-        return "사용법: " + PREFIX + "쿠키 NID_AUT=값; NID_SES=값\n" +
-            "(PC 크롬 F12 → Application → Cookies → cafe.naver.com 에서 복사)";
-    }
+    if (!v) return startCookieFlow(room, sender);   // 인자 없이 치면 2단계 입력 시작
+
     if (v.indexOf("NID_AUT") === -1 || v.indexOf("NID_SES") === -1) {
         return "⛔ NID_AUT 와 NID_SES 가 모두 있어야 해요.\n" +
-            "형식: NID_AUT=값; NID_SES=값";
+            "형식: " + PREFIX + "쿠키 NID_AUT=값; NID_SES=값\n" +
+            "(하나씩 나눠 넣으려면 " + PREFIX + "쿠키 만 치세요)";
     }
+    return applyCookie(v, isGroupChat);
+}
 
+/** 쿠키를 저장하고 곧바로 카페를 확인해 결과를 돌려준다 */
+function applyCookie(v, isGroupChat) {
     NAVER_COOKIE = v;
     var saved = false;
     if (COOKIE_FILE) saved = fileWrite(COOKIE_FILE, v);
@@ -613,6 +681,15 @@ function response(room, msg, sender, isGroupChat, replier) {
         }
 
         // ⓪-1 쿠키 등록 — 어느 방에서든(1:1 포함) 관리자만. 권한 없으면 조용히 무시
+        // ⓪-1 쿠키 등록이 진행 중이면 이 사람의 다음 메시지를 값으로 받는다.
+        //      (쿠키 값에 "/" 가 들어갈 수 있어서, 취소·재시작 말고는 전부 값으로 본다)
+        if (pendingAlive(room, sender)) {
+            if (text === PREFIX + "취소") { replier.reply(cancelCookieFlow()); return; }
+            if (text === PREFIX + "쿠키") { replier.reply(startCookieFlow(room, sender)); return; }
+            replier.reply(stepCookieFlow(text, isGroupChat));
+            return;
+        }
+
         if (text === PREFIX + "쿠키삭제") {
             var cr = clearCookieCmd(sender);
             if (cr) replier.reply(cr);
@@ -624,7 +701,7 @@ function response(room, msg, sender, isGroupChat, replier) {
             return;
         }
         if (text === PREFIX + "쿠키" || text.indexOf(PREFIX + "쿠키 ") === 0) {
-            var sr = setCookieCmd(text.substring((PREFIX + "쿠키").length), sender, isGroupChat);
+            var sr = setCookieCmd(text.substring((PREFIX + "쿠키").length), sender, isGroupChat, room);
             if (sr) replier.reply(sr);
             return;
         }
