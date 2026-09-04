@@ -31,7 +31,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-5";
+var BOT_VER = "0904-6";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -69,7 +69,8 @@ var REFRESH_MS = REFRESH_MIN * 60 * 1000;
 var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-var LAST_HTTP = 0;   // 마지막 HTTP 응답 코드 (진단용)
+var LAST_HTTP = 0;              // 마지막 HTTP 응답 코드 (진단용)
+var COOKIE_HANDLER_SEEN = false;   // 앱 기본 CookieHandler 가 있었는지 (진단용)
 
 // 로더에서 주입한다 (폰에만 두는 값 — 깃헙에는 올리지 않는다)
 var NAVER_COOKIE = "";
@@ -181,14 +182,33 @@ function fetchText(url, opt) {
     if (opt.referer) conn.setRequestProperty("Referer", opt.referer);
     conn.setConnectTimeout(15000);
     conn.setReadTimeout(20000);
-    try { LAST_HTTP = Number(conn.getResponseCode()); } catch (e) {}
-    var br = new java.io.BufferedReader(
-        new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
-    var sb = new java.lang.StringBuilder(), line;
-    while ((line = br.readLine()) !== null) { sb.append(line); sb.append("\n"); }
-    br.close();
-    conn.disconnect();
-    return String(sb.toString());
+
+    // 앱에 기본 CookieHandler 가 깔려 있으면 우리가 넣은 Cookie 헤더를 자기 것으로 덮어쓴다.
+    // 그래서 이 요청 동안만 잠시 꺼두고, 끝나면 원래대로 되돌린다.
+    var savedCH = null, chOff = false;
+    if (opt.cookie) {
+        try {
+            savedCH = java.net.CookieHandler.getDefault();
+            if (savedCH !== null) {
+                java.net.CookieHandler.setDefault(null);
+                chOff = true;
+                COOKIE_HANDLER_SEEN = true;
+            }
+        } catch (e) {}
+    }
+
+    try {
+        try { LAST_HTTP = Number(conn.getResponseCode()); } catch (e) {}
+        var br = new java.io.BufferedReader(
+            new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
+        var sb = new java.lang.StringBuilder(), line;
+        while ((line = br.readLine()) !== null) { sb.append(line); sb.append("\n"); }
+        br.close();
+        conn.disconnect();
+        return String(sb.toString());
+    } finally {
+        if (chOff) { try { java.net.CookieHandler.setDefault(savedCH); } catch (e) {} }
+    }
 }
 
 // ═══════════════ 데이터 ═══════════════
