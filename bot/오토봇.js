@@ -30,7 +30,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-2";
+var BOT_VER = "0904-3";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -62,6 +62,8 @@ var CAFE = {
 var REFRESH_MS = REFRESH_MIN * 60 * 1000;
 var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+var LAST_HTTP = 0;   // 마지막 HTTP 응답 코드 (진단용)
 
 // 로더에서 주입한다 (폰에만 두는 값 — 깃헙에는 올리지 않는다)
 var NAVER_COOKIE = "";
@@ -141,8 +143,10 @@ var COOKIE_FILE = BASE_DIR ? (BASE_DIR + "/naver_cookie.txt") : null;
  */
 function fetchText(url, opt) {
     opt = opt || {};
+    // 쿠키가 필요한 요청은 jsoup 을 건너뛴다.
+    // (jsoup 은 자체 쿠키 저장소로 Cookie 헤더를 덮어써 로그인이 풀리는 경우가 있다)
     try {
-        if (typeof org !== "undefined" && org.jsoup) {
+        if (!opt.cookie && typeof org !== "undefined" && org.jsoup) {
             var c = org.jsoup.Jsoup.connect(url)
                 .ignoreContentType(true)
                 .ignoreHttpErrors(true)
@@ -161,6 +165,7 @@ function fetchText(url, opt) {
     if (opt.referer) conn.setRequestProperty("Referer", opt.referer);
     conn.setConnectTimeout(15000);
     conn.setReadTimeout(20000);
+    try { LAST_HTTP = Number(conn.getResponseCode()); } catch (e) {}
     var br = new java.io.BufferedReader(
         new java.io.InputStreamReader(conn.getInputStream(), "UTF-8"));
     var sb = new java.lang.StringBuilder(), line;
@@ -255,6 +260,7 @@ var cafeOkAt = null;       // 마지막 성공 시각
 var cafeErr = null;
 var cafeSentTotal = 0;
 var cafeWarnAt = 0;        // 로그인 만료 경고 도배 방지
+var cafeRawHead = "";      // 마지막 응답 앞부분 (진단용)
 
 /**
  * 봇이 먼저 말 걸기 — 앱마다 API가 달라서 되는 것을 순서대로 시도한다.
@@ -317,6 +323,30 @@ function setCookieCmd(arg, sender, isGroupChat) {
     return head + "\n\n✅ 카페 확인 성공!" +
         (wasFirst ? "\n지금부터 올라오는 새 글만 알려드릴게요 (기준 글번호 " + cafeLastId + ")"
                   : "\n마지막 글번호: " + cafeLastId);
+}
+
+/** 쿠키의 "모양"만 보여준다 — 이름과 길이만, 값은 절대 노출하지 않는다 (잘림 진단용) */
+function cookieShape() {
+    var c = naverCookie();
+    if (!c) return "없음";
+    var parts = String(c).split(";"), out = [];
+    for (var i = 0; i < parts.length; i++) {
+        var p = parts[i].replace(/^\s+|\s+$/g, "");
+        var eq = p.indexOf("=");
+        if (eq === -1) continue;
+        out.push(p.substring(0, eq) + "(" + (p.length - eq - 1) + "자)");
+    }
+    return out.length ? out.join(", ") : "형식 이상";
+}
+
+/** /카페확인 — 지금 즉시 확인하고 원인 파악용 정보까지 보여준다 (관리자만) */
+function cafeDebugCmd(sender) {
+    if (!isAdmin(sender)) return null;
+    cafeCheck();
+    return cafeText() +
+        "\n\n── 진단 ──\nHTTP: " + (LAST_HTTP || "(모름)") +
+        "\n쿠키 구성: " + cookieShape() +
+        "\n응답 앞부분:\n" + (cafeRawHead || "(없음)");
 }
 
 function clearCookieCmd(sender) {
@@ -388,6 +418,7 @@ function cafeCheck() {
             cookie: naverCookie(),
             referer: "https://cafe.naver.com/" + CAFE.cafeUrl
         });
+        cafeRawHead = String(txt).substring(0, 200);
         var j = JSON.parse(txt);
         var m = j ? j.message : null;
         if (!m || String(m.status) !== "200") {
@@ -569,6 +600,11 @@ function response(room, msg, sender, isGroupChat, replier) {
         if (text === PREFIX + "쿠키삭제") {
             var cr = clearCookieCmd(sender);
             if (cr) replier.reply(cr);
+            return;
+        }
+        if (text === PREFIX + "카페확인") {
+            var dr = cafeDebugCmd(sender);
+            if (dr) replier.reply(dr);
             return;
         }
         if (text === PREFIX + "쿠키" || text.indexOf(PREFIX + "쿠키 ") === 0) {
