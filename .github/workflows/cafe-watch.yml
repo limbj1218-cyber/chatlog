@@ -11,7 +11,7 @@ name: 카페 새글 감시
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 concurrency:
@@ -102,7 +102,7 @@ jobs:
             "https://x-access-token:${TOKEN}@github.com/${TARGET_REPO}.git" out
 
           # 글 목록이 실제로 달라졌을 때만 커밋한다.
-          # (updatedAt 은 매번 바뀌므로 비교에서 뺀다 — 안 그러면 10분마다 빈 커밋이 쌓인다)
+          # (updatedAt 은 매번 바뀌므로 비교에서 뺀다 — 안 그러면 실행할 때마다 빈 커밋이 쌓인다)
           if [ -f out/latest.json ]; then
             before=$(jq -cS '{clubId, cafeName, articles}' out/latest.json 2>/dev/null || echo "")
             after=$(jq -cS '{clubId, cafeName, articles}' latest.json)

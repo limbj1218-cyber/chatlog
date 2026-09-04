@@ -62,7 +62,7 @@ var CAFE = {
     cafeUrl: "autoworker2",         // 링크 만들 때 쓰는 주소 (cafe.naver.com/이것/글번호)
     name: "오토워커",                // 알림 제목에 쓰는 이름
     rooms: ["오토2프프", "오토2"],   // 알림 보낼 방 (ROOMS 안에 있어야 함)
-    checkMin: 10,                   // 확인 주기 (분)
+    checkMin: 5,                    // 확인 주기 (분)
     perPage: 20,                    // 한 번에 확인할 글 수
     maxNotify: 5,                   // 한 번에 알릴 최대 글 수 (넘으면 "외 N건")
     menuIds: []                     // 특정 게시판만 알리려면 menuId 를 넣는다 (빈 배열 = 전체)
