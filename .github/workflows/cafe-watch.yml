@@ -37,6 +37,12 @@ jobs:
             exit 1
           fi
 
+          # 쿠키의 "모양"만 출력한다 — 이름과 길이뿐, 값은 찍지 않는다.
+          # (두 저장소의 시크릿이 같은 값인지 이 줄로 비교할 수 있다)
+          echo "쿠키 전체 길이: ${#NAVER_COOKIE}"
+          echo "쿠키 구성: $(printf '%s' "$NAVER_COOKIE" | tr ';' '\n' \
+            | awk -F= 'NF>1 { gsub(/^ +/,"",$1); printf "%s(%d자) ", $1, length($0)-length($1)-1 }')"
+
           UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36'
           URL="https://apis.naver.com/cafe-web/cafe2/ArticleListV2dot1.json?search.clubid=${CLUBID}&search.queryType=lastArticle&search.page=1&search.perPage=${PER_PAGE}&ad=false"
 
