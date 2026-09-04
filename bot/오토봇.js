@@ -31,7 +31,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-6";
+var BOT_VER = "0904-7";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -69,8 +69,12 @@ var REFRESH_MS = REFRESH_MIN * 60 * 1000;
 var UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-var LAST_HTTP = 0;              // 마지막 HTTP 응답 코드 (진단용)
+var LAST_HTTP = 0;                 // 마지막 HTTP 응답 코드 (진단용)
 var COOKIE_HANDLER_SEEN = false;   // 앱 기본 CookieHandler 가 있었는지 (진단용)
+var UA_OVERRIDE = "";              // /UA 로 지정한 브라우저 문자열 (있으면 이걸 쓴다)
+
+/** 실제로 보낼 User-Agent */
+function currentUA() { return UA_OVERRIDE || UA; }
 
 // 로더에서 주입한다 (폰에만 두는 값 — 깃헙에는 올리지 않는다)
 var NAVER_COOKIE = "";
@@ -153,6 +157,7 @@ var BASE_DIR = pickBaseDir();
 var CACHE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇캐시.json") : null;
 var STATE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇상태.json") : null;
 var COOKIE_FILE = BASE_DIR ? (BASE_DIR + "/naver_cookie.txt") : null;
+var UA_FILE = BASE_DIR ? (BASE_DIR + "/naver_ua.txt") : null;
 
 /**
  * 텍스트 가져오기 — jsoup 우선, 없으면 순수 자바 HTTP.
@@ -167,7 +172,7 @@ function fetchText(url, opt) {
             var c = org.jsoup.Jsoup.connect(url)
                 .ignoreContentType(true)
                 .ignoreHttpErrors(true)
-                .userAgent(UA)
+                .userAgent(currentUA())
                 .timeout(15000)
                 .maxBodySize(0);
             if (opt.cookie) c = c.header("Cookie", opt.cookie);
@@ -177,7 +182,7 @@ function fetchText(url, opt) {
     } catch (e) {}
 
     var conn = new java.net.URL(url).openConnection();
-    conn.setRequestProperty("User-Agent", UA);
+    conn.setRequestProperty("User-Agent", currentUA());
     if (opt.cookie) conn.setRequestProperty("Cookie", opt.cookie);
     if (opt.referer) conn.setRequestProperty("Referer", opt.referer);
     conn.setConnectTimeout(15000);
@@ -451,7 +456,53 @@ function cafeDebugCmd(sender) {
         "\n\n── 진단 ──\nHTTP: " + (LAST_HTTP || "(모름)") +
         "\n쿠키 구성: " + cookieShape() +
         "\n앱 쿠키핸들러: " + (COOKIE_HANDLER_SEEN ? "있었음 (요청 동안 껐다 켬)" : "없음") +
+        "\nUser-Agent: " + (UA_OVERRIDE ? "지정됨 (" + UA_OVERRIDE.length + "자)" : "기본값") +
         "\n응답 앞부분:\n" + (cafeRawHead || "(없음)");
+}
+
+/**
+ * /UA <문자열> — 브라우저와 같은 User-Agent 로 맞춘다.
+ * (네이버가 세션을 브라우저 정보와 함께 볼 때를 대비)
+ */
+function setUACmd(arg, sender) {
+    if (!isAdmin(sender)) return null;
+    var v = String(arg || "").replace(/[\r\n]+/g, " ").replace(/^\s+|\s+$/g, "");
+
+    if (!v) {
+        return "🖥️ 지금 쓰는 User-Agent\n─────────────\n" + currentUA() +
+            "\n\n바꾸려면: " + PREFIX + "UA 브라우저값\n" +
+            "(노트북 브라우저에서 F12 → Console 에 navigator.userAgent 입력하면 나옵니다)\n" +
+            "되돌리려면: " + PREFIX + "UA 초기화";
+    }
+    if (v === "초기화") {
+        UA_OVERRIDE = "";
+        if (UA_FILE) fileWrite(UA_FILE, "");
+        return "↩️ 기본 User-Agent 로 되돌렸어요.";
+    }
+    if (v.indexOf("Mozilla") !== 0) {
+        return "⛔ User-Agent 는 보통 Mozilla/5.0 으로 시작해요. 값을 다시 확인해주세요.";
+    }
+
+    UA_OVERRIDE = v;
+    if (UA_FILE) fileWrite(UA_FILE, v);
+
+    var head = "🖥️ User-Agent 를 맞췄어요 (" + v.length + "자)";
+    var wasFirst = (cafeLastId === 0);
+    cafeCheck();
+    if (cafeErr) return head + "\n\n❌ 카페 확인 실패: " + cafeErr;
+    return head + "\n\n✅ 카페 확인 성공!" +
+        (wasFirst ? "\n지금부터 올라오는 새 글만 알려드릴게요 (기준 글번호 " + cafeLastId + ")"
+                  : "\n마지막 글번호: " + cafeLastId);
+}
+
+function loadUA() {
+    if (!UA_FILE) return;
+    try {
+        var v = fileRead(UA_FILE);
+        if (!v) return;
+        v = String(v).replace(/[\r\n]+/g, " ").replace(/^\s+|\s+$/g, "");
+        if (v) UA_OVERRIDE = v;
+    } catch (e) {}
 }
 
 function clearCookieCmd(sender) {
@@ -716,6 +767,12 @@ function response(room, msg, sender, isGroupChat, replier) {
             if (cr) replier.reply(cr);
             return;
         }
+        if (text === PREFIX + "UA" || text === PREFIX + "ua" ||
+            text.indexOf(PREFIX + "UA ") === 0 || text.indexOf(PREFIX + "ua ") === 0) {
+            var ur = setUACmd(text.substring((PREFIX + "UA").length), sender);
+            if (ur) replier.reply(ur);
+            return;
+        }
         if (text === PREFIX + "카페확인") {
             var dr = cafeDebugCmd(sender);
             if (dr) replier.reply(dr);
@@ -761,6 +818,8 @@ function response(room, msg, sender, isGroupChat, replier) {
 try { loadData(); } catch (e) {}
 // 마지막으로 알린 카페 글 번호 복원 (앱을 껐다 켜도 같은 글을 다시 알리지 않게)
 try { loadState(); } catch (e) {}
+// 지정해둔 User-Agent 복원
+try { loadUA(); } catch (e) {}
 
 // ═══════════════ 앱 API 연결 (직접 붙여넣기용) ═══════════════
 //
