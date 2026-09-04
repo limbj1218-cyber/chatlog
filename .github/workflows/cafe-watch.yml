@@ -1,0 +1,106 @@
+name: 카페 새글 감시
+
+# 네이버 카페(비공개)의 최신 글 목록을 주기적으로 받아
+# 비공개 저장소 limbj1218-cyber/cafe-watch 의 latest.json 으로 기록한다.
+# 오토봇(폰)이 그 파일을 읽어 방에 알린다.
+#
+# ★ 글 제목은 로그에 출력하지 않는다 (이 저장소는 공개이므로 실행 로그도 공개된다).
+# ★ 필요한 시크릿
+#    NAVER_COOKIE     — 브라우저에서 뽑은 네이버 쿠키 전체 문자열
+#    CAFE_REPO_TOKEN  — cafe-watch 저장소에 Contents 읽기/쓰기 권한이 있는 PAT
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: cafe-watch
+  cancel-in-progress: false
+
+env:
+  CLUBID: "31766195"
+  CAFE_URL: "autoworker2"
+  PER_PAGE: "20"
+  TARGET_REPO: "limbj1218-cyber/cafe-watch"
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 카페 글 목록 받기
+        env:
+          NAVER_COOKIE: ${{ secrets.NAVER_COOKIE }}
+        run: |
+          if [ -z "$NAVER_COOKIE" ]; then
+            echo "❌ NAVER_COOKIE 시크릿이 없습니다."
+            exit 1
+          fi
+
+          UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36'
+          URL="https://apis.naver.com/cafe-web/cafe2/ArticleListV2dot1.json?search.clubid=${CLUBID}&search.queryType=lastArticle&search.page=1&search.perPage=${PER_PAGE}&ad=false"
+
+          code=$(curl -s -o resp.json -w '%{http_code}' --max-time 25 \
+            -H "Cookie: ${NAVER_COOKIE}" \
+            -H "User-Agent: ${UA}" \
+            -H 'Accept: application/json, text/plain, */*' \
+            -H 'Accept-Language: ko-KR,ko;q=0.9' \
+            "$URL")
+
+          status=$(jq -r '.message.status // "?"' resp.json 2>/dev/null)
+          echo "HTTP: $code / status: $status"
+
+          if [ "$status" != "200" ]; then
+            echo "❌ 카페를 읽지 못했습니다: $(jq -r '.message.error.msg // "알 수 없음"' resp.json)"
+            echo "   (쿠키가 만료됐다면 NAVER_COOKIE 시크릿을 새로 넣어주세요)"
+            exit 1
+          fi
+
+          # 필요한 항목만 추려서 저장한다. 로그에는 개수만 찍는다.
+          jq '{
+                updatedAt: (now | todateiso8601),
+                clubId: (.message.result.cafeId),
+                cafeName: (.message.result.cafeName),
+                cafeUrl: env.CAFE_URL,
+                articles: [
+                  .message.result.articleList[]
+                  | select(.blindArticle != true)
+                  | {
+                      id: .articleId,
+                      subject: .subject,
+                      menu: .menuName,
+                      menuId: .menuId,
+                      writer: .writerNickname,
+                      ts: .writeDateTimestamp
+                    }
+                ]
+              }' resp.json > latest.json
+
+          echo "가져온 글 수: $(jq '.articles | length' latest.json)"
+          echo "최신 글 번호: $(jq '[.articles[].id] | max' latest.json)"
+
+      - name: 비공개 저장소에 반영
+        env:
+          TOKEN: ${{ secrets.CAFE_REPO_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "❌ CAFE_REPO_TOKEN 시크릿이 없습니다."
+            exit 1
+          fi
+
+          git clone --quiet --depth 1 \
+            "https://x-access-token:${TOKEN}@github.com/${TARGET_REPO}.git" out
+          cp latest.json out/latest.json
+          cd out
+
+          if git diff --quiet -- latest.json; then
+            echo "변경 없음 — 커밋하지 않습니다."
+            exit 0
+          fi
+
+          git config user.name "cafe-watch"
+          git config user.email "actions@users.noreply.github.com"
+          git add latest.json
+          git commit --quiet -m "카페 최신글 갱신"
+          git push --quiet
+          echo "✅ latest.json 갱신 완료"

@@ -6,16 +6,20 @@
  *    /리스트   → 이 방에서 반응하는 트리거 목록 (누구나)
  *    /오토     → 진단 (방 인식·데이터 상태·버전) — 모든 방에서 동작
  *    /카페     → 카페 새글 알림 상태 진단
- *    /쿠키     → 네이버 로그인 쿠키 등록 (관리자만). NID_AUT → NID_SES 순으로 하나씩 물어본다
- *                (한 줄로 넣으려면 /쿠키 NID_AUT=값; NID_SES=값, 중간에 그만두려면 /취소)
- *    /쿠키삭제 → 등록한 쿠키 지우기 (관리자만)
+ *    /깃토큰   → 카페 목록을 읽을 깃헙 토큰 등록 (관리자만, /깃토큰 삭제 로 제거)
  *    ※ 등록/삭제 명령은 없다. 내용은 깃헙의 bot/오토봇데이터.json 을 고쳐서 관리한다.
  *
  *  ◆ 네이버 카페 새글 알림
- *    CHECK_MIN 분마다 카페 글 목록 API를 확인해 새 글을 방에 알린다 (제목 + 링크).
- *    비공개 카페는 네이버 로그인 쿠키가 있어야 읽힌다. 쿠키는 깃헙에 올리지 않고
- *    ① 방에서 /쿠키 명령 ② 로더의 MY_COOKIE ③ 폰의 <캐시폴더>/naver_cookie.txt 중 하나로 넣는다.
- *    (①로 넣으면 폰 파일에 저장되므로 앱을 껐다 켜도 유지된다)
+ *    폰에서 네이버를 직접 부르면 세션이 거부되므로(쿠키·IP·헤더를 다 맞춰도 실패),
+ *    깃헙 Actions 가 대신 카페를 확인해 비공개 저장소에 목록을 써 두고 봇은 그걸 읽는다.
+ *
+ *      chatlog(.github/workflows/cafe-watch.yml, 10분마다)
+ *        → 네이버 카페 API (쿠키는 저장소 Secret)
+ *        → cafe-watch(비공개)/latest.json
+ *        → 오토봇이 checkMin 분마다 읽어 새 글만 방에 알림
+ *
+ *    폰에는 비공개 저장소를 읽을 깃헙 토큰만 둔다 (/깃토큰, 또는 gh_token.txt).
+ *    ※ /쿠키·/UA 는 폰에서 네이버를 직접 부르던 시절의 잔재로, 지금 경로에서는 쓰이지 않는다.
  *
  *  ◆ 데이터
  *    깃헙에서 오토봇데이터.json 을 받아 쓰고, 받은 내용을 폰에 캐시한다.
@@ -31,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-11";
+var BOT_VER = "0904-12";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -83,8 +87,13 @@ function secChUa() {
     return '"Chromium";v="' + v + '", "Google Chrome";v="' + v + '", "Not.A/Brand";v="24"';
 }
 
-// 로더에서 주입한다 (폰에만 두는 값 — 깃헙에는 올리지 않는다)
+// 카페 최신글 목록이 놓이는 비공개 저장소 (깃헙 Actions 가 갱신한다)
+var GH_REPO = "limbj1218-cyber/cafe-watch";
+var GH_PATH = "latest.json";
+
+// 폰에만 두는 값 — 깃헙에는 올리지 않는다 (로더 주입 또는 /깃토큰 · /쿠키 로 등록)
 var NAVER_COOKIE = "";
+var GH_TOKEN = "";
 
 // /쿠키 명령을 쓸 수 있는 사람 (대화명에 이 문자열이 포함되면 관리자). 로더가 덮어쓴다.
 var ADMINS = ["후파", "임병진"];
@@ -165,6 +174,7 @@ var CACHE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇캐시.json") : null;
 var STATE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇상태.json") : null;
 var COOKIE_FILE = BASE_DIR ? (BASE_DIR + "/naver_cookie.txt") : null;
 var UA_FILE = BASE_DIR ? (BASE_DIR + "/naver_ua.txt") : null;
+var TOKEN_FILE = BASE_DIR ? (BASE_DIR + "/gh_token.txt") : null;
 
 /**
  * 텍스트 가져오기 — jsoup 우선, 없으면 순수 자바 HTTP.
@@ -175,7 +185,7 @@ function fetchText(url, opt) {
     // 쿠키가 필요한 요청은 jsoup 을 건너뛴다.
     // (jsoup 은 자체 쿠키 저장소로 Cookie 헤더를 덮어써 로그인이 풀리는 경우가 있다)
     try {
-        if (!opt.cookie && typeof org !== "undefined" && org.jsoup) {
+        if (!opt.cookie && !opt.headers && typeof org !== "undefined" && org.jsoup) {
             var c = org.jsoup.Jsoup.connect(url)
                 .ignoreContentType(true)
                 .ignoreHttpErrors(true)
@@ -190,6 +200,11 @@ function fetchText(url, opt) {
 
     var conn = new java.net.URL(url).openConnection();
     conn.setRequestProperty("User-Agent", currentUA());
+    if (opt.headers) {
+        for (var h = 0; h < opt.headers.length; h++) {
+            try { conn.setRequestProperty(opt.headers[h][0], opt.headers[h][1]); } catch (he) {}
+        }
+    }
     if (opt.cookie) {
         // 브라우저가 주소창으로 여는 요청과 최대한 똑같이 맞춘다
         conn.setRequestProperty("Cookie", opt.cookie);
@@ -324,17 +339,7 @@ var cafeErr = null;
 var cafeSentTotal = 0;
 var cafeWarnAt = 0;        // 로그인 만료 경고 도배 방지
 var cafeRawHead = "";      // 마지막 응답 앞부분 (진단용)
-var cafeApiUsed = "";      // 마지막으로 시도한 API 이름 (진단용)
-
-// 글 목록 API 후보 — 앞에서부터 차례로 시도한다 (응답 모양은 같다)
-var CAFE_APIS = ["ArticleListV2dot1", "ArticleListV2"];
-
-function cafeApiUrl(name) {
-    return "https://apis.naver.com/cafe-web/cafe2/" + name + ".json" +
-        "?search.clubid=" + CAFE.clubId +
-        "&search.queryType=lastArticle&search.page=1" +
-        "&search.perPage=" + CAFE.perPage + "&ad=false";
-}
+var cafeUpdatedAt = "";    // 깃헙이 목록을 갱신한 시각
 
 /**
  * 봇이 먼저 말 걸기 — 앱마다 API가 달라서 되는 것을 순서대로 시도한다.
@@ -345,6 +350,62 @@ function sendToRoom(room, text) {
     try { if (typeof bot !== "undefined" && bot && bot.send) { bot.send(room, text); return true; } } catch (e) {}
     try { if (typeof Bot !== "undefined" && Bot && Bot.send) { Bot.send(room, text); return true; } } catch (e) {}
     return false;
+}
+
+/** 깃헙 토큰 — ① 로더 주입 ② 폰의 gh_token.txt */
+function ghToken() {
+    if (GH_TOKEN) return GH_TOKEN;
+    if (TOKEN_FILE) {
+        var t = fileRead(TOKEN_FILE);
+        if (t) return String(t).replace(/[\r\n]+/g, "").replace(/^\s+|\s+$/g, "");
+    }
+    return "";
+}
+
+/** /깃토큰 <PAT> — 비공개 저장소를 읽을 토큰 등록 (관리자만) */
+function setTokenCmd(arg, sender, isGroupChat) {
+    if (!isAdmin(sender)) return null;
+    var v = String(arg || "").replace(/[\r\n]+/g, " ").replace(/^\s+|\s+$/g, "");
+
+    if (!v) {
+        return "🔐 깃헙 토큰 등록\n─────────────\n" +
+            "현재: " + (ghToken() ? "등록됨 ✅" : "없음 ❌") + "\n\n" +
+            "사용법: " + PREFIX + "깃토큰 <토큰>\n" +
+            "지우려면: " + PREFIX + "깃토큰 삭제";
+    }
+    if (v === "삭제") {
+        GH_TOKEN = "";
+        if (TOKEN_FILE) fileWrite(TOKEN_FILE, "");
+        return "🗑️ 깃헙 토큰을 지웠어요.";
+    }
+    if (v.indexOf("gh") !== 0 && v.indexOf("github_pat_") !== 0) {
+        return "⛔ 토큰은 보통 ghp_ 또는 github_pat_ 로 시작해요. 값을 다시 확인해주세요.";
+    }
+
+    GH_TOKEN = v;
+    var saved = false;
+    if (TOKEN_FILE) saved = fileWrite(TOKEN_FILE, v);
+
+    var head = "🔐 깃헙 토큰을 등록했어요 (" + v.length + "자)" +
+        (saved ? "" : "\n⚠️ 파일 저장 실패 — 앱을 껐다 켜면 사라집니다") +
+        (isGroupChat ? "\n⚠️ 여기는 단톡방이에요 — 방금 보낸 메시지를 꼭 삭제하세요!" : "");
+
+    var wasFirst = (cafeLastId === 0);
+    cafeCheck();
+    if (cafeErr) return head + "\n\n❌ 목록 읽기 실패: " + cafeErr;
+    return head + "\n\n✅ 카페 목록을 읽었어요!" +
+        (wasFirst ? "\n지금부터 올라오는 새 글만 알려드릴게요 (기준 글번호 " + cafeLastId + ")"
+                  : "\n마지막 글번호: " + cafeLastId);
+}
+
+function loadToken() {
+    if (!TOKEN_FILE) return;
+    try {
+        var t = fileRead(TOKEN_FILE);
+        if (!t) return;
+        t = String(t).replace(/[\r\n]+/g, "").replace(/^\s+|\s+$/g, "");
+        if (t) GH_TOKEN = t;
+    } catch (e) {}
 }
 
 /** 네이버 로그인 쿠키 — ① 로더 주입 ② 폰의 naver_cookie.txt */
@@ -520,11 +581,8 @@ function cafeDebugCmd(sender) {
     var ip = myPublicIp();
     return cafeText() +
         "\n\n── 진단 ──\nHTTP: " + (LAST_HTTP || "(모름)") +
-        "\n쿠키 구성: " + cookieShape() +
-        "\n앱 쿠키핸들러: " + (COOKIE_HANDLER_SEEN ? "있었음 (요청 동안 껐다 켬)" : "없음") +
-        "\nUser-Agent: " + (UA_OVERRIDE ? "지정됨 (" + UA_OVERRIDE.length + "자)" : "기본값") +
+        "\n깃헙 토큰 길이: " + (ghToken() ? ghToken().length + "자" : "없음") +
         "\n봇 공인 IP: " + ip +
-        "\n사용 API: " + (cafeApiUsed || "(아직 없음)") +
         "\n응답 앞부분:\n" + (cafeRawHead || "(없음)");
 }
 
@@ -599,11 +657,10 @@ function cafeArticleUrl(id) {
     return "https://cafe.naver.com/" + CAFE.cafeUrl + "/" + id;
 }
 
-/** 알릴 대상 글인지 — 새 글이고, 가려진 글이 아니고, 지정 게시판이면 그 게시판 */
+/** 알릴 대상 글인지 — 새 글이고, 지정 게시판이 있으면 그 게시판 */
 function cafeWanted(a) {
-    if (!a || !a.articleId) return false;
-    if (Number(a.articleId) <= cafeLastId) return false;
-    if (a.blindArticle) return false;
+    if (!a || !a.id) return false;
+    if (Number(a.id) <= cafeLastId) return false;
     if (CAFE.menuIds.length > 0 && CAFE.menuIds.indexOf(Number(a.menuId)) === -1) return false;
     return true;
 }
@@ -612,15 +669,15 @@ function cafeMessage(list) {
     var head = "📢 " + CAFE.name + " 카페 새글";
     if (list.length === 1) {
         var a = list[0];
-        return head + "\n\n[" + String(a.menuName || "") + "] " + String(a.subject) +
-            "\n✍️ " + String(a.writerNickname || "") + "\n" + cafeArticleUrl(a.articleId);
+        return head + "\n\n[" + String(a.menu || "") + "] " + String(a.subject) +
+            "\n✍️ " + String(a.writer || "") + "\n" + cafeArticleUrl(a.id);
     }
     var shown = list.slice(0, CAFE.maxNotify);
     var out = head + " " + list.length + "건\n";
     for (var i = 0; i < shown.length; i++) {
         var b = shown[i];
-        out += "\n[" + String(b.menuName || "") + "] " + String(b.subject) +
-            "\n" + cafeArticleUrl(b.articleId) + "\n";
+        out += "\n[" + String(b.menu || "") + "] " + String(b.subject) +
+            "\n" + cafeArticleUrl(b.id) + "\n";
     }
     if (list.length > shown.length) out += "\n… 외 " + (list.length - shown.length) + "건";
     return out;
@@ -633,43 +690,40 @@ function cafeMessage(list) {
 function cafeCheck() {
     if (!CAFE.on) return;
     cafeCheckedAt = new Date();
-    try {
-        // 주소를 차례로 시도한다 (하나가 막혀도 다른 게 열려 있을 수 있다).
-        // Referer 는 일부러 넣지 않는다 — 브라우저 주소창으로 열었을 때(정상 동작)와
-        // 똑같은 모양의 요청을 만들기 위해서다.
-        var m = null, txt = "", em = "알 수 없는 응답", j;
-        for (var e = 0; e < CAFE_APIS.length; e++) {
-            txt = fetchText(cafeApiUrl(CAFE_APIS[e]), { cookie: naverCookie(), referer: "" });
-            cafeRawHead = String(txt).substring(0, 200);
-            cafeApiUsed = CAFE_APIS[e];
-            try { j = JSON.parse(txt); } catch (pe) { j = null; }
-            m = j ? j.message : null;
-            if (m && String(m.status) === "200") break;
-            em = (m && m.error && m.error.msg) ? String(m.error.msg) : "알 수 없는 응답";
-            m = null;
-        }
+    var token = ghToken();
+    if (!token) {
+        cafeErr = "깃헙 토큰이 없어요 (" + PREFIX + "깃토큰 으로 등록하세요)";
+        return;
+    }
 
-        if (!m) {
-            cafeErr = em;
-            // 로그인 만료는 조용히 멈추면 모르니 6시간에 한 번 방에 알린다.
-            // 단, 한 번이라도 성공한 적이 있을 때만 — 아직 연결된 적 없으면 방에 알리지 않는다.
-            if (cafeOkAt && em.indexOf("로그인") !== -1 &&
-                new Date().getTime() - cafeWarnAt > 6 * 3600 * 1000) {
-                cafeWarnAt = new Date().getTime();
-                cafeBroadcast("⚠️ 카페 새글 알림이 멈췄어요 — 네이버 로그인이 만료됐습니다.\n" +
-                    "(쿠키를 다시 넣어주세요)");
-            }
+    try {
+        // 깃헙 Actions 가 만들어 둔 최신 글 목록을 비공개 저장소에서 읽어온다.
+        // (네이버를 폰에서 직접 부르면 세션이 거부되므로 깃헙을 거친다)
+        var url = "https://api.github.com/repos/" + GH_REPO + "/contents/" + GH_PATH +
+            "?t=" + new Date().getTime();
+        var txt = fetchText(url, {
+            headers: [
+                ["Authorization", "token " + token],
+                ["Accept", "application/vnd.github.raw"],
+                ["X-GitHub-Api-Version", "2022-11-28"]
+            ]
+        });
+        cafeRawHead = String(txt).substring(0, 200);
+
+        var j = JSON.parse(txt);
+        if (!j || !j.articles) {
+            cafeErr = "받은 내용이 올바르지 않아요";
             return;
         }
+        cafeUpdatedAt = String(j.updatedAt || "");
 
-        var list = (m.result && m.result.articleList) ? m.result.articleList : [];
-        var fresh = [], i;
+        var list = j.articles, fresh = [], i;
         for (i = 0; i < list.length; i++) if (cafeWanted(list[i])) fresh.push(list[i]);
 
         // 이번에 본 것 중 가장 큰 글 번호 (알림 여부와 무관하게 갱신)
         var maxId = cafeLastId;
         for (i = 0; i < list.length; i++) {
-            var n = Number(list[i].articleId);
+            var n = Number(list[i].id);
             if (n > maxId) maxId = n;
         }
 
@@ -680,7 +734,7 @@ function cafeCheck() {
         cafeOkAt = new Date();
         if (first || fresh.length === 0) return;   // 첫 가동이면 기준만 잡고 끝
 
-        fresh.sort(function (x, y) { return Number(x.articleId) - Number(y.articleId); });
+        fresh.sort(function (x, y) { return Number(x.id) - Number(y.id); });
         cafeBroadcast(cafeMessage(fresh));
         cafeSentTotal += fresh.length;
 
@@ -702,7 +756,9 @@ function cafeText() {
     return "📰 카페 새글 알림 (" + CAFE.name + ")\n─────────────\n" +
         "상태: " + (CAFE.on ? "켜짐 ✅" : "꺼짐 ⏸️") + "\n" +
         "확인 주기: " + CAFE.checkMin + "분 (타이머: " + TIMER_KIND + ")\n" +
-        "쿠키: " + (naverCookie() ? "있음 ✅" : "없음 ❌ (비공개 카페는 필요)") + "\n" +
+        "출처: 깃헙 " + GH_REPO + "\n" +
+        "깃헙 토큰: " + (ghToken() ? "등록됨 ✅" : "없음 ❌ (" + PREFIX + "깃토큰 으로 등록)") + "\n" +
+        "목록 갱신 시각: " + (cafeUpdatedAt || "(아직 없음)") + "\n" +
         "마지막 글 번호: " + (cafeLastId || "(아직 없음)") + "\n" +
         "마지막 확인: " + (cafeCheckedAt ? cafeCheckedAt.toLocaleString() : "(아직 없음)") + "\n" +
         "마지막 성공: " + (cafeOkAt ? cafeOkAt.toLocaleString() : "(아직 없음)") + "\n" +
@@ -846,6 +902,11 @@ function response(room, msg, sender, isGroupChat, replier) {
             if (ur) replier.reply(ur);
             return;
         }
+        if (text === PREFIX + "깃토큰" || text.indexOf(PREFIX + "깃토큰 ") === 0) {
+            var tr = setTokenCmd(text.substring((PREFIX + "깃토큰").length), sender, isGroupChat);
+            if (tr) replier.reply(tr);
+            return;
+        }
         if (text === PREFIX + "헤더테스트") {
             var hr = headerTestCmd(sender);
             if (hr) replier.reply(hr);
@@ -898,6 +959,8 @@ try { loadData(); } catch (e) {}
 try { loadState(); } catch (e) {}
 // 지정해둔 User-Agent 복원
 try { loadUA(); } catch (e) {}
+// 저장해둔 깃헙 토큰 복원
+try { loadToken(); } catch (e) {}
 
 // ═══════════════ 앱 API 연결 (직접 붙여넣기용) ═══════════════
 //
