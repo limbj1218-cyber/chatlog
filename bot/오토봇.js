@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0904-16";
+var BOT_VER = "0905-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -90,6 +90,11 @@ function secChUa() {
 // 카페 최신글 목록이 놓이는 비공개 저장소 (깃헙 Actions 가 갱신한다)
 var GH_REPO = "limbj1218-cyber/cafe-watch";
 var GH_PATH = "latest.json";
+
+// 감시 워크플로우 — 깃헙 예약 실행이 자주 건너뛰어서, 봇이 직접 깨운다
+var WF_REPO = "limbj1218-cyber/chatlog";
+var WF_FILE = "cafe-watch.yml";
+var WF_REF = "main";
 
 // 폰에만 두는 값 — 깃헙에는 올리지 않는다 (로더 주입 또는 /깃토큰 · /쿠키 로 등록)
 var NAVER_COOKIE = "";
@@ -224,6 +229,19 @@ function fetchText(url, opt) {
     if (opt.referer) conn.setRequestProperty("Referer", opt.referer);
     conn.setConnectTimeout(15000);
     conn.setReadTimeout(20000);
+
+    if (opt.method) {
+        try { conn.setRequestMethod(opt.method); } catch (me) {}
+        if (opt.body) {
+            try {
+                conn.setDoOutput(true);
+                var os = conn.getOutputStream();
+                os.write(new java.lang.String(opt.body).getBytes("UTF-8"));
+                os.flush();
+                os.close();
+            } catch (be) {}
+        }
+    }
 
     // 앱에 기본 CookieHandler 가 깔려 있으면 우리가 넣은 Cookie 헤더를 자기 것으로 덮어쓴다.
     // 그래서 이 요청 동안만 잠시 꺼두고, 끝나면 원래대로 되돌린다.
@@ -677,10 +695,17 @@ function myPublicIp() {
 
 function cafeDebugCmd(sender) {
     if (!isAdmin(sender)) return null;
-    cafeCheck();
+
+    // 먼저 워크플로우를 깨워 카페를 새로 읽게 하고, 끝날 때까지 잠깐 기다린 뒤 확인한다
+    var token = ghToken();
+    var kicked = token ? kickWorkflow(token) : false;
+    if (kicked) sleepMs(25000);
+    cafeCheck(true);
+
     var ip = myPublicIp();
     return cafeText() +
         "\n\n── 진단 ──\nHTTP: " + (LAST_HTTP || "(모름)") +
+        "\n워크플로우 깨우기: " + (kicked ? "성공 ✅ (204)" : "실패 ❌ (" + wfKickCode + ")") +
         "\n깃헙 토큰 길이: " + (ghToken() ? ghToken().length + "자" : "없음") +
         "\n봇 공인 IP: " + ip +
         "\n응답 앞부분:\n" + (cafeRawHead || "(없음)");
@@ -787,6 +812,37 @@ function cafeMessage(list) {
  * 카페를 한 번 확인한다.
  * 처음 실행이면(기록 없음) 알리지 않고 현재 최신 글 번호만 기억한다 — 밀린 글 도배 방지.
  */
+var wfKickedAt = null;     // 마지막으로 워크플로우를 깨운 시각
+var wfKickCode = 0;        // 그때 받은 HTTP 코드 (204 면 성공)
+
+/**
+ * 감시 워크플로우를 지금 실행시킨다.
+ * 깃헙 예약 실행이 몇 시간씩 건너뛰는 일이 잦아, 5분마다 도는 봇이 직접 깨운다.
+ */
+function kickWorkflow(token) {
+    try {
+        var url = "https://api.github.com/repos/" + WF_REPO +
+            "/actions/workflows/" + WF_FILE + "/dispatches";
+        fetchText(url, {
+            method: "POST",
+            body: '{"ref":"' + WF_REF + '"}',
+            headers: [
+                ["Authorization", "token " + token],
+                ["Accept", "application/vnd.github+json"],
+                ["Content-Type", "application/json"],
+                ["X-GitHub-Api-Version", "2022-11-28"]
+            ]
+        });
+    } catch (e) {}
+    wfKickedAt = new Date();
+    wfKickCode = LAST_HTTP;          // 204 = 실행 요청 성공
+    return LAST_HTTP === 204;
+}
+
+function sleepMs(ms) {
+    try { java.lang.Thread.sleep(ms); } catch (e) {}
+}
+
 /**
  * 깃헙 Actions 가 만들어 둔 최신 글 목록을 비공개 저장소에서 읽어온다.
  * (네이버를 폰에서 직접 부르면 세션이 거부되므로 깃헙을 거친다)
@@ -825,7 +881,7 @@ function cafeTestCmd(sender) {
     }
 }
 
-function cafeCheck() {
+function cafeCheck(noKick) {
     if (!CAFE.on) return;
     cafeCheckedAt = new Date();
     var token = ghToken();
@@ -833,6 +889,10 @@ function cafeCheck() {
         cafeErr = "깃헙 토큰이 없어요 (" + PREFIX + "깃토큰 으로 등록하세요)";
         return;
     }
+
+    // 다음 확인 때 최신 목록을 보도록 워크플로우를 미리 깨워 둔다 (결과는 기다리지 않는다).
+    // 깃헙 예약 실행이 몇 시간씩 건너뛰기 때문에 이 쪽이 훨씬 안정적이다.
+    if (!noKick) runAsync(function () { kickWorkflow(token); });
 
     try {
         var j = fetchCafeFeed(token);
@@ -897,6 +957,10 @@ function cafeText() {
         "출처: 깃헙 " + GH_REPO + "\n" +
         "깃헙 토큰: " + (ghToken() ? "등록됨 ✅" : "없음 ❌ (" + PREFIX + "깃토큰 으로 등록)") + "\n" +
         "목록 갱신 시각: " + (cafeUpdatedAt || "(아직 없음)") + "\n" +
+        "워크플로우 깨우기: " + (wfKickedAt
+            ? (wfKickCode === 204 ? "정상 ✅" : "실패 (" + wfKickCode + ")") +
+              " " + wfKickedAt.toLocaleString()
+            : "(아직 없음)") + "\n" +
         "마지막 글 번호: " + (cafeLastId || "(아직 없음)") + "\n" +
         "마지막 확인: " + (cafeCheckedAt ? cafeCheckedAt.toLocaleString() : "(아직 없음)") + "\n" +
         "마지막 성공: " + (cafeOkAt ? cafeOkAt.toLocaleString() : "(아직 없음)") + "\n" +
