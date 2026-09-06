@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0905-1";
+var BOT_VER = "0905-2";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -45,7 +45,23 @@ var ROOMS = [
 
 // 로더(MY_ROOMS)가 위 ROOMS 를 덮어쓰므로, 로더를 다시 붙여넣지 않고 방을 늘리려면 여기에 적는다.
 var EXTRA_ROOMS = [
-    "[오차율 계산봇]"
+    "[오차율 계산봇]",
+    "공백기 근무표"
+];
+
+// ── 대화 기록 (삭제된 메시지 찾아보기용) ──
+// 카톡은 삭제를 봇에게 알려주지 않으므로, 오는 메시지를 모아뒀다가 나중에 되짚어 보는 방식이다.
+var LOG_ROOMS = ["오토2", "오토2프프", "공백기 근무표"];   // 기록할 방
+var VIEW_ROOM = "공백기 근무표";                            // 조회 명령을 쓸 수 있는 방
+var LOG_MAX = 200;                                          // 방마다 보관할 최대 개수
+var LOG_SHOW = 15;                                          // 한 번에 보여줄 개수
+var LOG_FLUSH_EVERY = 10;                                   // 몇 개마다 파일로 저장할지
+
+// 조회 명령 → 어느 방의 기록을 보여줄지
+var LOG_CMDS = [
+    ["삭제내역", VIEW_ROOM],
+    ["삭제내역1", "오토2"],
+    ["삭제내역2", "오토2프프"]
 ];
 
 var PREFIX = "/";                  // 명령어 접두사
@@ -180,6 +196,7 @@ var STATE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇상태.json") : null;
 var COOKIE_FILE = BASE_DIR ? (BASE_DIR + "/naver_cookie.txt") : null;
 var UA_FILE = BASE_DIR ? (BASE_DIR + "/naver_ua.txt") : null;
 var TOKEN_FILE = BASE_DIR ? (BASE_DIR + "/gh_token.txt") : null;
+var LOG_FILE = BASE_DIR ? (BASE_DIR + "/대화기록.json") : null;
 
 /**
  * 텍스트 가져오기 — jsoup 우선, 없으면 순수 자바 HTTP.
@@ -1028,6 +1045,68 @@ function timerBeat() {
     } catch (e) {}
 })();
 
+// ═══════════════ 대화 기록 ═══════════════
+
+var LOGS = null;        // { 방이름: [ {t,s,m}, ... ] }
+var logSinceFlush = 0;
+
+function logTime() {
+    var d = new Date(), h = d.getHours(), ap = h < 12 ? "오전" : "오후";
+    var hh = h % 12; if (hh === 0) hh = 12;
+    var mm = d.getMinutes(); if (mm < 10) mm = "0" + mm;
+    return ap + " " + hh + ":" + mm;
+}
+
+function loadLogs() {
+    if (LOGS) return LOGS;
+    LOGS = {};
+    if (LOG_FILE) {
+        try {
+            var s = fileRead(LOG_FILE);
+            if (s) {
+                var o = JSON.parse(s);
+                if (o && typeof o === "object") LOGS = o;
+            }
+        } catch (e) {}
+    }
+    return LOGS;
+}
+
+function saveLogs() {
+    if (!LOG_FILE) return;
+    try { fileWrite(LOG_FILE, JSON.stringify(loadLogs())); } catch (e) {}
+}
+
+function logMessage(room, sender, msg) {
+    if (LOG_ROOMS.indexOf(room) === -1) return;
+    var all = loadLogs();
+    if (!all[room]) all[room] = [];
+    all[room].push({ t: logTime(), s: String(sender), m: String(msg) });
+    while (all[room].length > LOG_MAX) all[room].shift();
+
+    logSinceFlush++;
+    if (logSinceFlush >= LOG_FLUSH_EVERY) { logSinceFlush = 0; saveLogs(); }
+}
+
+function logText(targetRoom) {
+    var all = loadLogs();
+    var list = all[targetRoom] || [];
+    if (list.length === 0) {
+        return "📭 「" + targetRoom + "」 기록이 아직 없어요.\n" +
+            "(봇이 켜진 뒤에 오는 메시지부터 쌓입니다)";
+    }
+    var start = list.length > LOG_SHOW ? list.length - LOG_SHOW : 0;
+    var out = "🗂️ 「" + targetRoom + "」 최근 " + (list.length - start) + "개" +
+        " (보관 " + list.length + "/" + LOG_MAX + ")\n─────────────";
+    for (var i = start; i < list.length; i++) {
+        var e = list[i];
+        var m = String(e.m).replace(/\n/g, " ");
+        if (m.length > 60) m = m.substring(0, 60) + "…";
+        out += "\n" + e.t + " " + e.s + ": " + m;
+    }
+    return out;
+}
+
 // ═══════════════ 명령어 ═══════════════
 
 function listText(room) {
@@ -1130,6 +1209,20 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         // ① 목록에 없는 방은 완전히 무시
         if (!inRooms(room)) return;
+
+        // ①-1 대화 기록 (삭제된 메시지 되짚어보기용)
+        //     쿠키·토큰 명령은 위에서 이미 처리하고 돌아가므로 여기까지 오지 않는다
+        try { logMessage(room, sender, msg); } catch (e) {}
+
+        // ①-2 기록 조회 — 지정한 방에서만, 누구나
+        if (room === VIEW_ROOM) {
+            for (var li = 0; li < LOG_CMDS.length; li++) {
+                if (text === PREFIX + LOG_CMDS[li][0]) {
+                    replier.reply(logText(LOG_CMDS[li][1]));
+                    return;
+                }
+            }
+        }
 
         // ② 데이터 준비 (없으면 바로, 있으면 주기마다 백그라운드로 갱신)
         if (DATA === null) loadData();
