@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0905-3";
+var BOT_VER = "0905-4";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -53,9 +53,11 @@ var EXTRA_ROOMS = [
 // 카톡은 삭제를 봇에게 알려주지 않으므로, 오는 메시지를 모아뒀다가 나중에 되짚어 보는 방식이다.
 var LOG_ROOMS = ["오토2", "오토2프프", "공백기 근무표"];   // 기록할 방
 var VIEW_ROOM = "공백기 근무표";                            // 조회 명령을 쓸 수 있는 방
-var LOG_MAX = 200;                                          // 방마다 보관할 최대 개수
+var LOG_MAX = 3000;                                         // 방마다 보관할 최대 개수
 var LOG_SHOW = 15;                                          // 한 번에 보여줄 개수
-var LOG_FLUSH_EVERY = 10;                                   // 몇 개마다 파일로 저장할지
+// 저장은 파일 전체를 다시 쓰는 방식이라 자주 하면 손해다.
+// 평소엔 타이머가 5분마다 한 번 저장하고, 대화가 몰릴 때만 개수로 한 번 더 끊는다.
+var LOG_FLUSH_EVERY = 100;
 
 // 조회 명령 → 어느 방의 기록을 보여줄지
 var LOG_CMDS = [
@@ -1047,6 +1049,8 @@ function timerBeat() {
             lastCafeTickAt = now;
             cafeCheck();
         }
+        // 쌓인 대화 기록을 주기적으로 저장 (매 메시지마다 쓰면 파일 전체를 다시 쓰게 된다)
+        try { flushLogsIfDirty(); } catch (le) {}
     } catch (e) {}
     return true;
 }
@@ -1091,6 +1095,7 @@ function timerBeat() {
 
 var LOGS = null;        // { 방이름: [ {t,s,m}, ... ] }
 var logSinceFlush = 0;
+var logDirty = false;   // 저장하지 않은 변경이 있는지
 
 function logTime() {
     var d = new Date(), h = d.getHours(), ap = h < 12 ? "오전" : "오후";
@@ -1116,7 +1121,16 @@ function loadLogs() {
 
 function saveLogs() {
     if (!LOG_FILE) return;
-    try { fileWrite(LOG_FILE, JSON.stringify(loadLogs())); } catch (e) {}
+    try {
+        fileWrite(LOG_FILE, JSON.stringify(loadLogs()));
+        logDirty = false;
+        logSinceFlush = 0;
+    } catch (e) {}
+}
+
+/** 타이머가 부른다 — 저장하지 않은 변경이 있을 때만 쓴다 */
+function flushLogsIfDirty() {
+    if (logDirty) saveLogs();
 }
 
 function logMessage(room, sender, msg) {
@@ -1126,8 +1140,9 @@ function logMessage(room, sender, msg) {
     all[room].push({ t: logTime(), s: String(sender), m: String(msg) });
     while (all[room].length > LOG_MAX) all[room].shift();
 
+    logDirty = true;
     logSinceFlush++;
-    if (logSinceFlush >= LOG_FLUSH_EVERY) { logSinceFlush = 0; saveLogs(); }
+    if (logSinceFlush >= LOG_FLUSH_EVERY) saveLogs();
 }
 
 function logText(targetRoom) {
