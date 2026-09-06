@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0905-2";
+var BOT_VER = "0905-3";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -445,6 +445,48 @@ function sendToRoom(room, text) {
     SEND_TRIED = tried.join(" / ");
     SEND_KIND = "실패 ❌";
     return false;
+}
+
+/**
+ * 이 앱이 어떤 이벤트/기능을 제공하는지 그대로 나열한다.
+ * 삭제 감지에 쓸 수 있는 이벤트가 있는지 찾아보기 위한 조사용.
+ */
+function eventProbe() {
+    var out = [], k, n;
+
+    out.push("■ Event 상수");
+    try {
+        if (typeof Event === "undefined" || !Event) {
+            out.push("  (Event 없음)");
+        } else {
+            n = 0;
+            for (k in Event) {
+                var v = "";
+                try { v = " = " + Event[k]; } catch (e2) {}
+                out.push("  " + k + v);
+                if (++n >= 40) { out.push("  …"); break; }
+            }
+            if (n === 0) out.push("  (목록을 읽을 수 없음)");
+        }
+    } catch (e) { out.push("  오류: " + e); }
+
+    out.push("");
+    out.push("■ 봇 객체가 가진 것");
+    try {
+        var b = currentBot();
+        if (!b) {
+            out.push("  (봇 객체 없음)");
+        } else {
+            n = 0;
+            for (k in b) {
+                out.push("  " + k);
+                if (++n >= 40) { out.push("  …"); break; }
+            }
+            if (n === 0) out.push("  (목록을 읽을 수 없음)");
+        }
+    } catch (e) { out.push("  오류: " + e); }
+
+    return "🔍 앱 기능 조사\n─────────────\n" + out.join("\n");
 }
 
 /** 이 앱이 어떤 발송 수단을 제공하는지 그대로 보여준다 */
@@ -1235,6 +1277,10 @@ function response(room, msg, sender, isGroupChat, replier) {
         }
         if (text === PREFIX + "카페") {
             replier.reply(cafeText());
+            return;
+        }
+        if (text === PREFIX + "기능조사") {
+            if (isAdmin(sender)) replier.reply(eventProbe());
             return;
         }
         if (text === PREFIX + "발송테스트") {
