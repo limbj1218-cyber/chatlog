@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0905-4";
+var BOT_VER = "0907-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -80,7 +80,7 @@ var CAFE = {
     cafeUrl: "autoworker2",         // 링크 만들 때 쓰는 주소 (cafe.naver.com/이것/글번호)
     name: "오토워커",                // 알림 제목에 쓰는 이름
     rooms: ["오토2프프", "오토2"],   // 알림 보낼 방 (ROOMS 안에 있어야 함)
-    checkMin: 5,                    // 확인 주기 (분)
+    checkMin: 3,                    // 확인 주기 (분)
     perPage: 20,                    // 한 번에 확인할 글 수
     maxNotify: 5,                   // 한 번에 알릴 최대 글 수 (넘으면 "외 N건")
     menuIds: []                     // 특정 게시판만 알리려면 menuId 를 넣는다 (빈 배열 = 전체)
@@ -904,6 +904,37 @@ function sleepMs(ms) {
     try { java.lang.Thread.sleep(ms); } catch (e) {}
 }
 
+var cafeCycleRunning = false;
+
+/**
+ * 한 주기에 "깨우기 → 잠깐 기다리기 → 읽기"를 모두 한다.
+ * 예전처럼 깨우기와 읽기를 다른 주기에 나눠 하면 확인 주기만큼(몇 분) 그냥 늦어진다.
+ * 워크플로우는 보통 10초 안팎이면 끝나므로, 갱신이 확인되면 바로 끊는다.
+ * ※ 반드시 백그라운드에서 부를 것 — 여기서 기다리는 동안 메시지 처리가 멈추면 안 된다.
+ */
+function cafeCycle() {
+    if (cafeCycleRunning) return;
+    cafeCycleRunning = true;
+    try {
+        var token = ghToken();
+        if (!token) { cafeCheck(true); return; }
+
+        var before = cafeUpdatedAt;
+        kickWorkflow(token);
+
+        var waits = [12000, 12000, 15000];   // 12초 → 24초 → 39초
+        for (var i = 0; i < waits.length; i++) {
+            sleepMs(waits[i]);
+            cafeCheck(true);
+            if (cafeUpdatedAt && cafeUpdatedAt !== before) break;   // 갱신됨 → 끝
+        }
+    } catch (e) {
+        cafeErr = String(e);
+    } finally {
+        cafeCycleRunning = false;
+    }
+}
+
 /**
  * 깃헙 Actions 가 만들어 둔 최신 글 목록을 비공개 저장소에서 읽어온다.
  * (네이버를 폰에서 직접 부르면 세션이 거부되므로 깃헙을 거친다)
@@ -1047,7 +1078,7 @@ function timerBeat() {
         var now = new Date().getTime();
         if (now - lastCafeTickAt >= CAFE.checkMin * 60 * 1000) {
             lastCafeTickAt = now;
-            cafeCheck();
+            runAsync(cafeCycle);   // 깨우기·기다리기·읽기를 한 번에 (타이머는 막지 않는다)
         }
         // 쌓인 대화 기록을 주기적으로 저장 (매 메시지마다 쓰면 파일 전체를 다시 쓰게 된다)
         try { flushLogsIfDirty(); } catch (le) {}
