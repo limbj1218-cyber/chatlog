@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0907-1";
+var BOT_VER = "0907-2";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -331,14 +331,40 @@ function loadData() {
 }
 
 /** 네트워크 대기로 메시지 처리가 멈추지 않게 별도 스레드에서 실행 (안 되면 그냥 실행) */
+// 지금 실행 중인 코드가 진짜 백그라운드 스레드인지.
+// 여기서만 기다려도 되고, 이게 false 면 절대 기다리면 안 된다 (봇 전체가 멈춘다).
+var IN_BG = false;
+
+/**
+ * 백그라운드에서 실행. 스레드를 못 만들면 그 자리에서 실행하고 false 를 돌려준다.
+ * (메신저봇R API2 에는 JavaAdapter 가 없어서 그 방식만으로는 스레드가 안 만들어진다)
+ */
 function runAsync(fn) {
+    var body = function () {
+        IN_BG = true;
+        try { fn(); } catch (e) {}
+        IN_BG = false;
+    };
+
+    // ① Rhino 는 JS 함수를 Runnable 로 바로 바꿔준다
     try {
-        var t = new java.lang.Thread(new JavaAdapter(java.lang.Runnable, { run: fn }));
+        var t = new java.lang.Thread(body);
         t.setDaemon(true);
         t.start();
-        return;
+        return true;
     } catch (e) {}
-    try { fn(); } catch (e2) {}
+
+    // ② JavaAdapter 가 있는 엔진
+    try {
+        var t2 = new java.lang.Thread(new JavaAdapter(java.lang.Runnable, { run: body }));
+        t2.setDaemon(true);
+        t2.start();
+        return true;
+    } catch (e) {}
+
+    // ③ 스레드를 못 만들면 여기서 그냥 실행 (IN_BG 는 false 이므로 기다리지 않는다)
+    try { fn(); } catch (e) {}
+    return false;
 }
 
 /** 마지막 갱신이 REFRESH_MIN 분보다 오래됐으면 백그라운드로 다시 받아온다 */
@@ -759,8 +785,9 @@ function cafeDebugCmd(sender) {
 
     // 먼저 워크플로우를 깨워 카페를 새로 읽게 하고, 끝날 때까지 잠깐 기다린 뒤 확인한다
     var token = ghToken();
+    // 이 명령은 메시지 처리 흐름에서 도므로 오래 기다리면 안 된다 (봇이 그동안 멈춘다)
     var kicked = token ? kickWorkflow(token) : false;
-    if (kicked) sleepMs(25000);
+    if (kicked) sleepMs(12000);
     cafeCheck(true);
 
     var ip = myPublicIp();
@@ -921,6 +948,10 @@ function cafeCycle() {
 
         var before = cafeUpdatedAt;
         kickWorkflow(token);
+
+        // 백그라운드 스레드가 아니면 절대 기다리지 않는다 — 기다리면 봇 전체가 멈춘다.
+        // 이 경우엔 깨우기만 하고, 결과는 다음 주기에 읽는다 (조금 늦을 뿐 동작은 한다).
+        if (!IN_BG) { cafeCheck(true); return; }
 
         var waits = [12000, 12000, 15000];   // 12초 → 24초 → 39초
         for (var i = 0; i < waits.length; i++) {
