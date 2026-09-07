@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0907-2";
+var BOT_VER = "0907-3";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -331,9 +331,19 @@ function loadData() {
 }
 
 /** 네트워크 대기로 메시지 처리가 멈추지 않게 별도 스레드에서 실행 (안 되면 그냥 실행) */
-// 지금 실행 중인 코드가 진짜 백그라운드 스레드인지.
-// 여기서만 기다려도 되고, 이게 false 면 절대 기다리면 안 된다 (봇 전체가 멈춘다).
-var IN_BG = false;
+// 메시지를 처리하는 스레드의 번호. response() 가 돌 때마다 갱신한다.
+// 이 스레드에서 기다리면 봇 전체가 멈추고, 오래 멈추면 안드로이드가 앱을 정지시킨다.
+var MSG_THREAD_ID = -1;
+
+function threadId() {
+    try { return Number(java.lang.Thread.currentThread().getId()); } catch (e) { return -1; }
+}
+
+/** 지금 기다려도 안전한가 — 메시지 스레드가 아니어야 하고, 확인이 안 되면 기다리지 않는다 */
+function safeToWait() {
+    var id = threadId();
+    return id !== -1 && MSG_THREAD_ID !== -1 && id !== MSG_THREAD_ID;
+}
 
 /**
  * 백그라운드에서 실행. 스레드를 못 만들면 그 자리에서 실행하고 false 를 돌려준다.
@@ -341,9 +351,7 @@ var IN_BG = false;
  */
 function runAsync(fn) {
     var body = function () {
-        IN_BG = true;
         try { fn(); } catch (e) {}
-        IN_BG = false;
     };
 
     // ① Rhino 는 JS 함수를 Runnable 로 바로 바꿔준다
@@ -362,7 +370,7 @@ function runAsync(fn) {
         return true;
     } catch (e) {}
 
-    // ③ 스레드를 못 만들면 여기서 그냥 실행 (IN_BG 는 false 이므로 기다리지 않는다)
+    // ③ 스레드를 못 만들면 여기서 그냥 실행 (이때는 기다리는 동작을 하지 않는다)
     try { fn(); } catch (e) {}
     return false;
 }
@@ -785,9 +793,9 @@ function cafeDebugCmd(sender) {
 
     // 먼저 워크플로우를 깨워 카페를 새로 읽게 하고, 끝날 때까지 잠깐 기다린 뒤 확인한다
     var token = ghToken();
-    // 이 명령은 메시지 처리 흐름에서 도므로 오래 기다리면 안 된다 (봇이 그동안 멈춘다)
+    // 이 명령은 메시지 처리 흐름에서 돈다 — 여기서 기다리면 봇이 그동안 멈추므로
+    // 깨우기만 하고 바로 읽는다 (직전 실행 결과가 보이며, 새 내용은 곧 반영된다)
     var kicked = token ? kickWorkflow(token) : false;
-    if (kicked) sleepMs(12000);
     cafeCheck(true);
 
     var ip = myPublicIp();
@@ -951,7 +959,7 @@ function cafeCycle() {
 
         // 백그라운드 스레드가 아니면 절대 기다리지 않는다 — 기다리면 봇 전체가 멈춘다.
         // 이 경우엔 깨우기만 하고, 결과는 다음 주기에 읽는다 (조금 늦을 뿐 동작은 한다).
-        if (!IN_BG) { cafeCheck(true); return; }
+        if (!safeToWait()) { cafeCheck(true); return; }
 
         var waits = [12000, 12000, 15000];   // 12초 → 24초 → 39초
         for (var i = 0; i < waits.length; i++) {
@@ -1272,6 +1280,8 @@ function shouldReportError(text) {
 function response(room, msg, sender, isGroupChat, replier) {
     var text = "";
     try {
+        MSG_THREAD_ID = threadId();   // 이 스레드에서는 절대 기다리면 안 된다
+
         text = String(msg).trim();
         if (!text) return;
 
