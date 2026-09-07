@@ -26,7 +26,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0907-4";
+var BOT_VER = "0907-5";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -53,6 +53,7 @@ var LOG_ROOMS = ["오토2", "오토2프프", "공백기 근무표"];   // 기록
 var VIEW_ROOM = "공백기 근무표";                            // 조회 명령을 쓸 수 있는 방
 var LOG_MAX = 3000;                                         // 방마다 보관할 최대 개수
 var LOG_SHOW = 15;                                          // 한 번에 보여줄 개수
+var LOG_NEAR_MIN = 5;                                       // 시각으로 찾을 때 앞뒤 몇 분까지
 var LOG_FLUSH_EVERY = 100;                                  // 몇 개마다 파일로 저장할지
 
 // 조회 명령 → 어느 방의 기록을 보여줄지
@@ -306,22 +307,81 @@ function logMessage(room, sender, msg) {
     if (logSinceFlush >= LOG_FLUSH_EVERY) runAsync(saveLogs);
 }
 
-function logText(targetRoom) {
+/** "오후 3:24" → 자정부터의 분. 못 읽으면 -1 */
+function timeToMin(s) {
+    var t = String(s).replace(/^\s+|\s+$/g, "");
+    var pm = t.indexOf("오후") !== -1;
+    var am = t.indexOf("오전") !== -1;
+    var m = t.match(/(\d{1,2})\s*[:시]\s*(\d{1,2})/);
+    if (!m) {
+        // "1530" 처럼 붙여 쓴 경우
+        var m2 = t.match(/(\d{1,2})(\d{2})\s*$/);
+        if (!m2) return -1;
+        m = m2;
+    }
+    var h = Number(m[1]), mi = Number(m[2]);
+    if (h > 23 || mi > 59) return -1;
+    if (pm && h < 12) h += 12;
+    if (am && h === 12) h = 0;
+    return h * 60 + mi;
+}
+
+/**
+ * targetRoom 의 보관 기록을 보여준다.
+ * around 가 있으면 그 시각 앞뒤 LOG_NEAR_MIN 분만 추린다 (삭제된 메시지 찾기용).
+ */
+function logText(targetRoom, around) {
     var all = loadLogs();
     var list = all[targetRoom] || [];
     if (list.length === 0) {
         return "📭 「" + targetRoom + "」 기록이 아직 없어요.\n" +
             "(봇이 켜진 뒤에 오는 메시지부터 쌓입니다)";
     }
-    var start = list.length > LOG_SHOW ? list.length - LOG_SHOW : 0;
-    var out = "🗂️ 「" + targetRoom + "」 최근 " + (list.length - start) + "개" +
-        " (보관 " + list.length + "/" + LOG_MAX + ")\n─────────────";
-    for (var i = start; i < list.length; i++) {
-        var e = list[i];
+
+    var head, picked = [], i, e;
+
+    if (around) {
+        var want = timeToMin(around);
+        if (want < 0) {
+            return "시각을 못 읽었어요: 「" + around + "」\n" +
+                "예) " + PREFIX + "삭제내역1 3:24  /  " + PREFIX + "삭제내역1 오후 3:24";
+        }
+        // 오전/오후를 안 쓰고 12시 이하로 적었으면 양쪽 다 본다 (3:24 → 오전·오후 둘 다)
+        var wants = [want];
+        if (String(around).indexOf("오전") === -1 && String(around).indexOf("오후") === -1 &&
+            want < 12 * 60) {
+            wants.push(want + 12 * 60);
+        }
+        for (i = 0; i < list.length; i++) {
+            var mm = timeToMin(list[i].t);
+            if (mm < 0) continue;
+            for (var wi = 0; wi < wants.length; wi++) {
+                if (Math.abs(mm - wants[wi]) <= LOG_NEAR_MIN) { picked.push(list[i]); break; }
+            }
+        }
+        if (picked.length === 0) {
+            return "📭 그 시각 근처(±" + LOG_NEAR_MIN + "분)에 기록된 메시지가 없어요.";
+        }
+        if (picked.length > LOG_SHOW * 2) picked = picked.slice(picked.length - LOG_SHOW * 2);
+        head = "🗂️ 「" + targetRoom + "」 " + around + " 앞뒤 " + LOG_NEAR_MIN + "분 (" +
+            picked.length + "개)";
+    } else {
+        var start = list.length > LOG_SHOW ? list.length - LOG_SHOW : 0;
+        for (i = start; i < list.length; i++) picked.push(list[i]);
+        head = "🗂️ 「" + targetRoom + "」 최근 " + picked.length + "개" +
+            " (보관 " + list.length + "/" + LOG_MAX + ")";
+    }
+
+    var out = head + "\n─────────────";
+    for (i = 0; i < picked.length; i++) {
+        e = picked[i];
         var m = String(e.m).replace(/\n/g, " ");
         if (m.length > 60) m = m.substring(0, 60) + "…";
         out += "\n" + e.t + " " + e.s + ": " + m;
     }
+    out += "\n─────────────\n" +
+        "※ 어느 게 삭제됐는지는 표시되지 않습니다 (카톡이 봇에게 알려주지 않음).\n" +
+        "  방에서 「삭제된 메시지입니다」가 보이는 시각으로 대조하세요.";
     return out;
 }
 
@@ -391,8 +451,13 @@ function response(room, msg, sender, isGroupChat, replier) {
         // ③ 기록 조회 — 지정한 방에서만, 누구나
         if (room === VIEW_ROOM) {
             for (var li = 0; li < LOG_CMDS.length; li++) {
-                if (text === PREFIX + LOG_CMDS[li][0]) {
-                    replier.reply(logText(LOG_CMDS[li][1]));
+                var cmd = PREFIX + LOG_CMDS[li][0];
+                if (text === cmd) {
+                    replier.reply(logText(LOG_CMDS[li][1], ""));
+                    return;
+                }
+                if (text.indexOf(cmd + " ") === 0) {
+                    replier.reply(logText(LOG_CMDS[li][1], text.substring(cmd.length + 1)));
                     return;
                 }
             }
