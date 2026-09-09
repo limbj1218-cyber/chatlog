@@ -30,7 +30,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "카페봇";
-var BOT_VER = "0907-2";
+var BOT_VER = "0909-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -423,6 +423,21 @@ function cafeMessage(list) {
     return out;
 }
 
+/**
+ * 다른 인스턴스가 이미 이 글까지 보냈는지 확인하고, 아니면 내가 보낼 것으로 찜한다.
+ * 값은 앱 전체(JVM)가 공유하므로 스크립트가 중복 설치돼 있어도 한 번만 나간다.
+ * 확인이 안 되는 환경이면 그냥 보낸다 (기존 동작 유지).
+ */
+function alreadySentByAnother(maxId) {
+    try {
+        var key = "cafebot.lastSent." + CAFE.cafeUrl;
+        var prev = Number(java.lang.System.getProperty(key) || 0);
+        if (maxId <= prev) return true;
+        java.lang.System.setProperty(key, String(maxId));
+    } catch (e) {}
+    return false;
+}
+
 function cafeBroadcast(text) {
     var any = false;
     for (var i = 0; i < CAFE.rooms.length; i++) {
@@ -466,6 +481,14 @@ function cafeCheck(noKick) {
 
         var first = (cafeLastId === 0);
         if (first || fresh.length === 0) {
+            cafeLastId = maxId;
+            saveState();
+            return;
+        }
+
+        // 이 앱 안에서 카페봇이 둘 이상 돌고 있어도 같은 글이 두 번 나가지 않게 막는다.
+        // (스크립트 중복 설치·구버전 잔존 등) 앱 전체가 공유하는 값으로 확인한다.
+        if (alreadySentByAnother(maxId)) {
             cafeLastId = maxId;
             saveState();
             return;
