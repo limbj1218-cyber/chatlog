@@ -26,7 +26,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0907-5";
+var BOT_VER = "0909-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -490,6 +490,12 @@ function response(room, msg, sender, isGroupChat, replier) {
         } catch (e2) {}
     }
 }
+
+// 예전 오토봇(카페 알림이 들어 있던 버전)이 걸어둔 타이머 끄기.
+// 그 타이머는 "autobot.timer.gen" 값이 자기 것과 다르면 스스로 멈추는데,
+// 지금 오토봇에는 타이머가 없어 그 값을 갱신할 일이 없다. 그래서 여기서 한 번 바꿔준다.
+// (이걸 안 하면 본체를 새로 불러와도 옛 타이머가 계속 돌아 카페 알림이 두 번 나간다)
+try { java.lang.System.setProperty("autobot.timer.gen", "stopped-" + new Date().getTime()); } catch (e) {}
 
 // 스크립트가 켜질 때 미리 받아둔다 (여기서는 기다려도 된다)
 try { loadData(); } catch (e) {}
