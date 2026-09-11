@@ -266,8 +266,13 @@ function triggersOf(table) {
 // 앱이 살아 있는 동안만 기억한다. 재시작하면 초기화되는데, 그래도 상관없다.
 var containAt = {};
 
-function containReady(room, key) {
-    var id = room + "|" + key;
+/**
+ * 포함 트리거가 지금 응답해도 되는지.
+ * 묶는 기준(what)은 트리거 이름이 아니라 "내보낼 내용" 이다 —
+ * 질문·궁금 처럼 여러 낱말이 같은 안내를 가리키면 쿨다운을 함께 쓴다.
+ */
+function containReady(room, what) {
+    var id = room + "|" + what;
     var now = new Date().getTime();
     var prev = containAt[id] || 0;
     if (now - prev < CONTAIN_COOL_MIN * 60 * 1000) return false;
@@ -525,7 +530,10 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         // ⑦ 포함 트리거 — 그 낱말이 대화에 섞여 있기만 해도 응답 (방마다 쿨다운)
         var ckey = findContain(table, text);
-        if (ckey && containReady(room, ckey)) replier.reply(String(table[ckey]));
+        if (ckey) {
+            var body = String(table[ckey]);
+            if (containReady(room, body)) replier.reply(body);
+        }
 
     } catch (e) {
         lastLoadErr = String(e);
