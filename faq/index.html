@@ -1,0 +1,1048 @@
+<title>오토워커 2기 FAQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#E5E3DD;
+  --surface:#FFFFFF;
+  --sunk:#F6F4F0;
+  --ink:#181D21;
+  --ink-soft:#39434A;
+  --muted:#6E767B;
+  --hair:#E6E3DC;
+  --hair-strong:#CFCBC1;
+
+  --accent:#8F6510;
+  --clay:#9E4030;
+  --clay-lift:#FAEDE8;
+
+  --bar-bg:#1B242C;
+  --bar-ink:#F0ECE3;
+  --bar-muted:#8E9BA4;
+  --bar-hair:#2E3A44;
+  --pill:#E3B75A;
+
+  --lift:rgba(24,29,33,.045);
+  --shadow:0 1px 1px rgba(24,29,33,.04), 0 18px 40px -26px rgba(24,29,33,.45);
+
+  --serif:"Gowun Batang",'Nanum Myeongjo',Georgia,serif;
+  --sans:"IBM Plex Sans KR",'Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif;
+  --mono:"IBM Plex Mono",'D2Coding',ui-monospace,monospace;
+
+  --wrap:940px;
+  --pad:clamp(22px,5vw,54px);
+}
+
+/* 주제별 색 — 밝은 테마 */
+#s1{--accent:#8A6310}
+#s2{--accent:#0F6668}
+#s3{--accent:#3F4E96}
+#s4{--accent:#9C4A2E}
+#s5{--accent:#2F6942}
+#s6{--accent:#873C61}
+#s7{--accent:#3E5A6E}
+
+/* 주제별 색 — 상단 바 위에서는 항상 밝은 쪽 */
+label[for="t-all"]{--pill:#EFE9DD}
+label[for="t-s1"]{--pill:#E3B75A}
+label[for="t-s2"]{--pill:#63C2BF}
+label[for="t-s3"]{--pill:#93A4EF}
+label[for="t-s4"]{--pill:#E5947C}
+label[for="t-s5"]{--pill:#7FC996}
+label[for="t-s6"]{--pill:#E094B8}
+label[for="t-s7"]{--pill:#96B5CB}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0C0F11;
+    --surface:#161A1E;
+    --sunk:#1D2328;
+    --ink:#EAE7E0;
+    --ink-soft:#C3C7C6;
+    --muted:#8D9698;
+    --hair:#262D33;
+    --hair-strong:#39424A;
+    --accent:#E3B75A;
+    --clay:#E2907A;
+    --clay-lift:#2C1E19;
+    --bar-bg:#0F1417;
+    --bar-ink:#E9E5DC;
+    --bar-muted:#7E8A92;
+    --bar-hair:#212A31;
+    --lift:rgba(255,255,255,.045);
+    --shadow:0 1px 1px rgba(0,0,0,.4), 0 18px 44px -28px rgba(0,0,0,.9);
+  }
+  :root:not([data-theme="light"]) #s1{--accent:#E3B75A}
+  :root:not([data-theme="light"]) #s2{--accent:#63C2BF}
+  :root:not([data-theme="light"]) #s3{--accent:#93A4EF}
+  :root:not([data-theme="light"]) #s4{--accent:#E5947C}
+  :root:not([data-theme="light"]) #s5{--accent:#7FC996}
+  :root:not([data-theme="light"]) #s6{--accent:#E094B8}
+  :root:not([data-theme="light"]) #s7{--accent:#96B5CB}
+}
+:root[data-theme="dark"]{
+  --ground:#0C0F11;
+  --surface:#161A1E;
+  --sunk:#1D2328;
+  --ink:#EAE7E0;
+  --ink-soft:#C3C7C6;
+  --muted:#8D9698;
+  --hair:#262D33;
+  --hair-strong:#39424A;
+  --accent:#E3B75A;
+  --clay:#E2907A;
+  --clay-lift:#2C1E19;
+  --bar-bg:#0F1417;
+  --bar-ink:#E9E5DC;
+  --bar-muted:#7E8A92;
+  --bar-hair:#212A31;
+  --lift:rgba(255,255,255,.045);
+  --shadow:0 1px 1px rgba(0,0,0,.4), 0 18px 44px -28px rgba(0,0,0,.9);
+}
+:root[data-theme="dark"] #s1{--accent:#E3B75A}
+:root[data-theme="dark"] #s2{--accent:#63C2BF}
+:root[data-theme="dark"] #s3{--accent:#93A4EF}
+:root[data-theme="dark"] #s4{--accent:#E5947C}
+:root[data-theme="dark"] #s5{--accent:#7FC996}
+:root[data-theme="dark"] #s6{--accent:#E094B8}
+:root[data-theme="dark"] #s7{--accent:#96B5CB}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--sans);font-size:15.5px;line-height:1.82;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid currentColor;opacity:.95}
+a:hover{opacity:1}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+.wrap{max-width:var(--wrap);margin-inline:auto;padding-inline:clamp(14px,3.5vw,30px)}
+
+/* ══ 표지 ═════════════════════════════════════ */
+.hero{
+  position:relative;overflow:hidden;
+  background:var(--surface);border:1px solid var(--hair);border-radius:18px;
+  box-shadow:var(--shadow);
+  margin-top:clamp(22px,4vw,46px);
+  padding:clamp(34px,5.5vw,58px) var(--pad) clamp(26px,4vw,36px);
+}
+.hero::before{
+  content:"";position:absolute;inset:0 0 auto 0;height:4px;
+  background:linear-gradient(90deg,#E3B75A,#63C2BF,#93A4EF,#E5947C,#7FC996,#E094B8,#96B5CB);
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 18px;
+}
+.eyebrow::before{content:"";width:28px;height:1px;background:var(--hair-strong)}
+h1{
+  font-family:var(--serif);font-weight:700;
+  font-size:clamp(30px,5vw,46px);line-height:1.22;letter-spacing:-.02em;
+  margin:0;text-wrap:balance;max-width:19ch;
+}
+.deck{margin:18px 0 0;color:var(--ink-soft);max-width:44ch;font-size:16px;line-height:1.75}
+
+.strip{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:1px;
+  margin-top:34px;background:var(--hair);border:1px solid var(--hair);border-radius:12px;overflow:hidden;
+}
+.stat{padding:15px 18px;background:var(--surface)}
+.stat b{
+  display:block;font-family:var(--mono);font-weight:500;font-size:22px;line-height:1.25;
+  font-variant-numeric:tabular-nums;letter-spacing:-.035em;
+}
+.stat span{display:block;font-size:11px;color:var(--muted);letter-spacing:.05em;margin-top:3px}
+
+/* ══ 주제 바 ══════════════════════════════════ */
+.topicbar{
+  position:sticky;top:0;z-index:20;
+  background:var(--bar-bg);color:var(--bar-ink);
+  box-shadow:0 10px 30px -22px rgba(0,0,0,.55);
+}
+.topicbar .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:13px}
+.topics{display:flex;flex-wrap:wrap;gap:7px;margin:0;padding:0;list-style:none}
+.pill{
+  display:inline-flex;align-items:baseline;gap:8px;
+  font-family:var(--sans);font-size:13px;line-height:1.4;font-weight:500;
+  color:var(--bar-muted);background:none;
+  border:1px solid var(--bar-hair);border-radius:999px;padding:6px 15px;
+  white-space:nowrap;cursor:pointer;user-select:none;
+  transition:color .14s,border-color .14s,background .14s;
+}
+.pill:hover{color:var(--pill);border-color:var(--pill)}
+.pill .n{
+  font-family:var(--mono);font-size:10.5px;font-weight:400;
+  font-variant-numeric:tabular-nums;opacity:.7;
+}
+
+/* 주제 전환 — 자바스크립트 없이 라디오 + 라벨로 동작 */
+.tabin{position:absolute;width:0;height:0;opacity:0;pointer-events:none}
+
+#t-s1:checked ~ .wrap main > section,
+#t-s2:checked ~ .wrap main > section,
+#t-s3:checked ~ .wrap main > section,
+#t-s4:checked ~ .wrap main > section,
+#t-s5:checked ~ .wrap main > section,
+#t-s6:checked ~ .wrap main > section,
+#t-s7:checked ~ .wrap main > section{display:none}
+
+#t-s1:checked ~ .wrap main > #s1,
+#t-s2:checked ~ .wrap main > #s2,
+#t-s3:checked ~ .wrap main > #s3,
+#t-s4:checked ~ .wrap main > #s4,
+#t-s5:checked ~ .wrap main > #s5,
+#t-s6:checked ~ .wrap main > #s6,
+#t-s7:checked ~ .wrap main > #s7{display:block}
+
+#t-all:checked ~ .topicbar .pill[for="t-all"],
+#t-s1:checked  ~ .topicbar .pill[for="t-s1"],
+#t-s2:checked  ~ .topicbar .pill[for="t-s2"],
+#t-s3:checked  ~ .topicbar .pill[for="t-s3"],
+#t-s4:checked  ~ .topicbar .pill[for="t-s4"],
+#t-s5:checked  ~ .topicbar .pill[for="t-s5"],
+#t-s6:checked  ~ .topicbar .pill[for="t-s6"],
+#t-s7:checked  ~ .topicbar .pill[for="t-s7"]{
+  color:var(--bar-bg);background:var(--pill);border-color:var(--pill);font-weight:600;
+}
+#t-all:checked ~ .topicbar .pill[for="t-all"] .n,
+#t-s1:checked  ~ .topicbar .pill[for="t-s1"] .n,
+#t-s2:checked  ~ .topicbar .pill[for="t-s2"] .n,
+#t-s3:checked  ~ .topicbar .pill[for="t-s3"] .n,
+#t-s4:checked  ~ .topicbar .pill[for="t-s4"] .n,
+#t-s5:checked  ~ .topicbar .pill[for="t-s5"] .n,
+#t-s6:checked  ~ .topicbar .pill[for="t-s6"] .n,
+#t-s7:checked  ~ .topicbar .pill[for="t-s7"] .n{opacity:.72}
+
+#searchwrap{margin-left:auto;flex:0 1 210px;min-width:150px}
+#search{
+  width:100%;padding:8px 14px;
+  font-family:var(--sans);font-size:13px;color:var(--bar-ink);
+  background:rgba(255,255,255,.07);border:1px solid var(--bar-hair);border-radius:999px;
+}
+#search::placeholder{color:var(--bar-muted)}
+#search:focus{border-color:var(--pill);outline:none}
+
+/* ══ 주제 카드 ════════════════════════════════ */
+.card{
+  position:relative;overflow:hidden;
+  background:var(--surface);border:1px solid var(--hair);border-radius:18px;
+  box-shadow:var(--shadow);margin-top:clamp(20px,3.2vw,30px);
+}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--accent)}
+
+.sec-head{
+  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  padding:26px var(--pad) 22px;border-bottom:1px solid var(--hair);
+}
+.sec-head h2{
+  font-family:var(--serif);font-weight:700;font-size:25px;margin:0;
+  letter-spacing:-.02em;color:var(--ink);
+}
+.sec-head .tag{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  color:var(--accent);border:1px solid var(--accent);border-radius:999px;
+  padding:3px 10px;white-space:nowrap;
+}
+.sec-head .n{
+  margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted);
+  font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.04em;
+}
+
+/* ══ 문답 ═════════════════════════════════════ */
+.qa{
+  padding:30px var(--pad) 32px calc(var(--pad) + 40px);
+  border-bottom:1px solid var(--hair);position:relative;
+}
+.qa:last-child{border-bottom:0}
+.qa:nth-child(odd){background:var(--lift)}
+.q{
+  font-family:var(--serif);font-weight:700;font-size:21px;line-height:1.5;
+  margin:0 0 14px;text-wrap:balance;letter-spacing:-.015em;max-width:30ch;color:var(--ink);
+}
+.q::before{
+  content:"Q";position:absolute;left:var(--pad);
+  font-family:var(--mono);font-weight:500;font-size:12px;
+  color:var(--accent);border:1.5px solid var(--accent);border-radius:50%;
+  width:26px;height:26px;display:grid;place-items:center;margin-top:3px;
+}
+.a{margin:0;color:var(--ink-soft);max-width:60ch}
+.a + .a{margin-top:13px}
+.a strong{color:var(--ink);font-weight:600}
+.src{
+  display:inline-block;margin-top:16px;padding:3px 11px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;
+  color:var(--muted);border:1px solid var(--hair-strong);border-radius:999px;
+}
+
+.flag{
+  margin:16px 0 0;padding:14px 18px;max-width:60ch;
+  background:var(--clay-lift);border-left:3px solid var(--clay);border-radius:0 8px 8px 0;
+  font-size:14px;line-height:1.72;color:var(--ink-soft);
+}
+.flag b{color:var(--clay);font-weight:600}
+
+code{
+  font-family:var(--mono);font-size:.84em;
+  background:var(--sunk);border:1px solid var(--hair);border-radius:4px;
+  padding:1.5px 6px;color:var(--ink);
+}
+
+/* ══ 바로가기 ═════════════════════════════════ */
+.links{
+  list-style:none;margin:18px 0 0;padding:14px 18px;max-width:60ch;
+  background:var(--sunk);border:1px solid var(--hair);border-radius:10px;
+}
+.links li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;padding:7px 0}
+.links li + li{border-top:1px dashed var(--hair)}
+.links span{
+  flex:0 0 auto;min-width:15ch;
+  font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
+}
+.links a{font-size:13.5px;line-height:1.5;word-break:break-word}
+.links a::after{content:" ↗";font-size:.85em;opacity:.6}
+
+/* ══ 표 ═══════════════════════════════════════ */
+.tw{
+  overflow-x:auto;margin:18px 0 0;max-width:60ch;
+  border:1px solid var(--hair);border-radius:10px;
+}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:min(100%,400px);line-height:1.65}
+caption{
+  text-align:left;padding:13px 18px 4px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+th,td{padding:11px 18px;text-align:left;border-bottom:1px solid var(--hair);vertical-align:top}
+thead th{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;background:var(--sunk);
+}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.fix{color:var(--accent);font-weight:600}
+
+/* ══ 단계 ═════════════════════════════════════ */
+.steps{list-style:none;margin:18px 0 0;padding:0;counter-reset:s;max-width:60ch}
+.steps li{
+  counter-increment:s;display:flex;gap:15px;align-items:flex-start;
+  padding:11px 0;font-size:14.5px;line-height:1.7;
+}
+.steps li + li{border-top:1px dashed var(--hair)}
+.steps li::before{
+  content:counter(s);flex:0 0 23px;width:23px;height:23px;margin-top:4px;
+  display:grid;place-items:center;border-radius:50%;
+  background:var(--accent);color:var(--surface);
+  font-family:var(--mono);font-size:11px;font-weight:500;
+}
+
+/* ══ 안내 · 꼬리말 ════════════════════════════ */
+.note{
+  margin:clamp(20px,3.2vw,30px) 0 0;padding:20px var(--pad);
+  background:var(--surface);border:1px solid var(--hair);border-radius:14px;
+  font-size:13.5px;line-height:1.75;color:var(--muted);box-shadow:var(--shadow);
+}
+.note b{color:var(--ink-soft);font-weight:500}
+
+footer{
+  margin:34px 0 0;padding:26px var(--pad) 64px;
+  font-size:12.5px;line-height:1.85;color:var(--muted);
+}
+footer p{margin:0 0 7px}
+
+.empty{
+  margin-top:26px;padding:52px var(--pad);text-align:center;
+  color:var(--muted);font-size:15px;
+  background:var(--surface);border:1px solid var(--hair);border-radius:14px;
+}
+[hidden]{display:none !important}
+
+@media (max-width:640px){
+  .qa{padding-left:calc(var(--pad) + 34px)}
+  .q{font-size:19px}
+  .links span{min-width:0;flex-basis:100%}
+}
+</style>
+
+<input type="radio" name="topic" id="t-all" class="tabin" checked>
+<input type="radio" name="topic" id="t-s1" class="tabin">
+<input type="radio" name="topic" id="t-s2" class="tabin">
+<input type="radio" name="topic" id="t-s3" class="tabin">
+<input type="radio" name="topic" id="t-s4" class="tabin">
+<input type="radio" name="topic" id="t-s5" class="tabin">
+<input type="radio" name="topic" id="t-s6" class="tabin">
+<input type="radio" name="topic" id="t-s7" class="tabin">
+
+<nav class="topicbar" aria-label="주제">
+  <div class="wrap">
+    <ul class="topics">
+      <li><label class="pill" for="t-all">전체 <span class="n">64</span></label></li>
+      <li><label class="pill" for="t-s1">강의 · 운영 <span class="n">11</span></label></li>
+      <li><label class="pill" for="t-s2">튜브워커 <span class="n">11</span></label></li>
+      <li><label class="pill" for="t-s3">이지워커 · 그록 <span class="n">10</span></label></li>
+      <li><label class="pill" for="t-s4">클로드 <span class="n">6</span></label></li>
+      <li><label class="pill" for="t-s5">채널 · 지표 <span class="n">13</span></label></li>
+      <li><label class="pill" for="t-s6">수익창출 · 계정 <span class="n">7</span></label></li>
+      <li><label class="pill" for="t-s7">편집 · 음성 <span class="n">6</span></label></li>
+    </ul>
+    <div id="searchwrap" hidden>
+      <input id="search" type="search" placeholder="질문 검색 — 크레딧, 썸네일…" autocomplete="off" aria-label="질문 검색">
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">오토2 사담방 · 2026.08.01 – 09.11</p>
+    <h1>방에서 가장 많이 나온 질문과, 그때 받은 답</h1>
+    <p class="deck">조교님들이 사담방에서 실제로 답한 내용을 주제별로 묶었습니다. 위 메뉴에서 주제를 고르거나, 검색창에 궁금한 낱말을 넣어보세요.</p>
+    <div class="strip">
+      <div class="stat"><b>53,442</b><span>대화</span></div>
+      <div class="stat"><b>8,006</b><span>질문성 메시지</span></div>
+      <div class="stat"><b>535</b><span>참여자</span></div>
+      <div class="stat"><b>64</b><span>정리한 문항</span></div>
+    </div>
+  </header>
+</div>
+
+
+
+<div class="wrap">
+  <main id="all">
+
+    <!-- ═══ 1 ═══ -->
+    <section id="s1" class="card">
+      <div class="sec-head"><h2>강의 · 운영</h2><span class="tag">가장 많음</span><span class="n">질문 1,140건</span></div>
+
+      <div class="qa">
+        <p class="q">정규강의는 언제 하나요?</p>
+        <p class="a">8/14 ~ 9/18 <strong>매주 금요일 19:00 ~ 익일 01:00</strong>, 총 6회(8/14 · 8/21 · 8/28 · 9/4 · 9/11 · 9/18)입니다. 이 시간에는 실시간 강의에 집중하시라고 튜브워커의 '다음 단계 생성'이 잠시 멈춥니다(사이트 접속은 됩니다). 튜브워커 업데이트도 가능한 이 시간대에 진행합니다.</p>
+        <span class="src">두코 · 08-07</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">강의를 놓쳤어요. 다시 볼 수 있나요?</p>
+        <p class="a">VOD가 수강생 카페에 올라갑니다. 강의자료와 정리본은 노션(<a href="https://wiki.autoworkers.ai/2-3b5c8b66674080cf863fd91bcc90bdbf" target="_blank" rel="noopener noreferrer">wiki.autoworkers.ai</a>)과 카페의 '정규강의 n강 자료 모음' 글에 모여 있습니다. 특강도 '강의 내용 정리'와 '줌 채팅'이 따로 올라옵니다.</p>
+        <span class="src">아는아이 · 구스범스</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">카페 등업은 언제 되나요?</p>
+        <p class="a">가입 신청이 확인되는 대로 순차 진행하며, 1주차 금요일 전까지 완료를 목표로 했습니다. 등업 전에는 디하클 기본 제공 강의도 보이지 않으니 조금 기다리셔야 합니다.</p>
+        <span class="src">봄동 · 아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">조교님께 질문은 언제, 어떻게 하면 되나요?</p>
+        <p class="a">운영시간은 <strong>9/10부터 매일 오후 1시 ~ 밤 12시</strong>로 바뀌었습니다(그 전에는 오전 10시 ~ 익일 01시). 근무 중인 조교님이 확인하고 답하므로 특정 조교 태그는 지양해 주세요.</p>
+        <ol class="steps">
+          <li>해당 주차 강의 내용을 먼저 본다</li>
+          <li>강의대로 직접 해본다</li>
+          <li>그래도 안 되는 지점을 <strong>캡처해서</strong> 질문한다</li>
+        </ol>
+        <span class="src">두코 · 09-09 / 버터떡 · 08-10</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">1기 강의를 미리 들어도 되나요?</p>
+        <p class="a">권하지 않습니다. 2기 커리큘럼이 더 올라가 있어서, 선행학습을 어설프게 하면 정규강의 때 "아 이거 아는 내용인데" 하면서 대충 듣게 됩니다. 1기 때 성과가 크게 난 분들은 대부분 매주 강의 회차에 집중한 분들이었습니다.</p>
+        <span class="src">버터떡 · 08-10</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">강의 전에 뭘 준비해 둬야 하나요?</p>
+        <p class="a"><strong>클로드와 캡컷 설치면 충분합니다.</strong> 나머지 구독은 첫 강의를 듣고 필요할 때 하세요 — 미리 결제하면 쓰지도 못하고 하루하루가 돈입니다.</p>
+        <p class="a">굳이 미리 하실 거면 어떤 카테고리의 채널을 할지 정하고, 레퍼런스 채널을 찾아보며 스타일 · 소재 · 대본을 구상해 두는 쪽이 훨씬 도움이 됩니다.</p>
+        <span class="src">아는아이 · 버터떡 · 봄동</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">일반반과 프리미엄반은 뭐가 다른가요?</p>
+        <p class="a">프반 전용 강의, 1기 우수수강생 꿀팁 특강, 강사님 개별 피드백(강의 종료 후 zoom으로 시간을 조율해 진행)이 더해집니다. 튜브워커 월 한도도 다릅니다. 조교 케어와 1:1 피드백은 반 구분 없이 똑같이 드립니다. 프반 업그레이드는 차액 결제로 가능하며, 정확한 조건은 디하클 채널톡으로 문의하세요.</p>
+        <div class="tw">
+          <table>
+            <caption>튜브워커 월 사용 한도</caption>
+            <thead><tr><th>구분</th><th class="num">월 한도</th></tr></thead>
+            <tbody>
+              <tr><td>일반반</td><td class="num">1,500분</td></tr>
+              <tr><td>프리미엄반</td><td class="num">3,000분</td></tr>
+              <tr><td>1기 프반 → 2기 일반반 연장</td><td class="num">3,000분</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="a">한 번이라도 프반이었던 분은 이후에도 3,000분이 유지됩니다. 한도는 구독일 기준으로 매달 초기화됩니다.</p>
+        <span class="src">봄동 · 둘리 · 버터떡 · 아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">과제는 어디에 제출하나요?</p>
+        <p class="a">매주 노션에 과제 안내가 올라옵니다. 주차별로 제출처(구글폼 또는 카페 게시판)가 함께 안내되니 노션을 먼저 확인하세요. 제출하신 분은 사담방의 <strong>과제 제출자 릴레이</strong>에 이어서 적으면 선착순 20명 커피 쿠폰이 나갑니다 — 앞 번호에 이어서, 양식 그대로 적어주셔야 집계됩니다.</p>
+        <span class="src">봄동 · 둘리</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">55일 챌린지는 55번 올리는 건가요?</p>
+        <p class="a">횟수가 아니라 <strong>날짜</strong>입니다. 시작일로부터 55일간 업로드 인증을 하는 것이라, 9/1에 시작해 9/3에 인증하면 3일차입니다. 3일 안에 영상이 올라가야 챌린지가 유지됩니다.</p>
+        <p class="a">글 제목은 <code>[오토워커 2기]챌린지 n/55일차 : 부제목</code> 양식으로 맞춰주세요.</p>
+        <span class="src">아는아이 · 버터떡</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">성과 인증(치킨 · 한우)은 어떻게 하나요?</p>
+        <ol class="steps">
+          <li>오토워커 카페 성과인증 게시판에 인증글을 올린다</li>
+          <li>사담방과 디하클 오픈톡방에 그 글 링크를 공유한다</li>
+          <li>공유한 화면을 캡처해, 카페글 링크와 캡처 2장을 디하클 채널톡으로 보낸다</li>
+        </ol>
+        <p class="a">조회수 1만 인증(치킨)을 먼저 받은 뒤에 10만 인증(한우)이 가능합니다. 커피와 치킨은 한 게시물로 되지만 한우는 별도 게시물이어야 합니다.</p>
+        <span class="src">아는아이 · 후파 · 둘리</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">결제 · 환불 · 반 변경은 어디에 물어보나요?</p>
+        <p class="a">디하클 채널톡(<a href="http://pf.kakao.com/_EJixlG" target="_blank" rel="noopener noreferrer">pf.kakao.com/_EJixlG</a>)입니다. 상담 인원이 많지 않아 답이 늦을 수 있고, 특히 월요일은 일요일 무료강의 직후라 문의가 몰립니다.</p>
+        <span class="src">구스범스 · 후파</span>
+      </div>
+    </section>
+
+    <!-- ═══ 2 ═══ -->
+    <section id="s2" class="card">
+      <div class="sec-head"><h2>튜브워커</h2><span class="n">질문 770건</span></div>
+
+      <div class="qa">
+        <p class="q">가입은 어떻게 하나요?</p>
+        <p class="a"><a href="https://tube.autoworkers.ai" target="_blank" rel="noopener noreferrer">tube.autoworkers.ai</a>에서 <strong>카카오 계정</strong>으로 회원가입합니다. 가입 중 '디하클 닉네임' 칸에는 디하클에서 쓰는 닉네임을 오타 없이, 띄어쓰기까지 똑같이 넣어야 합니다.</p>
+        <p class="a">9/1부터 절차가 바뀌어 인증코드 알림톡이 즉시 발송되고, 이후 영업일 1~2일 내 가입 승인이 나면 바로 이용할 수 있습니다. 그전에 신청했는데 아직 승인이 안 났다면 번거롭더라도 <strong>재가입</strong>해야 합니다.</p>
+        <span class="src">두코 · 09-01</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">인증코드가 안 와요.</p>
+        <p class="a">카카오톡에 <strong>'노씨데브'</strong> 이름으로 옵니다. 코드는 24시간만 유효해서 지나면 재발급을 받아야 합니다. 입력한 번호가 맞는지 먼저 확인하시고, 그래도 안 오면 사담방에 문의하세요. 인증번호는 최초 가입 때만 받고 이후에는 로그인만 하면 됩니다.</p>
+        <span class="src">구스범스 · 아는아이 · 봄동</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">'크레딧'과 '분'은 뭐가 다른가요?</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>단위</th><th>무엇인가</th><th>어떻게 채우나</th></tr></thead>
+            <tbody>
+              <tr><td class="fix">크레딧</td><td>AI 툴을 쓰기 위한 API 비용</td><td>유료 충전</td></tr>
+              <tr><td class="fix">분</td><td>튜브워커 사용 가능 시간</td><td>반별 월 한도, 매달 초기화</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="a">크레딧을 써서 그 시간만큼 영상을 만드는 구조입니다. 크레딧은 처음 한 번 지급되고 그 뒤로는 충전해서 쓰며, <strong>매주 지급되지 않습니다.</strong> 3개월 무료는 크레딧이 아니라 튜브워커 프로그램 사용료 쪽입니다.</p>
+        <span class="src">아는아이 · 버터떡</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">크레딧이 너무 빨리 닳아요.</p>
+        <p class="a">소모의 상당 부분이 <strong>이미지와 영상 생성</strong>입니다. 이지워커로 그 단계를 대체하면 크게 줄어듭니다.</p>
+        <p class="a">반대로 음성은 직접 구독보다 쌉니다. 일레븐랩스 구독이 22달러에 121,000자(약 32,000원)인데, 튜브워커는 약 79자당 1크레딧이라 121,000자면 1,532크레딧 — 2만 원이 안 됩니다. 발음 변환은 변환이 필요한 문장만 계산되어 크레딧 소모가 가장 적은 작업입니다.</p>
+        <span class="src">아는아이 · 08-17</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">만든 영상은 계속 보관되나요?</p>
+        <p class="a">아니요. 스튜디오에서 '새 영상'을 만든 시점부터 <strong>30일</strong> 동안만 보관되고, 지나면 서버에서 완전히 삭제되어 복구할 수 없습니다. 영상별로 며칠 남았는지는 [내 스튜디오]에서 확인할 수 있습니다.</p>
+        <div class="flag"><b>완성한 영상은 그때그때 내려받으세요.</b> 제작 중인 영상도 마무리하고 다운로드해 두는 편이 안전합니다.</div>
+        <span class="src">두코 · 08-31</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">목소리를 바꾸려면 전체를 다시 만들어야 하나요?</p>
+        <p class="a">목소리를 전부 바꾸려면 <strong>전체 재생성</strong>, 일부만 바꾸려면 <strong>청크 재생성</strong>입니다(청크는 2,000자 기준이라 대본이 짧으면 전체 재생성과 같습니다). 목소리를 바꾸려고 청크 재생성을 한 경우는 오류가 아니라 환불 대상이 아닙니다.</p>
+        <p class="a">음성을 새로 만들면 음성 길이와 자막 배치가 바뀌고, 장면 분할도 거기에 맞춰야 하므로 <strong>스토리보드도 새로 생성</strong>해야 합니다.</p>
+        <span class="src">버터떡 · 아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">음성에 외계어가 섞여요. 오류인가요?</p>
+        <p class="a">TTS 공통의 환각 현상이라 튜브워커 시스템 오류가 아니고 환불 대상도 아닙니다. 사용 빈도가 높은 커스텀 보이스를 고르면 확률이 줄지만 완전히 없어지지는 않습니다. 같은 구간은 다시 만들어도 또 날 수 있어, 재생성하거나 캡컷에서 그 부분만 손보는 쪽이 빠릅니다.</p>
+        <span class="src">아는아이 · 나물쓰</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">폰이나 패드로도 되나요?</p>
+        <p class="a">튜브워커는 카카오 로그인이라 사이트 접속과 작업 자체는 모바일에서 됩니다. 다만 클로드로 대본을 따로 만들거나 확장프로그램으로 이미지를 뽑으려면 PC가 필요합니다(원격 제어로는 가능). 패드로도 튜브워커는 되지만 클로드까지 같이 쓰려면 PC나 노트북을 쓰시게 될 겁니다.</p>
+        <span class="src">아는아이 · 구스범스</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">대본이 이상하게 나와요.</p>
+        <p class="a">웹(홈 채팅)에서 만드셨다면 강의에서 배포된 <strong>스킬이 적용되지 않은</strong> 것입니다. 그 경우 대본을 다시 뽑으셔야 합니다.</p>
+        <p class="a">넣을 때는 튜브워커 대본 가이드에 맞게, 줄바꿈 없이 넣어달라고 요청하세요. 문단이 너무 잘게 나뉘었거나 마침표가 빠지지 않았는지도 확인해 보시고, 특수기호가 들어가면 할루시네이션이 생길 수 있습니다.</p>
+        <span class="src">아는아이 · 구스범스 · 버터떡</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">마스코트가 모든 씬에 나와요.</p>
+        <p class="a">정상입니다. 마스코트는 사회자처럼 진행하는 컨셉이라 매 씬에 등장하게 되어 있습니다. 마스코트를 쓰려면 튜브워커에서 등록하고 '사용' 체크를 한 뒤에 스토리보드를 만들어야 프롬프트에 반영됩니다.</p>
+        <span class="src">나물쓰 · 아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">씬 하나가 너무 길거나 짧아요.</p>
+        <p class="a">한 씬을 6~10초 사이로 나오게 요청하는 구조라 6초가 될 수도 10초가 될 수도 있습니다. 씬 길이에 맞춰 영상 속도가 조절되므로, 씬이 12초인데 6초짜리 영상을 넣으면 0.5배속이 됩니다 — "엿가락처럼 늘어난다"는 게 이 경우입니다. 세팅된 구간만 영상화하거나, 그 씬만 캡컷에서 손보는 편이 빠릅니다.</p>
+        <span class="src">아는아이 · 나물쓰</span>
+      </div>
+    </section>
+
+    <!-- ═══ 3 ═══ -->
+    <section id="s3" class="card">
+      <div class="sec-head"><h2>이지워커 · 플로우 · 그록</h2><span class="n">질문 584건</span></div>
+
+      <div class="qa">
+        <p class="q">이지워커가 뭔가요?</p>
+        <p class="a">후파 조교가 만든 크롬 확장프로그램입니다. 이미지 · 영상을 <strong>저렴하게</strong> 만들기 위한 보조 도구로 이해하시면 됩니다.</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>도구</th><th>이미지 · 영상을 만드는 방식</th></tr></thead>
+            <tbody>
+              <tr><td class="fix">튜브워커</td><td>API로 생성 → 크레딧 차감</td></tr>
+              <tr><td class="fix">이지워커</td><td>내가 구독한 플로우 · 그록으로 생성해서 업로드</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ol class="steps">
+          <li>튜브워커 3단계에서 스토리보드(엑셀)를 내려받는다</li>
+          <li>외부에서 만든 이미지를 업로드한다</li>
+          <li>외부(그록)에서 영상을 만들어 업로드한다</li>
+        </ol>
+        <span class="src">봄동 · 후파</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">플로우플로우는 또 뭔가요?</p>
+        <p class="a">이지워커 2단계의 '이미지 외부 생성'을 위한 도구입니다. 다운로드되는 프로그램이 아니라 <strong>플로우 안에서만</strong> 돌아갑니다. 원래 확장 하나로 다 할 수도 있었지만 그러면 이미지 생성 속도가 너무 느려져서 따로 분리했습니다. API와는 관련이 없습니다.</p>
+        <ul class="links">
+          <li><span>플로우플로우 도구</span><a href="https://labs.google/fx/tools/flow/shared/tool/a05673cf-9200-43f5-8c66-dd9c921f8ab0" target="_blank" rel="noopener noreferrer">labs.google — 공유된 도구 열기</a></li>
+          <li><span>플로우 본체</span><a href="https://labs.google/fx/ko/tools/flow" target="_blank" rel="noopener noreferrer">labs.google/fx/ko/tools/flow</a></li>
+        </ul>
+        <span class="src">후파 · 08-24 · 09-10</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">설치와 업데이트는 어떻게 하나요?</p>
+        <p class="a">아래 배포 페이지에서 받아 설치하면 됩니다. 이제는 삭제 · 재설치 없이 업데이트되고, 즉시 반영하려면 주소창에 <code>chrome://extensions/</code> 를 치고 맨 위 [업데이트]를 누른 뒤 버전 숫자가 올라갔는지 확인하세요. 안 눌러도 시간이 지나면 반영됩니다.</p>
+        <ul class="links">
+          <li><span>이지워커 설치 · 업데이트</span><a href="https://limbj1218-cyber.github.io/hoopa-ez-dist/index.html?t=11" target="_blank" rel="noopener noreferrer">limbj1218-cyber.github.io/hoopa-ez-dist</a></li>
+          <li><span>오토워커 확장 · 보조 프로그램 모음</span><a href="https://smile387.synology.me:5001/sharing/LwhK2Zkbd" target="_blank" rel="noopener noreferrer">smile387.synology.me — 공유 폴더</a></li>
+        </ul>
+        <div class="flag"><b>설치 직후에는 꺼진 상태로 깔립니다.</b> 확장프로그램 관리에서 직접 켜주세요. 그리고 설치했다고 원본 파일을 지우면 안 됩니다.</div>
+        <span class="src">후파 · 구스범스</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">사용법은 어디에 있나요?</p>
+        <p class="a">카페에 가이드 영상이 올라와 있습니다. 이지워커 파일 안에 설명서도 함께 들어 있으니 한 번 찬찬히 읽어보시면 도움이 됩니다.</p>
+        <ul class="links">
+          <li><span>이지워커 설치 · 사용 가이드</span><a href="https://cafe.naver.com/autoworker2/31" target="_blank" rel="noopener noreferrer">cafe.naver.com/autoworker2/31</a></li>
+          <li><span>워터마크 리무버 사용법</span><a href="https://cafe.naver.com/autoworker2/32" target="_blank" rel="noopener noreferrer">cafe.naver.com/autoworker2/32</a></li>
+          <li><span>그록그록 설명 영상</span><a href="https://cafe.naver.com/autoworker2/43" target="_blank" rel="noopener noreferrer">cafe.naver.com/autoworker2/43</a></li>
+        </ul>
+        <span class="src">버터떡 · 후파</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">플로우로 이미지는 하루 몇 장까지 되나요?</p>
+        <p class="a">무료 계정 하나로 <strong>최대 200장 안팎</strong>인데, 딱 정해져 있지 않고 서버 부하에 따라 날마다 다릅니다. 몇 장까지 되는지에 너무 매달리지 마시고 막히면 다른 계정으로 이어서 만든다고 생각하세요.</p>
+        <p class="a">이미지 생성 때문에 프로나 울트라에 가입하실 필요는 전혀 없습니다. 제미나이 유료로 가입하면 플로우도 같이 되지만 무료와 큰 차이는 없습니다.</p>
+        <span class="src">후파 · 아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">업로드가 자꾸 실패해요.</p>
+        <p class="a"><strong>동시 업로드 장수를 1장으로</strong> 두고 전체 업로드하세요. 분당 업로드 제한(1분에 30장, 2초 딜레이)이 있어 여러 장을 한꺼번에 올리면 실패합니다. v9부터는 1개로 고정해 두었습니다. 그래도 안 넘어가면 모든 이미지가 제대로 올라갔는지 확인해 보세요.</p>
+        <span class="src">버터떡 · 후파 · 나물쓰</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">워터마크는 지울 수 있나요?</p>
+        <p class="a">이미지만 됩니다. <strong>영상 워터마크는 지울 수 없습니다.</strong></p>
+        <span class="src">후파 · 08-13</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">그록을 꼭 구독해야 하나요?</p>
+        <p class="a">아니요. 대체 수단이 있습니다.</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>도구</th><th>무료 범위</th><th>메모</th></tr></thead>
+            <tbody>
+              <tr><td class="fix">qwen</td><td>계정당 하루 5개</td><td>총 길이 5초. 계정을 여럿 두고 번갈아 사용</td></tr>
+              <tr><td class="fix">veo</td><td>구글 계정당 상당량</td><td>한글 구현은 낫지만 인증 · 계정 전환이 까다로움</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="a">그록을 구독한다면 연결제보다 <strong>월결제</strong>를 권합니다 — 해지하려 하면 1개월 무료 같은 제안이 붙어서 오히려 싸게 쓰게 되는 경우가 있습니다. 그리고 그록그록에 제한이 있는 게 아니라 그록 구독 요금제에 따른 제한입니다.</p>
+        <span class="src">버터떡 · 아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">플로우에서 계정을 바꾸려면?</p>
+        <p class="a">로그아웃이 아니라 옆에 생긴 <strong>Switch account</strong>를 쓰세요. 플로우 창을 닫았다 열면 기본 프로필 계정으로 돌아가므로 매번 스위치해야 합니다.</p>
+        <ol class="steps">
+          <li>새 계정으로 로그인한다</li>
+          <li>플로우에 접속한다</li>
+          <li>작업 이력이 전혀 없으면 아무 이미지나 하나 생성한다</li>
+          <li>플로우플로우 링크를 주소창에 입력한다</li>
+        </ol>
+        <span class="src">아는아이 · 후파 · 09-11</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">생성이 자꾸 실패해요. 제 계정 문제인가요?</p>
+        <p class="a">계정 문제가 아니라 <strong>플로우 서버 트래픽</strong> 때문에 응답을 못 받는 경우가 많았습니다. 플로우 메인에 "높은 수요로 영상 생성에 영향이 있으며, 실패한 요청의 AI 크레딧은 환불된다"는 안내가 떠 있던 시기가 있습니다. 다른 계정으로 이어서 하시거나 시간을 두고 다시 시도해 보세요.</p>
+        <span class="src">아는아이 · 후파</span>
+      </div>
+    </section>
+
+    <!-- ═══ 4 ═══ -->
+    <section id="s4" class="card">
+      <div class="sec-head"><h2>클로드</h2><span class="n">질문 458건</span></div>
+
+      <div class="qa">
+        <p class="q">어떤 요금제를 써야 하나요?</p>
+        <p class="a">첫 강의를 듣고 정하세요. 대본만 필요하면 튜브워커로도 만들 수 있고, 구독한다면 <strong>맥스 5배</strong> 정도가 기준이 됩니다. 프로로는 대본이 하루에 겨우 1개 되고 그마저 세션을 여러 번 초기화해야 합니다.</p>
+        <p class="a">연결제는 AI가 워낙 빨리 바뀌어 리스크가 있으니 월결제를 권합니다. 결제하고 사용하지 않았다면 환불도 됩니다.</p>
+        <span class="src">아는아이 · 나물쓰</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">클로드와 클로드 코드는 뭐가 다른가요?</p>
+        <p class="a">클로드는 지피티 · 제미나이 같은 채팅 툴이고, 클로드 코드는 채팅에 더해 "뭔가를 얘기하면 뚝딱 만들어주는" 쪽입니다. 그렇게 만드는 걸 바이브코딩이라고 부릅니다.</p>
+        <span class="src">아는아이 · 08-11</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">웹(홈 채팅)으로 하면 안 되나요?</p>
+        <p class="a">홈 채팅에서는 로컬 스킬을 불러올 수 없습니다. 채팅용 스킬로 바꿔 쓸 수는 있지만 서브에이전트 같은 기능이 빠져 반쪽짜리가 되고, 코워크로도 전체 기능은 못 씁니다. 강사님이 배포한 스킬을 100% 쓰려면 <strong>클로드 코드</strong>로 하세요. 스킬은 PC에 저장되므로 앱이나 코드로 해야 PC를 직접 연결 · 조작할 수 있습니다.</p>
+        <span class="src">아는아이 · 08-19</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">스킬은 어떻게 적용하나요?</p>
+        <ol class="steps">
+          <li>강사님이 만들어주신 스킬 폴더를 내려받는다</li>
+          <li>클로드 코드에 "이 스킬로 세팅해줘"라고 요청한다</li>
+          <li>이후에는 운영 중인 채널명으로 대본을 요청하면 스킬이 적용된다</li>
+        </ol>
+        <ul class="links">
+          <li><span>오토워커 스킬 다운로드</span><a href="https://drive.google.com/drive/folders/13PG48_9nFHxV10lDGWtl3bok4FwUynM0" target="_blank" rel="noopener noreferrer">drive.google.com — 공유 폴더</a></li>
+        </ul>
+        <p class="a">업데이트 전에 기존 스킬 폴더는 백업해 두세요 — 이미 본인 사용에 맞게 최적화해 두셨다면 업데이트보다 그게 나을 수도 있습니다. 스킬 안의 '사용자가 요청해도 직접 고치지 말 것' 항목은 <code>claude.md</code>에서 직접 수정해야 풀립니다.</p>
+        <span class="src">둘리 · 나물쓰 · 구스범스</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">토큰이 금방 떨어져요.</p>
+        <p class="a">바이브코딩에 다 쓰고 정작 대본을 못 만드는 경우가 가장 많습니다. 컨텍스트가 쌓이면 예전에 쓴 자료까지 읽느라 소모가 늘어나니 새 세션으로 넘기세요.</p>
+        <p class="a">레퍼런스도 긴 영상을 많이 넣으면 분석이 오래 걸리고 소모가 심합니다. 장르별로 첫 영상만 오퍼스로 뽑고 이후에는 소넷으로 써도 괜찮습니다.</p>
+        <span class="src">아는아이 · 버터떡</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">오류가 나는데 어떻게 물어보면 되나요?</p>
+        <p class="a">오류 화면과 <strong>파일 경로</strong>를 함께 주고 "이 문제를 해결해달라"고 하는 게 가장 빠릅니다. 강의 화면과 내 화면이 다르면 두 화면을 다 캡처해서 왜 다른지 물어보세요.</p>
+        <div class="flag"><b>다만 클로드는 유튜브 스튜디오를 볼 수 없습니다.</b> 지표 판단이나 썸네일 평가를 맡겨도 별 소용이 없고 토큰만 녹습니다.</div>
+        <span class="src">버터떡 · 아는아이</span>
+      </div>
+    </section>
+
+    <!-- ═══ 5 ═══ -->
+    <section id="s5" class="card">
+      <div class="sec-head"><h2>채널 운영 · 지표</h2><span class="n">질문 1,116건</span></div>
+
+      <div class="qa">
+        <p class="q">조회수가 안 나와요.</p>
+        <p class="a">롱폼에서는 조회수가 아니라 <strong>노출수</strong>를 봐야 합니다. "조회수가 왜 안 나와요"가 아니라 "왜 노출을 안 주나요"가 되어야 합니다 — 노출이 되고 클릭이 일어나면 조회수는 자동으로 따라옵니다.</p>
+        <p class="a">노출수가 100 미만으로 계속 이어지면 죽은 채널이지만, <strong>조회수 100 미만은 죽은 채널이 아니라 그냥 썸네일과 대본이 안 좋은 것</strong>입니다.</p>
+        <div class="tw">
+          <table>
+            <caption>영상 5~10개 시점의 진단</caption>
+            <thead><tr><th>노출수</th><th>클릭률</th><th>시청지속률</th><th>어디를 고칠까</th></tr></thead>
+            <tbody>
+              <tr><td>나온다</td><td>낮다</td><td>—</td><td class="fix">썸네일 또는 시청 연령층</td></tr>
+              <tr><td>나온다</td><td>괜찮다</td><td>낮다</td><td class="fix">대본 구조</td></tr>
+              <tr><td>나온다</td><td>낮다</td><td>낮다</td><td class="fix">전면 개편</td></tr>
+              <tr><td>아예 안 준다</td><td>—</td><td>—</td><td class="fix">채널 문제 (교체 고려)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <span class="src">아는아이 · 08-17</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">롱폼은 왜 이렇게 반응이 느린가요?</p>
+        <p class="a">쇼츠는 반응이 빨리 오지만 롱폼은 아닙니다. 유튜브가 이 채널이 정확히 무엇을 하는 채널인지, 누구에게 보여줘야 할지 학습하는 데 시간이 걸립니다. 처음에는 200, 300 하다가 영상이 10개 20개 쌓이면 다 같이 올라가는 경우가 많습니다.</p>
+        <p class="a">"롱폼은 길어서 롱폼이기도 하지만, 길게 봐야 해서 롱폼이기도 합니다."</p>
+        <span class="src">나물쓰 · 아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">영상 길이는 얼마가 좋나요?</p>
+        <p class="a">3분 이상이면 롱폼으로 보지만 미드롤 광고 기준이 8분이라 최소 8분 이상, 권장은 <strong>20~30분</strong>입니다. 5~10분짜리를 여러 개 만드느라 힘 빼는 것보다 20~30분짜리 하나를 잘 만드는 편이 수익창출 조건을 한 번에 채웁니다.</p>
+        <p class="a">계산해 보면 — 조회수 1만, 평균 지속 6분이면 6만 분 = 1,000시간. 그런 영상 8개면 4,000시간입니다.</p>
+        <span class="src">아는아이 · 나물쓰</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">하루에 몇 개 올려야 하나요?</p>
+        <p class="a">초반 10개 정도는 <strong>1채널 1영상</strong>. 1영상이 온전히 소화되고 노출 · 조회수가 안정적으로 붙으면 그때 2영상을 고려하세요. 처음부터 3~4개를 올리면 채널이 소화하지 못해 오히려 안 좋을 수 있습니다.</p>
+        <p class="a">롱폼이라 초반에는 주 1편도 괜찮습니다. 안 올리는 것보다는 올리는 게 낫습니다.</p>
+        <span class="src">나물쓰 · 아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">카테고리는 뭐가 좋나요?</p>
+        <p class="a">경제가 레퍼런스가 많아 수창이 빠른 편이지만, 그만큼 날아가는 채널도 많고 결이 안 맞는 사람도 있습니다. 어떤 카테고리든 리스크는 있습니다.</p>
+        <p class="a">중요한 건 <strong>좁히는 것</strong>입니다. '경제'는 너무 포괄적이라 국뽕 · 몰락 · 중국정세 · 미국정세 · 특허처럼 아주 세밀하게 잡아야 합니다 — 이걸 핀셋 카테고리라고 부릅니다. 초반 알고리즘 형성을 위해 한 가지로 통일해 주는 게 좋습니다.</p>
+        <span class="src">아는아이 · 나물쓰</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">레퍼런스는 어떤 기준으로 고르나요?</p>
+        <p class="a">업로드 <strong>1일 이내 조회수 1만 이상</strong>을 주로, 차선으로 3일 이내 5만 이상. 간단히 "1일 이내 5만 뷰 이상"으로 정해놓고 찾아도 됩니다.</p>
+        <p class="a">정찰용 계정을 하나 만들어 그 계정으로는 레퍼런스만 구독 · 시청하면 홈 피드에 소재가 알아서 뜹니다. 내 채널에서 잘 터진 영상을 레퍼런스로 삼아도 됩니다. 대본을 만들 때 레퍼런스를 2~3개 넣되, 이미지 스타일은 A채널에서, 카피 문구는 B · C채널에서 가져오는 식으로 섞으면 유사도가 내려갑니다.</p>
+        <span class="src">아는아이 · 나물쓰</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">썸네일을 어떻게 고쳐야 하나요?</p>
+        <p class="a">클릭률 <strong>9% 이상</strong>을 목표로 하되, 이미 10%가 넘는 건 그대로 두고 낮은 것만 바꾸세요. A/B는 배경 이미지를 고정하고 카피 문구만 바꿔 비교하는 게 깔끔합니다.</p>
+        <p class="a">클릭률이 이미 높은데 노출수가 줄어든다면 썸네일이 아니라 <strong>제목 · 설명 · 태그(메타데이터)</strong>를 바꿔 타겟을 비틀어야 합니다. 지금 타겟층에는 다 뿌렸다는 뜻입니다.</p>
+        <p class="a">썸네일은 강사님도 수작업을 가장 권합니다. 오래 붙잡고 있다고 잘 나오는 것도 아닙니다.</p>
+        <ul class="links">
+          <li><span>강사님 썸네일 템플릿</span><a href="https://www.miricanvas.com/v2/ko/design2/v/26847963-ce34-434c-a3d2-a6d5493b9112?mode=templateshare" target="_blank" rel="noopener noreferrer">미리캔버스 — 템플릿 열기</a></li>
+        </ul>
+        <span class="src">아는아이 · 버터떡 · 나물쓰 · 둘리</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">댓글 관리가 의미가 있나요?</p>
+        <p class="a">있습니다. 댓글이 달리고 <strong>30분 이내</strong>에 대댓글을 달면 알고리즘이 활동이 활발한 채널로 판단해 노출을 더 주기도 하고, 시청자도 답글을 잘 달아주는 채널이라 생각해 댓글을 더 답니다. 클릭률이나 시청지속률이 조금 낮아도 참여도가 높으면 더 밀어줍니다.</p>
+        <span class="src">아는아이 · 08-16</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">CTA(좋아요 · 구독)는 어디에 넣나요?</p>
+        <p class="a">훅 다음, 본문으로 넘어가는 지점에 자연스럽게 넣습니다. 부탁하거나 사정하는 말투가 아니라 <strong>"구독하면 무엇을 얻고, 안 하면 무엇을 놓치는지"</strong>로 유도해야 합니다.</p>
+        <div class="flag"><b>"영상이 마음에 드신다면 구독을 눌러주세요"는 지양하세요.</b> 나중에 눌러도 된다는 뉘앙스가 되어, 그냥 보다가 꺼버리는 경우가 많습니다.</div>
+        <p class="a">훅 자체가 약하면 CTA를 넣어도 채널에 매력을 못 느낍니다. 수익창출 전에는 특히 신경 쓰세요 — 조회수 20~30만이 나와도 구독 전환이 안 되면 수창을 못 하고 그만큼 수익을 날립니다.</p>
+        <span class="src">아는아이 · 버터떡</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">영상을 내렸다가 다시 올려도 되나요?</p>
+        <p class="a">의미 있는 편집 후 재게시는 제재 대상이 아닙니다. 불안하면 설명글이나 고정댓글에 "오류가 있어 수정 후 다시 공개합니다"라고 남겨두세요.</p>
+        <div class="flag"><b>다만 노출을 받고 있는 영상은 내리지 마세요.</b> 다시 올린다고 그만큼 노출을 준다는 보장이 없고, 내용이 그대로면 중복 콘텐츠에 걸릴 수도 있습니다.</div>
+        <span class="src">아는아이 · 09-01</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">시청시간이 스튜디오와 안 맞아요.</p>
+        <p class="a">쇼츠 · 비공개 · 삭제 영상을 제외하고 집계하기 때문에 <strong>5~7일</strong> 정도 차이가 납니다.</p>
+        <span class="src">아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">쇼츠도 같이 올려도 되나요?</p>
+        <p class="a">올려도 됩니다. 롱폼과 쇼츠는 알고리즘이 다릅니다. 다만 <strong>롱폼을 잘라 하이라이트 쇼츠로 올리는 건 비추천</strong>입니다 — 초반 이탈률이 높아 롱폼 시청지속률이 망가질 수 있습니다. 비슷한 연령대를 잡는 다른 종류의 쇼츠를 따로 운영하는 편이 낫습니다.</p>
+        <span class="src">아는아이 · 09-06</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">팩트체크는 어디까지 해야 하나요?</p>
+        <p class="a">날아간 채널 상당수가 검증되지 않은 내용이었습니다. 대본의 신뢰성은 허위 콘텐츠 선별의 한 요인으로 보입니다. 출처는 이 순서로 잡으세요.</p>
+        <ol class="steps">
+          <li>정부부처 · 각 전문기관</li>
+          <li>언론사 · 통신사 · 포털사이트</li>
+          <li>레퍼런스 영상 안의 출처</li>
+        </ol>
+        <p class="a">뉴스 기사만 잔뜩 가져와 보도자료처럼 나열하는 영상도 좋지 않습니다.</p>
+        <span class="src">아는아이 · 08-12</span>
+      </div>
+    </section>
+
+    <!-- ═══ 6 ═══ -->
+    <section id="s6" class="card">
+      <div class="sec-head"><h2>수익창출 · 계정</h2><span class="n">질문 514건</span></div>
+
+      <div class="qa">
+        <p class="q">수익창출 조건과 순서는 어떻게 되나요?</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>단계</th><th>조건</th><th>열리는 것</th></tr></thead>
+            <tbody>
+              <tr><td class="fix">1차 수창</td><td>구독자 1,000명<br>시청시간 4,000시간</td><td>멤버십 · 슈퍼챗 · 하이프 · 쇼핑태그</td></tr>
+              <tr><td class="fix">2차 수창</td><td>1차 승인 후 조건 충족</td><td>보기페이지 광고(롱폼) · 쇼츠 피드 광고</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="a">애드센스를 만들어 연결하고 YPP 파트너스에 가입하는 건 1차 때입니다. 검토는 빠르면 24시간, 최대 한 달까지 걸립니다.</p>
+        <div class="flag"><b>1차를 먼저 신청하세요.</b> 2차와 같이 하면 검토되는 동안의 수익을 그대로 날립니다. 1차가 승인되면 2차는 조건만 되면 딸깍으로 끝납니다. 쇼핑태그는 1차 이후 5~7일쯤 지나야 생깁니다.</div>
+        <span class="src">아는아이 · 08-23 · 09-10</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">애드센스는 미리 만들어두면 안 되나요?</p>
+        <p class="a">안 됩니다. 애드센스 사이트에서 미리 만들어두는 건 안 된다고 안내되었습니다(블로그용 생성 화면으로 잘못 들어가는 경우가 많습니다). 연결할 때는 이미 보유한 구글 계정으로 하세요.</p>
+        <span class="src">버터떡 · 아는아이 · 나물쓰</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">수익금은 언제부터 받을 수 있나요?</p>
+        <p class="a">수익금 <strong>10달러</strong>가 되면 핀번호 발송이 가능하고, 그동안에도 수익은 계속 쌓입니다. 핀번호를 입력하고 <strong>100달러</strong>가 되면 계좌 정보를 넣고 받을 수 있습니다.</p>
+        <span class="src">아는아이 · 08-06</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">CPM과 RPM은 뭐가 다른가요?</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>지표</th><th>1,000조회당</th></tr></thead>
+            <tbody>
+              <tr><td class="fix">CPM</td><td>광고 단가 — 광고주가 내는 돈</td></tr>
+              <tr><td class="fix">RPM</td><td>광고 수익 — 구글이 수수료를 떼고 주는 돈</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="a">RPM은 광고 수와 시청지속시간에 따라 들쭉날쭉해서 계산하기 어렵습니다. CPM이 1만 원이어도 RPM은 2천 원이 될 수도, 4천 원이 될 수도 있습니다. CPM은 어느 정도 평균을 낼 수 있습니다.</p>
+        <span class="src">아는아이 · 08-28</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">채널 고급기능은 미리 열어야 하나요?</p>
+        <p class="a">네. 중급은 문자인증이라 바로 통과되지만, <strong>고급은 영상(얼굴) 인증</strong>이라 하루 이상 걸릴 수도, 승인이 안 날 수도 있습니다.</p>
+        <p class="a">고급을 열어야 설명글에 출처 링크를 넣고 썸네일 A/B 테스트를 할 수 있습니다. 인증하면 승인까지 하루이틀 걸리니 미리 열어두세요 — 영상 두세 개 만에 확 뜨면 그때는 못 엽니다.</p>
+        <span class="src">아는아이 · 08-20 · 09-06</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">계정은 왜 분리하나요?</p>
+        <p class="a">정책 위반에 걸렸을 때 개인계정은 하위 브랜드 채널 전부가 영향을 받지만, 브랜드계정은 그 채널 하나만 날아가는 경우도 있습니다. 애드센스 분리도 이 연좌제를 줄이려는 것 — 하나의 애드센스로 다 연결해 두면 줄줄이 엮일 수 있습니다.</p>
+        <p class="a">계정에 채널이 하나만 있으면 개인계정, 두 개 이상이면 하위에 있는 것이 브랜드계정입니다.</p>
+        <p class="a">다만 어떤 방법도 100% 안전하지는 않고, 세분화할수록 시간과 품이 듭니다. 리스크를 어디까지 가져갈지는 본인 선택입니다.</p>
+        <div class="flag"><b>이미 정지된 애드센스에 넣었던 주소 · 전화번호 · 계좌는 새 계정에 쓰면 안 됩니다.</b> 새로 만든 계정까지 같이 정지됩니다.</div>
+        <span class="src">아는아이 · 나물쓰 · 후파 · 구스범스</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">계정이 정지되거나 인증이 거절됐어요.</p>
+        <p class="a">길게 쓰기보다 <strong>"적법한 절차로 만든 정상 계정인데 삭제 이유를 알려달라"</strong>고 간단히 요청해 다음 날 바로 풀린 사례가 있습니다. 고급기능 인증 거절도 납득할 이유를 대라고 따져서 통과한 경우가 있습니다.</p>
+        <p class="a">채널을 삭제했다면 새 채널을 바로 만들지 말고 채널이 다시 생길 때까지 기다리세요. 채널만 삭제하면 브랜드계정은 남고, 중급기능은 다시 받아야 하지만 고급기능은 살아있는 경우가 있습니다.</p>
+        <span class="src">아는아이 · 08-26 · 09-02</span>
+      </div>
+    </section>
+
+    <!-- ═══ 7 ═══ -->
+    <section id="s7" class="card">
+      <div class="sec-head"><h2>편집 · 음성</h2><span class="n">질문 326건</span></div>
+
+      <div class="qa">
+        <p class="q">캡컷에서 프로젝트가 안 열려요.</p>
+        <p class="a">'프로젝트 만들기'로 만드는 게 아닙니다. 튜브워커에서 받은 압축파일을 풀어서, <strong>그 폴더를 캡컷 저장(드래프트) 경로에 그대로 옮기는</strong> 것입니다.</p>
+        <div class="flag"><b>폴더를 열었을 때 <code>Resources</code> 폴더가 바로 보여야 합니다.</b> 프로젝트 이름 폴더가 한 겹 더 있거나 폴더명에 <code>_capcut</code>이 붙어 있으면 껍데기 폴더가 하나 더 생긴 것입니다.</div>
+        <p class="a">그래도 안 뜨면 캡컷을 재시작하고, 그래도 안 되면 폴더를 지운 뒤 캡컷을 닫은 채로 다시 넣어보세요.</p>
+        <ul class="links">
+          <li><span>캡컷 연결 가이드 영상</span><a href="https://cafe.naver.com/autoworker2/17" target="_blank" rel="noopener noreferrer">cafe.naver.com/autoworker2/17</a></li>
+          <li><span>캡컷 데스크톱 내려받기</span><a href="https://www.capcut.com/ko-kr/tools/desktop-video-editor" target="_blank" rel="noopener noreferrer">capcut.com — 데스크톱 편집기</a></li>
+        </ul>
+        <span class="src">아는아이 · 나물쓰 · 봄동</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">캡컷 유료 결제가 필요한가요?</p>
+        <p class="a">튜브워커만 쓴다면 필요 없습니다. 무료로도 내보내기가 되고, 안 된다면 편집 요소 중에 유료가 들어간 것입니다. srt 자막 내보내기와 맞춤법 수정은 유료 기능입니다.</p>
+        <span class="src">아는아이 · 버터떡</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">PC 사양은 어느 정도 필요한가요?</p>
+        <p class="a">캡컷에서 <strong>내보내기만 할 수 있는 사양</strong>이면 됩니다. 그래픽카드를 쓰는 건 내보내기 단계뿐이고, 그것도 고사양이 필요하지 않습니다. 나머지 부분은 PC 사양이 전혀 상관없습니다.</p>
+        <span class="src">아는아이 · 08-05</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">자막 줄이 안 맞아요.</p>
+        <p class="a">최대 자막 길이를 길게 하고 자막 크기까지 크게 해서 줄 나눔이 된 경우입니다. 크기를 조금 줄여보세요. 글자수와 글자크기는 튜브워커에서 조정하고, 그 밖의 세부 조정은 캡컷에서 합니다.</p>
+        <span class="src">아는아이 · 봄동</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">특정 씬만 고치고 싶어요.</p>
+        <p class="a">이미지는 '이미지 프롬프트 편집'에서 그 씬만 재생성하거나, 따로 만들어 캡컷에서 덮어쓰면 됩니다. 효과음도 원하는 씬만 캡컷에서 교체하는 편이 빠릅니다. 씬 몇 개만 어색한 정도라면 캡컷에서 직접 손보는 게 가장 빠릅니다.</p>
+        <span class="src">나물쓰 · 아는아이</span>
+      </div>
+
+      <div class="qa">
+        <p class="q">숫자나 영어가 이상하게 읽혀요.</p>
+        <p class="a">대본에 숫자나 기호가 들어가면 한글로 바꿔서 음성을 만듭니다(발음 변환). 이건 오류가 아니라 정상 동작이고, 크레딧 소모가 가장 적은 작업입니다.</p>
+        <p class="a">아라비아 숫자 그대로 읽히길 원하면 대본 스킬에서 바꾸세요. 발음 교정 없이 가려면 클로드에게 "읽었을 때 자연스러운 발음 버전"으로 대본을 받으면 되는데, 대신 <strong>자막을 캡컷에서 손봐야</strong> 합니다.</p>
+        <span class="src">아는아이 · 버터떡</span>
+      </div>
+    </section>
+
+    <p class="empty" id="noresult" style="display:none">검색 결과가 없습니다.</p>
+  </main>
+
+  <p class="note">
+    주제별 숫자는 <b>물음표나 의문형이 섞인 메시지</b>를 키워드로 분류한 건수입니다. 한 메시지가 여러 주제에 걸치면 양쪽에 들어갑니다.
+    답변은 그 시점에 방에서 나온 내용이라 이후 공지로 바뀐 부분이 있을 수 있고, 결제 · 환불처럼 확정이 필요한 건은 디하클 채널톡이 우선입니다.
+  </p>
+
+  <footer>
+    <p>오토2 사담방 대화 기록(2026-08-01 ~ 09-11, 53,442건)에서 질문과 조교 답변을 추려 주제별로 정리했습니다.</p>
+    <p>답변자 표기는 방에서 쓰는 조교 닉네임입니다. 개인 연락처 · 줌 접속 정보 · 실명은 담지 않았습니다.</p>
+    <p>운영 관련 확정 사항은 공지와 디하클 채널톡이 우선합니다.</p>
+  </footer>
+</div>
+
+<script>
+/* 주제 전환은 CSS 로 동작합니다. 아래는 검색 기능 — 스크립트가 살아 있을 때만 켜집니다. */
+(function () {
+  var wrap = document.getElementById('searchwrap');
+  var input = document.getElementById('search');
+  if (!wrap || !input) return;
+
+  var sections = [].slice.call(document.querySelectorAll('main > section'));
+  var items = [].slice.call(document.querySelectorAll('.qa'));
+  var noresult = document.getElementById('noresult');
+  var radios = [].slice.call(document.querySelectorAll('.tabin'));
+  items.forEach(function (el) { el.setAttribute('data-text', el.textContent.toLowerCase()); });
+  wrap.hidden = false;
+
+  function clearInline() {
+    items.forEach(function (el) { el.style.display = ''; });
+    sections.forEach(function (s) { s.style.display = ''; });
+  }
+
+  input.addEventListener('input', function () {
+    var q = input.value.trim().toLowerCase();
+    if (!q) { clearInline(); noresult.style.display = 'none'; return; }
+    var hits = 0;
+    items.forEach(function (el) {
+      var ok = el.getAttribute('data-text').indexOf(q) !== -1;
+      el.style.display = ok ? '' : 'none';
+      if (ok) hits++;
+    });
+    sections.forEach(function (s) {
+      var any = [].some.call(s.querySelectorAll('.qa'), function (el) { return el.style.display !== 'none'; });
+      s.style.display = any ? 'block' : 'none';   // 검색 중엔 주제 선택을 무시하고 전체에서 찾는다
+    });
+    noresult.style.display = hits === 0 ? '' : 'none';
+  });
+
+  // 주제를 다시 고르면 검색은 해제한다
+  radios.forEach(function (r) {
+    r.addEventListener('change', function () {
+      if (input.value) { input.value = ''; clearInline(); noresult.style.display = 'none'; }
+    });
+  });
+})();
+</script>

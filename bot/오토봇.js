@@ -26,7 +26,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0909-1";
+var BOT_VER = "0911-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -44,6 +44,12 @@ var PREFIX = "/";                  // 명령어 접두사
 var COMMON_KEY = "_공통";          // 모든 방에 공통 적용되는 데이터 키
 var REFRESH_MIN = 30;              // 데이터 자동 갱신 주기 (분)
 var LIST_MAX = 30;                 // /리스트 에 한 번에 보여줄 최대 개수
+
+// 트리거 이름이 "*" 로 시작하면 메시지 전체가 아니라 "그 낱말이 들어 있기만 해도" 응답한다.
+// 보통 대화에 섞여 나오는 말이라 같은 방에서 연달아 터지지 않게 쿨다운을 둔다.
+var CONTAIN_MARK = "*";
+var CONTAIN_COOL_MIN = 20;         // 같은 포함 트리거는 방마다 이 분 안에 한 번만
+
 var DATA_URL = "https://raw.githubusercontent.com/limbj1218-cyber/chatlog/main/bot/" +
     encodeURIComponent("오토봇데이터.json");
 
@@ -256,6 +262,31 @@ function triggersOf(table) {
     return keys;
 }
 
+// ── 포함 트리거 쿨다운 ──
+// 앱이 살아 있는 동안만 기억한다. 재시작하면 초기화되는데, 그래도 상관없다.
+var containAt = {};
+
+function containReady(room, key) {
+    var id = room + "|" + key;
+    var now = new Date().getTime();
+    var prev = containAt[id] || 0;
+    if (now - prev < CONTAIN_COOL_MIN * 60 * 1000) return false;
+    containAt[id] = now;
+    return true;
+}
+
+/** 메시지 안에 들어 있기만 해도 되는 트리거를 찾는다. 없으면 null */
+function findContain(table, text) {
+    var keys = triggersOf(table);
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (key.charAt(0) !== CONTAIN_MARK) continue;
+        var word = key.substring(1);
+        if (word && text.indexOf(word) !== -1) return key;
+    }
+    return null;
+}
+
 // ═══════════════ 대화 기록 ═══════════════
 
 var LOGS = null;        // { 방이름: [ {t,s,m}, ... ] }
@@ -397,8 +428,15 @@ function listText(room) {
         shown = keys.slice(0, LIST_MAX);
         tail = "\n… 외 " + (keys.length - LIST_MAX) + "개";
     }
+    var lines = [];
+    for (var i = 0; i < shown.length; i++) {
+        var k = shown[i];
+        lines.push(k.charAt(0) === CONTAIN_MARK
+            ? (k.substring(1) + "  (말 속에 있어도)")
+            : k);
+    }
     return "📋 이 방의 자동응답 (" + keys.length + "개)\n─────────────\n" +
-        shown.join("\n") + tail;
+        lines.join("\n") + tail;
 }
 
 function diagText(room, sender) {
@@ -478,9 +516,16 @@ function response(room, msg, sender, isGroupChat, replier) {
             return;
         }
 
-        // ⑥ 등록된 트리거 — 메시지 전체가 정확히 일치할 때만
+        // ⑥ 등록된 트리거 — 메시지 전체가 정확히 일치할 때
         var table = tableFor(room);
-        if (table.hasOwnProperty(text)) replier.reply(String(table[text]));
+        if (table.hasOwnProperty(text)) {
+            replier.reply(String(table[text]));
+            return;
+        }
+
+        // ⑦ 포함 트리거 — 그 낱말이 대화에 섞여 있기만 해도 응답 (방마다 쿨다운)
+        var ckey = findContain(table, text);
+        if (ckey && containReady(room, ckey)) replier.reply(String(table[ckey]));
 
     } catch (e) {
         lastLoadErr = String(e);
