@@ -71,20 +71,35 @@ GITHUB_TOKEN=                 # 카페 알림용. 비워두면 카페만 안 되
 
 [uv](https://docs.astral.sh/uv/getting-started/installation/) 를 설치한다. 그게 전부다.
 
-### 3. 실행
+### 3. uv 설치
 
-- **윈도우**: `run.bat` 을 더블클릭
-- **리눅스·맥**: `./run.sh`
+[uv](https://docs.astral.sh/uv/getting-started/installation/) 만 있으면 된다.
+파이썬도 uv 가 알아서 맞춰준다.
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source "$HOME/.local/bin/env"       # 또는 터미널을 새로 연다
+```
+
+윈도우라면 PowerShell 에서 `irm https://astral.sh/uv/install.ps1 | iex` 후 창을 새로 연다.
+
+### 4. 실행
+
+```bash
+./run.sh          # 리눅스·맥  (윈도우는 run.bat)
+```
 
 이 스크립트가 하는 일은 셋이다 — 깃헙에서 최신 코드 받기(`git pull`) → 의존성 맞추기
-(`uv sync`) → 봇 실행. 봇이 죽으면 10초 뒤에 다시 띄운다.
+(`uv sync`) → 봇 실행. 봇이 죽으면 10초 뒤에 다시 띄운다. 끄려면 `Ctrl+C`.
 
 uv 없이 쓰려면:
 
 ```bash
-python -m venv .venv && .venv/bin/pip install -e .
+python3 -m venv .venv && .venv/bin/pip install -e .
 .venv/bin/python -m autoworker
 ```
+
+계속 띄워두려면 `tmux` / `screen` 안에서 돌리거나 systemd 서비스로 만든다.
 
 ## 첫 실행에서 할 일
 
