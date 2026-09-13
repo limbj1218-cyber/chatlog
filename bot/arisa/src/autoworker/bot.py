@@ -31,6 +31,7 @@ class AutoworkerBot:
     def __init__(self) -> None:
         self.started_at = datetime.now()
         self.seen_any = False
+        self.connected_once = False
         self.store = Store(config.DATA_DIR)
         self.rooms = rooms.RoomMap(self.store)
         self.data = AutoReplyData(self.store)
@@ -234,63 +235,72 @@ class AutoworkerBot:
         except Exception as e:  # noqa: BLE001
             return f"{type(e).__name__}: {e}"
 
-    async def _wait_for_arisa(self) -> None:
-        """붙을 때까지 기다리되, 왜 안 되는지 조용히 넘기지 않는다.
+    def _watch_connect(self) -> None:
+        """붙는 데 성공하면 한 번 알리도록 client.connect 를 감싼다.
 
-        airi 의 run() 은 연결 실패를 말없이 재시도하기만 해서,
-        주소가 틀렸을 때 "아무 반응이 없다" 로만 보인다. 그래서 여기서 먼저 알린다.
+        airi 의 run() 은 연결 실패를 잡아서 1초 뒤 다시 시도한다. 그 재시도가
+        정상 동작이므로 **여기서 막지 않는다** — 대신 붙었을 때만 알린다.
         """
-        attempt = 0
-        while True:
-            attempt += 1
-            loud = attempt == 1 or attempt % 6 == 0
+        original = self.client.connect
 
-            tcp_error = await self._tcp_open()
-            if tcp_error is not None:
-                if loud:
-                    log.error("%s 에 아무도 듣고 있지 않습니다 — %s", config.ARISA_TARGET, tcp_error)
-                    log.error("  · arisa 가 떠 있는지: ps aux | grep arisa")
-                    log.error("  · 누가 듣고 있는지:   ss -ltnp | grep 3000")
-                    log.error("  · .env 의 ARISA_TARGET 이 맞는지")
-                await asyncio.sleep(10)
-                continue
+        async def connect_and_tell() -> None:
+            await original()
+            if not self.connected_once:
+                self.connected_once = True
+                log.info("arisa 에 연결되었습니다 ✅ (%s)", config.ARISA_TARGET)
+                log.info("메시지를 기다립니다. 방에서 /방정보 를 쳐보세요.")
 
-            try:
-                await self.client.connect()  # 이 안에서 health_check 까지 한다
-            except Exception as e:  # noqa: BLE001
-                if loud:
-                    log.error(
-                        "포트는 열려 있는데 gRPC 로는 말이 안 통합니다 (%s): %s: %s",
-                        config.ARISA_TARGET,
-                        type(e).__name__,
-                        e,
-                    )
-                    log.error("  · arisa 가 정말 그 포트인지 (다른 프로그램일 수 있음)")
-                    log.error("  · arisa 가 살아 있는지 — 로그에 오류가 찍혔는지 확인")
-                    log.error("  · adb forward 같은 중계를 쓰고 있다면 그 중계가 끊겼는지")
-                await asyncio.sleep(10)
-                continue
+        self.client.connect = connect_and_tell  # type: ignore[method-assign]
 
-            log.info("arisa 에 연결되었습니다 ✅ (%s)", config.ARISA_TARGET)
+    async def _nag_if_never_connected(self) -> None:
+        """한참 지나도 못 붙으면 그때 확인할 것을 알린다."""
+        await asyncio.sleep(30)
+        if self.connected_once:
             return
+        log.error("30초가 지나도 arisa 에 붙지 못했습니다 (%s)", config.ARISA_TARGET)
+        tcp_error = await self._tcp_open()
+        if tcp_error is not None:
+            log.error("  포트에 아무도 듣고 있지 않습니다 — %s", tcp_error)
+            log.error("  · arisa 가 떠 있는지: ps aux | grep arisa")
+            log.error("  · .env 의 ARISA_TARGET 이 맞는지")
+        else:
+            log.error("  포트는 열려 있는데 gRPC 로 말이 안 통합니다.")
+            log.error("  · 3000번을 듣는 게 arisa 가 맞는지: ss -ltnp | grep 3000")
+            log.error("  · arisa 쪽 화면에 오류가 찍혔는지")
+        log.error("  (계속 다시 붙어보는 중입니다 — arisa 를 띄우면 알아서 연결됩니다)")
+
+    async def _run_client(self) -> None:
+        """airi 의 재시도에 맡기되, 끊기면 알리고 다시 붙는다."""
+        while True:
+            try:
+                await self.client.run()
+                log.warning("이벤트 구독이 끝났습니다 — 5초 뒤 다시 붙습니다.")
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                log.error("연결이 끊겼습니다 (%s: %s) — 5초 뒤 다시 붙습니다.", type(e).__name__, e)
+            self.connected_once = False
+            self.client._disconnect()  # noqa: SLF001 — 다음 시도에서 새로 붙게
+            await asyncio.sleep(5)
 
     async def run(self) -> None:
-        await self._wait_for_arisa()
         await self.data.refresh()
         log.info(
             "자동응답 데이터: %s (방 %d개)",
             self.data.source,
             len(self.data.data or {}),
         )
-        log.info("기억하고 있는 방:\n%s", self.rooms.known_text())
-        log.info("메시지를 기다립니다. 방에서 /방정보 를 쳐보세요.")
+        log.info("아는 방:\n%s", self.rooms.known_text())
+
+        self._watch_connect()
         tasks = [
             asyncio.create_task(self.data.run_forever(), name="data"),
             asyncio.create_task(self.cafe.run_forever(), name="cafe"),
             asyncio.create_task(self._flush_forever(), name="flush"),
+            asyncio.create_task(self._nag_if_never_connected(), name="nag"),
         ]
         try:
-            await self.client.run()
+            await self._run_client()
         finally:
             for t in tasks:
                 t.cancel()
