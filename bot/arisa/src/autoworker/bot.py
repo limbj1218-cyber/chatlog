@@ -242,9 +242,24 @@ class AutoworkerBot:
         정상 동작이므로 **여기서 막지 않는다** — 대신 붙었을 때만 알린다.
         """
         original = self.client.connect
+        self._tries = 0
 
         async def connect_and_tell() -> None:
-            await original()
+            self._tries += 1
+            try:
+                await original()
+            except Exception as e:  # noqa: BLE001
+                # airi 는 이 오류를 삼키고 1초 뒤 다시 시도한다.
+                # 그대로 두면 왜 안 되는지 영영 안 보이므로, 가끔씩 찍어준다.
+                if self._tries == 1 or self._tries % 15 == 0:
+                    log.warning(
+                        "붙는 중… (%d번째 실패: %s: %s)",
+                        self._tries,
+                        type(e).__name__,
+                        e,
+                    )
+                raise
+            self._tries = 0
             if not self.connected_once:
                 self.connected_once = True
                 log.info("arisa 에 연결되었습니다 ✅ (%s)", config.ARISA_TARGET)
@@ -290,7 +305,7 @@ class AutoworkerBot:
             self.data.source,
             len(self.data.data or {}),
         )
-        log.info("아는 방:\n%s", self.rooms.known_text())
+        log.info("동작할 방:\n%s", self.rooms.known_text(only_configured=True))
 
         self._watch_connect()
         tasks = [

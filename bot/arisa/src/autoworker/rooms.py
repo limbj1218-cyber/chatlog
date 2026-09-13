@@ -52,10 +52,16 @@ class RoomMap:
     def id_for(self, name: str) -> int | None:
         return self.by_name.get(name)
 
-    def known_text(self) -> str:
-        if not self.by_name:
+    def known_text(self, only_configured: bool = False) -> str:
+        """아는 방 목록. only_configured 면 봇이 실제로 동작하는 방만."""
+        from . import config
+
+        items = sorted(self.by_name.items())
+        if only_configured:
+            items = [(n, c) for n, c in items if config.in_rooms(n)]
+        if not items:
             return "(아직 배운 방이 없어요)"
-        return "\n".join(f"  {name} → {cid}" for name, cid in sorted(self.by_name.items()))
+        return "\n".join(f"  {name} → {cid}" for name, cid in items)
 
 
 def channel_name(channel) -> str:
