@@ -17,10 +17,20 @@ if errorlevel 1 (
     echo.
 )
 
+where uv >nul 2>&1
+if errorlevel 1 (
+    echo  ! uv 가 없습니다. PowerShell 에서 설치하세요:
+    echo    irm https://astral.sh/uv/install.ps1 ^| iex
+    pause
+    exit /b 1
+)
+
 uv sync --quiet
 if errorlevel 1 (
-    echo  ! uv sync 실패 - uv 가 설치되어 있는지 확인하세요.
-    echo    https://docs.astral.sh/uv/getting-started/installation/
+    echo.
+    echo  ! uv sync 실패 - 위 오류를 보세요. 흔한 원인:
+    echo    - 네트워크 문제 ^(깃헙에서 airi-py 를 받지 못함^)
+    echo    - 파이썬 3.11 이상이 없음
     pause
     exit /b 1
 )

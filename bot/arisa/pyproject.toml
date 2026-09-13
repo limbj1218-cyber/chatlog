@@ -4,14 +4,15 @@ version = "0.1.0"
 description = "오토봇 + 카페봇 (Arisa2 / KakaoTalk)"
 requires-python = ">=3.11"
 dependencies = [
-    "airi",
+    # 배포 이름은 airi-py, 불러올 때 쓰는 모듈 이름은 airi 다
+    "airi-py",
 ]
 
 [project.scripts]
 autoworker-bot = "autoworker.__main__:main"
 
 [tool.uv.sources]
-airi = { git = "https://github.com/ye-seola/arisa2.git", subdirectory = "python", branch = "main" }
+airi-py = { git = "https://github.com/ye-seola/arisa2.git", subdirectory = "python", branch = "main" }
 
 [build-system]
 requires = ["hatchling"]

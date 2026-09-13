@@ -6,9 +6,18 @@ while true; do
     echo "[$(date '+%m-%d %H:%M:%S')] 깃헙에서 최신 코드를 받습니다..."
     git pull --ff-only || echo "  ! git pull 실패 — 예전 코드로 계속 진행합니다."
 
+    if ! command -v uv >/dev/null 2>&1; then
+        echo "  ! uv 가 없습니다. 설치하세요:"
+        echo "    curl -LsSf https://astral.sh/uv/install.sh | sh"
+        echo "    source \"\$HOME/.local/bin/env\""
+        exit 1
+    fi
+
     if ! uv sync --quiet; then
-        echo "  ! uv sync 실패 — uv 가 설치되어 있는지 확인하세요."
-        echo "    https://docs.astral.sh/uv/getting-started/installation/"
+        echo
+        echo "  ! uv sync 실패 — 위 오류를 보세요. 흔한 원인:"
+        echo "    · 네트워크 문제 (깃헙에서 airi-py 를 받지 못함)"
+        echo "    · 파이썬 3.11 이상이 없음 (uv 가 알아서 받지만 막힐 수 있음)"
         exit 1
     fi
 
