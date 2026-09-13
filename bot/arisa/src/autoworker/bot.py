@@ -217,6 +217,23 @@ class AutoworkerBot:
 
     # ─────────────── 실행 ───────────────
 
+    async def _tcp_open(self) -> str | None:
+        """3000번에 누가 듣고 있기는 한지 먼저 본다. 실패하면 이유를 돌려준다.
+
+        "연결 거부"(아무도 없음)와 "붙었다가 끊김"(누군가 있는데 gRPC 가 안 됨)은
+        고칠 곳이 완전히 다르다. 그래서 gRPC 보다 먼저 이걸 확인한다.
+        """
+        host, _, port = config.ARISA_TARGET.rpartition(":")
+        try:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(host.strip("[]"), int(port)), timeout=5
+            )
+            writer.close()
+            await writer.wait_closed()
+            return None
+        except Exception as e:  # noqa: BLE001
+            return f"{type(e).__name__}: {e}"
+
     async def _wait_for_arisa(self) -> None:
         """붙을 때까지 기다리되, 왜 안 되는지 조용히 넘기지 않는다.
 
@@ -226,26 +243,36 @@ class AutoworkerBot:
         attempt = 0
         while True:
             attempt += 1
+            loud = attempt == 1 or attempt % 6 == 0
+
+            tcp_error = await self._tcp_open()
+            if tcp_error is not None:
+                if loud:
+                    log.error("%s 에 아무도 듣고 있지 않습니다 — %s", config.ARISA_TARGET, tcp_error)
+                    log.error("  · arisa 가 떠 있는지: ps aux | grep arisa")
+                    log.error("  · 누가 듣고 있는지:   ss -ltnp | grep 3000")
+                    log.error("  · .env 의 ARISA_TARGET 이 맞는지")
+                await asyncio.sleep(10)
+                continue
+
             try:
-                await self.client.connect()
-                await self.client.health_check()
-                log.info("arisa 에 연결되었습니다 ✅ (%s)", config.ARISA_TARGET)
-                return
+                await self.client.connect()  # 이 안에서 health_check 까지 한다
             except Exception as e:  # noqa: BLE001
-                if attempt == 1 or attempt % 6 == 0:
+                if loud:
                     log.error(
-                        "arisa 에 붙지 못했습니다 (%s): %s: %s",
+                        "포트는 열려 있는데 gRPC 로는 말이 안 통합니다 (%s): %s: %s",
                         config.ARISA_TARGET,
                         type(e).__name__,
                         e,
                     )
-                    log.error(
-                        "  확인할 것 — ① 패드에서 arisa 가 떠 있는지"
-                        " ② ARISA_BIND 가 0.0.0.0:3000 인지"
-                        " ③ .env 의 ARISA_TARGET 이 패드 IP 인지"
-                        " ④ 둘이 같은 공유기인지"
-                    )
+                    log.error("  · arisa 가 정말 그 포트인지 (다른 프로그램일 수 있음)")
+                    log.error("  · arisa 가 살아 있는지 — 로그에 오류가 찍혔는지 확인")
+                    log.error("  · adb forward 같은 중계를 쓰고 있다면 그 중계가 끊겼는지")
                 await asyncio.sleep(10)
+                continue
+
+            log.info("arisa 에 연결되었습니다 ✅ (%s)", config.ARISA_TARGET)
+            return
 
     async def run(self) -> None:
         await self._wait_for_arisa()
