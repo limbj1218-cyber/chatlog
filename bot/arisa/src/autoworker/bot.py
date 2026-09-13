@@ -72,7 +72,8 @@ class AutoworkerBot:
     async def _handle(self, ctx: AiriContext[proto.MessageEvent]) -> None:
         author = ctx.event.author
         text = str(ctx.event.message or "").strip()
-        room = rooms.channel_name(ctx.channel)
+        raw_room = rooms.channel_name(ctx.channel)
+        room = config.canonical_room(raw_room)  # 긴 카톡 이름 → 짧은 설정 이름
         sender = author.nickname if author is not None else ""
 
         if not self.seen_any:
@@ -102,11 +103,14 @@ class AutoworkerBot:
             await ctx.reply(self.diag_text(room, sender, ctx.channel.id))
             return
         if text == config.PREFIX + "방정보":
+            alias_note = f"\n설정 이름: [{room}]" if room != raw_room else ""
             await ctx.reply(
                 f"🏷️ 방 정보\n─────────────\n"
-                f"이름: [{room}]\nchannel_id: {ctx.channel.id}\n"
+                f"카톡 이름: [{raw_room}]{alias_note}\n"
+                f"channel_id: {ctx.channel.id}\n"
                 f"종류: {ctx.channel.channel_type}\n"
-                f"보낸 사람: [{sender}]\n\n"
+                f"보낸 사람: [{sender}]\n"
+                f"이 방 활성화됨: {'예 ✅' if config.in_rooms(room) else '아니오 ❌'}\n\n"
                 f"기억하고 있는 방:\n{self.rooms.known_text()}"
             )
             return

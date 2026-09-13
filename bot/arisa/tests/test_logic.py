@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from autoworker import chatlog, matching  # noqa: E402
+from autoworker import chatlog, config, matching  # noqa: E402
 
 DATA = {
     "_공통": {
@@ -34,6 +34,32 @@ class FakeClock:
 
     def advance(self, minutes: float) -> None:
         self.now += minutes * 60
+
+
+# ─────────────── 방 이름 별칭 ───────────────
+
+
+def test_카톡_방이름이_짧은_이름으로_바뀐다():
+    assert config.canonical_room("(사담방) 오토워커 2기 [개발남노씨]") == "오토2"
+    assert config.canonical_room("(프리미엄반) 오토워커 2기 [개발남노씨]") == "오토2프프"
+
+
+def test_모르는_방이름은_그대로():
+    assert config.canonical_room("공백기 근무표") == "공백기 근무표"
+    assert config.canonical_room("아무방") == "아무방"
+
+
+def test_별칭을_거치면_활성화된_방이_된다():
+    for real in config.ROOM_ALIASES:
+        assert config.in_rooms(config.canonical_room(real)), real
+    assert not config.in_rooms("(사담방) 오토워커 2기 [개발남노씨]")
+
+
+def test_별칭이_데이터_키와_이어진다():
+    """카톡 이름으로 들어와도 오토봇데이터.json 의 방별 트리거를 찾아야 한다."""
+    room = config.canonical_room("(사담방) 오토워커 2기 [개발남노씨]")
+    table = matching.table_for(DATA, room)
+    assert "질문" in table
 
 
 # ─────────────── 트리거표 ───────────────
