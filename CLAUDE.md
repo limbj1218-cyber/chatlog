@@ -56,8 +56,9 @@
 
 - `bot/arisa/` — **오토봇 + 카페봇의 Arisa2 이식판 (파이썬)**. 2026-09-13 시작, 기능은 1:1로 동일.
   [Arisa2](https://github.com/ye-seola/arisa2)는 안드로이드용 Rust 바이너리로 카톡 DB를 폴링해
-  **gRPC(기본 `0.0.0.0:3000`)** 로 이벤트를 뿌린다. 그래서 **로더가 필요 없다** — 단말기는 `arisa`만
-  띄우는 창구이고, 봇 코드는 다른 PC에서 돌며 `git pull` 로 갱신한다.
+  **gRPC(기본 `0.0.0.0:3000`)** 로 이벤트를 뿌린다. 그래서 **로더가 필요 없다** — 봇 코드가 폰 밖에서 돌고
+  `git pull` 로 갱신된다. arisa 와 봇은 같은 기계에 있어도(현재 사용자 구성: PC 한 대에서 `127.0.0.1:3000`)
+  나뉘어 있어도 되며, `.env` 의 `ARISA_TARGET` 만 맞추면 된다.
   자동응답 내용은 메신저봇R 판과 **같은 `bot/오토봇데이터.json`** 을 쓰므로 양쪽이 어긋나지 않는다.
   · 설정은 `src/autoworker/config.py` 한 파일 · 실행은 `run.bat` / `run.sh` (git pull → uv sync → 실행 → 죽으면 재시작)
   · `airi` 를 import 하는 건 `bot.py` 뿐이다. 나머지 모듈은 단말기 없이 `python tests/test_logic.py` 로 검증된다 — 이 경계를 유지할 것
