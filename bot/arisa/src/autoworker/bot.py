@@ -73,7 +73,8 @@ class AutoworkerBot:
         author = ctx.event.author
         text = str(ctx.event.message or "").strip()
         raw_room = rooms.channel_name(ctx.channel)
-        room = config.canonical_room(raw_room)  # 긴 카톡 이름 → 짧은 설정 이름
+        # channel_id 를 먼저 보고, 모르는 방이면 이름으로 (긴 카톡 이름 → 짧은 설정 이름)
+        room = config.resolve_room(ctx.channel.id, raw_room)
         sender = author.nickname if author is not None else ""
 
         if not self.seen_any:

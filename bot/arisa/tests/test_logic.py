@@ -55,6 +55,22 @@ def test_별칭을_거치면_활성화된_방이_된다():
     assert not config.in_rooms("(사담방) 오토워커 2기 [개발남노씨]")
 
 
+def test_channel_id_로_찾는다():
+    assert config.resolve_room(18490098569406776, "이름이 뭐든") == "오토2"
+    assert config.resolve_room(18490098487826738, "") == "오토2프프"
+
+
+def test_id_를_모르면_이름으로():
+    assert config.resolve_room(999, "(사담방) 오토워커 2기 [개발남노씨]") == "오토2"
+    assert config.resolve_room(999, "공백기 근무표") == "공백기 근무표"
+    assert config.resolve_room(999, "처음보는방") == "처음보는방"
+
+
+def test_등록된_id_는_전부_활성화된_방이다():
+    for cid, short in config.ROOM_IDS.items():
+        assert config.in_rooms(short), (cid, short)
+
+
 def test_별칭이_데이터_키와_이어진다():
     """카톡 이름으로 들어와도 오토봇데이터.json 의 방별 트리거를 찾아야 한다."""
     room = config.canonical_room("(사담방) 오토워커 2기 [개발남노씨]")

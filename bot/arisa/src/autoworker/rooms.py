@@ -23,6 +23,8 @@ class RoomMap:
     def __init__(self, store: Store) -> None:
         self.store = store
         self.by_name: dict[str, int] = {}
+
+        # 배운 것 먼저 올리고
         raw = store.read_json(ROOMS_NAME)
         if isinstance(raw, dict):
             for name, cid in raw.items():
@@ -30,6 +32,13 @@ class RoomMap:
                     self.by_name[str(name)] = int(cid)
                 except (TypeError, ValueError):
                     continue
+
+        # 설정에 적힌 id 가 이깁니다 — 사람이 직접 적은 값이라 더 확실하다.
+        # 덕분에 켜자마자 먼저 말 걸기가 된다.
+        from . import config
+
+        for cid, name in config.ROOM_IDS.items():
+            self.by_name[name] = cid
 
     def learn(self, name: str, channel_id: int) -> None:
         if not name:
