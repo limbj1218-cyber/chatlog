@@ -30,6 +30,7 @@ MESSAGE_TYPE_TEXT = 1
 class AutoworkerBot:
     def __init__(self) -> None:
         self.started_at = datetime.now()
+        self.seen_any = False
         self.store = Store(config.DATA_DIR)
         self.rooms = rooms.RoomMap(self.store)
         self.data = AutoReplyData(self.store)
@@ -70,15 +71,29 @@ class AutoworkerBot:
 
     async def _handle(self, ctx: AiriContext[proto.MessageEvent]) -> None:
         author = ctx.event.author
+        text = str(ctx.event.message or "").strip()
+        room = rooms.channel_name(ctx.channel)
+        sender = author.nickname if author is not None else ""
+
+        if not self.seen_any:
+            self.seen_any = True
+            log.info("첫 메시지를 받았습니다 — 연결 정상 ✅ [%s] %s", room, sender)
+
+        # 무슨 일이 일어나는지 보이도록 남긴다 (LOG_LEVEL=DEBUG 로 켜서 본다)
+        log.debug(
+            "[%s] (%s) mine=%s type=%s: %s",
+            room,
+            sender,
+            getattr(author, "is_mine", None),
+            ctx.event.message_type,
+            text[:60],
+        )
+
         if author is not None and author.is_mine:
             return  # 내가 보낸 말에 내가 답하지 않는다
-
-        text = str(ctx.event.message or "").strip()
         if not text:
             return
 
-        room = rooms.channel_name(ctx.channel)
-        sender = author.nickname if author is not None else ""
         if room:
             self.rooms.learn(room, ctx.channel.id)
 
@@ -197,8 +212,46 @@ class AutoworkerBot:
 
     # ─────────────── 실행 ───────────────
 
+    async def _wait_for_arisa(self) -> None:
+        """붙을 때까지 기다리되, 왜 안 되는지 조용히 넘기지 않는다.
+
+        airi 의 run() 은 연결 실패를 말없이 재시도하기만 해서,
+        주소가 틀렸을 때 "아무 반응이 없다" 로만 보인다. 그래서 여기서 먼저 알린다.
+        """
+        attempt = 0
+        while True:
+            attempt += 1
+            try:
+                await self.client.connect()
+                await self.client.health_check()
+                log.info("arisa 에 연결되었습니다 ✅ (%s)", config.ARISA_TARGET)
+                return
+            except Exception as e:  # noqa: BLE001
+                if attempt == 1 or attempt % 6 == 0:
+                    log.error(
+                        "arisa 에 붙지 못했습니다 (%s): %s: %s",
+                        config.ARISA_TARGET,
+                        type(e).__name__,
+                        e,
+                    )
+                    log.error(
+                        "  확인할 것 — ① 패드에서 arisa 가 떠 있는지"
+                        " ② ARISA_BIND 가 0.0.0.0:3000 인지"
+                        " ③ .env 의 ARISA_TARGET 이 패드 IP 인지"
+                        " ④ 둘이 같은 공유기인지"
+                    )
+                await asyncio.sleep(10)
+
     async def run(self) -> None:
+        await self._wait_for_arisa()
         await self.data.refresh()
+        log.info(
+            "자동응답 데이터: %s (방 %d개)",
+            self.data.source,
+            len(self.data.data or {}),
+        )
+        log.info("기억하고 있는 방:\n%s", self.rooms.known_text())
+        log.info("메시지를 기다립니다. 방에서 /방정보 를 쳐보세요.")
         tasks = [
             asyncio.create_task(self.data.run_forever(), name="data"),
             asyncio.create_task(self.cafe.run_forever(), name="cafe"),
