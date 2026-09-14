@@ -54,24 +54,15 @@
   먼저 말 걸기는 이 앱에서 **`BotManager.getCurrentBot().send()` 만 동작**한다 (`Api.replyRoom`·전역 `bot` 은 없음).
   발송에 실패하면 기준 글번호를 올리지 않아 다음 주기에 다시 시도한다. 쿠키 만료를 방에 알리지는 않는다
 
-- `bot/arisa/` — **오토봇 + 카페봇의 Arisa2 이식판 (파이썬)**. 2026-09-13 시작, 기능은 1:1로 동일.
-  [Arisa2](https://github.com/ye-seola/arisa2)는 안드로이드용 Rust 바이너리로 카톡 DB를 폴링해
-  **gRPC(기본 `0.0.0.0:3000`)** 로 이벤트를 뿌린다. 그래서 **로더가 필요 없다** — 봇 코드가 폰 밖에서 돌고
-  `git pull` 로 갱신된다. arisa 와 봇은 같은 기계에 있어도(현재 사용자 구성: PC 한 대에서 `127.0.0.1:3000`)
-  나뉘어 있어도 되며, `.env` 의 `ARISA_TARGET` 만 맞추면 된다.
-  자동응답 내용은 메신저봇R 판과 **같은 `bot/오토봇데이터.json`** 을 쓰므로 양쪽이 어긋나지 않는다.
-  · 설정은 `src/autoworker/config.py` 한 파일 · 실행은 `run.bat` / `run.sh` (git pull → uv sync → 실행 → 죽으면 재시작)
-  · `airi` 를 import 하는 건 `bot.py` 뿐이다. 나머지 모듈은 단말기 없이 `python tests/test_logic.py` 로 검증된다 — 이 경계를 유지할 것
-  · **실제 카톡 방 이름은 길다** — `(사담방) 오토워커 2기 [개발남노씨]`, `(프리미엄반) 오토워커 2기 [개발남노씨]`.
-    설정과 `오토봇데이터.json` 의 키는 짧은 이름(`오토2`·`오토2프프`)을 그대로 두고 `config.ROOM_ALIASES` 로 잇는다.
-    방 이름이 또 바뀌면 **별칭 한 줄만 더한다** — 데이터 파일이나 메신저봇R 판을 건드리지 말 것
-  · 방은 이름으로 설정하지만 Arisa2는 `channel_id`(int)로 다룬다. 메시지가 올 때 짝을 배워 `rooms.json` 에 남긴다.
-    **처음 켠 직후에는 아무 방도 모르므로 먼저 말 걸기가 안 된다** — 각 방에서 `/방정보` 를 한 번 치면 바로 배운다
-  · **`.env`(ARISA_TARGET, GITHUB_TOKEN)는 절대 커밋하지 않는다.** `.gitignore` 에 있다
-  · 메신저봇R 판에서 두 봇을 스크립트로 나눈 이유(한쪽 대기가 앱 전체를 멈춤)는 asyncio 라 사라졌다. 한 프로세스에 둔다
-  · **아직 안 옮긴 것**: `FeedMessageDeleted`(삭제된 원문까지 옴 → `/삭제내역` 을 제대로 고칠 수 있다),
-    `RawQuery`(카톡 DB 직접 조회 → 3000개씩 쌓을 필요 없음), 네이버 카페 직접 호출(깃헙 Actions 경유 제거 가능).
-    1:1 이식을 먼저 확인한 뒤에 손대기로 했다
+> **Arisa2 이식은 2026-09-14 폐기했다.** 코드(`bot/arisa/`, 파이썬 1:1 이식판)는 `6d7389a` 에 남아 있으니
+> 되살리려면 `git checkout 6d7389a -- bot/arisa`. 로직은 완성되어 시험 26개를 통과했고 문제는 코드가 아니라 **환경**이었다 —
+> arisa 는 안드로이드에서만 도는 Rust 바이너리라(카톡 DB 경로 + ART VM) 우분투 VM 위에 Docker 로 Redroid 를 올리고
+> 그 안에 카톡과 arisa 를 띄우는 구성이 필요하다. 포트는 Docker 가 `0.0.0.0:3000->3000` 으로 공개해 주므로
+> 우분투의 `127.0.0.1:3000` 으로 닿지만, **arisa 가 `ARISA_EXIT_ON_STDIN_CLOSE=true`(기본값) 라 띄운 셸이 닫히면 조용히 죽는다.**
+> 그러면 docker-proxy 는 살아 있어 TCP 는 받아주고 gRPC 만 끊겨 `StreamTerminatedError: Connection lost` 로 보인다 —
+> 이 증상이 나오면 컨테이너가 아니라 **그 안의 arisa** 를 의심할 것.
+> 다시 시도한다면 띄우기는 `sudo docker exec -d redroid sh -c 'ARISA_BIND=0.0.0.0:3000 ARISA_EXIT_ON_STDIN_CLOSE=false /data/local/tmp/arisa-x86_64 > /data/local/tmp/arisa.log 2>&1'`
+> (scrcpy·adb 없이 우분투에서 바로 된다). 설치 가이드: arisa-guide.notion.site
 
 > 다섯 봇(단톡봇·제련봇·사건봇·오토봇·카페봇)은 서로 독립이며 각자 로더로 설치한다. 명령어가 겹치지 않게 로더 명령을 구분해 두었으나,
 > `/랭킹`·`/초기화`·`/삭제`·`재련가즈아` 는 제련봇과 사건봇이 공유하는 이름이다. 두 봇을 **같은 방**에 넣으면
