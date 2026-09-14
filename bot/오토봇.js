@@ -26,7 +26,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0911-1";
+var BOT_VER = "0914-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -320,13 +320,21 @@ function loadLogs() {
     return LOGS;
 }
 
+var logSaving = false;     // 저장 스레드가 이미 도는 중인지
+var lastLogErr = null;     // 마지막 저장 실패 (진단용)
+
 function saveLogs() {
     if (!LOG_FILE) return;
+    if (logSaving) return;          // 같은 파일에 둘이 동시에 쓰면 파일이 깨진다
+    logSaving = true;
     try {
         fileWrite(LOG_FILE, JSON.stringify(loadLogs()));
         logDirty = false;
-        logSinceFlush = 0;
-    } catch (e) {}
+        lastLogErr = null;
+    } catch (e) {
+        lastLogErr = String(e);
+    }
+    logSaving = false;
 }
 
 function logMessage(room, sender, msg) {
@@ -340,7 +348,16 @@ function logMessage(room, sender, msg) {
     logSinceFlush++;
     // 저장은 파일 전체를 다시 쓰는 방식이라 자주 하면 손해다.
     // 개수로 끊고, 쓰기는 백그라운드에서 한다.
-    if (logSinceFlush >= LOG_FLUSH_EVERY) runAsync(saveLogs);
+    //
+    // ※ 세는 값을 "여기서 바로" 0 으로 되돌린다.
+    //   저장이 끝난 뒤에 되돌리면, 저장이 도는 동안 들어온 메시지마다 스레드가
+    //   새로 만들어져 수십 개가 쌓인다. 각 스레드가 기록 전체를 문자열로 만들어
+    //   메모리를 잡아먹고, 같은 파일에 동시에 써서 파일이 깨진다.
+    //   스레드를 더 못 만들면 runAsync 가 그 자리에서 실행해 봇이 멈춘다.
+    if (logSinceFlush >= LOG_FLUSH_EVERY && !logSaving) {
+        logSinceFlush = 0;
+        runAsync(saveLogs);
+    }
 }
 
 /** "오후 3:24" → 자정부터의 분. 못 읽으면 -1 */
@@ -457,7 +474,8 @@ function diagText(room, sender) {
         "기록 보관: " + (LOG_ROOMS.indexOf(room) !== -1
             ? ((loadLogs()[room] || []).length + "/" + LOG_MAX + "개") : "안 함") + "\n" +
         "캐시 위치: " + (CACHE_FILE ? CACHE_FILE : "(저장 불가 — 깃헙만 사용)") +
-        (lastLoadErr ? "\n최근 오류: " + lastLoadErr : "");
+        (lastLoadErr ? "\n최근 오류: " + lastLoadErr : "") +
+        (lastLogErr ? "\n기록 저장 오류: " + lastLogErr : "");
 }
 
 // ═══════════════ 메시지 처리 ═══════════════
