@@ -26,7 +26,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0914-1";
+var BOT_VER = "0915-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -253,6 +253,33 @@ function tableFor(room) {
     var own = DATA[room];
     if (own) for (k in own) if (own.hasOwnProperty(k)) out[k] = own[k];
     return out;
+}
+
+function isArray(v) {
+    return Object.prototype.toString.call(v) === "[object Array]";
+}
+
+/**
+ * 응답을 내보낸다.
+ * 데이터의 값이 **목록**이면 메시지를 나눠서 여러 개로 보낸다.
+ *   "트리거": "한 줄"              → 메시지 1개
+ *   "트리거": ["첫 개", "둘째 개"]  → 메시지 2개
+ */
+function sendReply(replier, value) {
+    if (isArray(value)) {
+        for (var i = 0; i < value.length; i++) {
+            var one = String(value[i]);
+            if (!one) continue;
+            try { replier.reply(one); } catch (e) {}
+        }
+        return;
+    }
+    replier.reply(String(value));
+}
+
+/** 쿨다운을 묶는 기준 — 목록이든 한 줄이든 같은 내용이면 같은 값이 나오게 */
+function replyKey(value) {
+    return isArray(value) ? value.join(" ") : String(value);
 }
 
 function triggersOf(table) {
@@ -542,15 +569,15 @@ function response(room, msg, sender, isGroupChat, replier) {
         // ⑥ 등록된 트리거 — 메시지 전체가 정확히 일치할 때
         var table = tableFor(room);
         if (table.hasOwnProperty(text)) {
-            replier.reply(String(table[text]));
+            sendReply(replier, table[text]);
             return;
         }
 
         // ⑦ 포함 트리거 — 그 낱말이 대화에 섞여 있기만 해도 응답 (방마다 쿨다운)
         var ckey = findContain(table, text);
         if (ckey) {
-            var body = String(table[ckey]);
-            if (containReady(room, body)) replier.reply(body);
+            var value = table[ckey];
+            if (containReady(room, replyKey(value))) sendReply(replier, value);
         }
 
     } catch (e) {
