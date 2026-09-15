@@ -37,6 +37,7 @@ var remoteResponse = null;
 var loadedAt = null;
 var lastError = null;
 var loadMethod = "";
+var codeFrom = "";     // 본체 코드를 어디서 얻었는지 (깃헙 / 폰에 저장된 코드)
 var apiMode = "(아직 메시지 못 받음)";
 var api2Ready = false;
 var lastSeen = "";
@@ -115,6 +116,63 @@ function botFolder() {
     return bases[0] + name + "/";
 }
 
+// ── 파일 · 백그라운드 (본체를 못 받았을 때를 대비한 장치들) ──
+
+function fileWrite(path, data) {
+    try {
+        if (typeof FileStream !== "undefined" && FileStream && FileStream.write) {
+            FileStream.write(path, data);
+            return true;
+        }
+    } catch (e) {}
+    try {
+        var f = new java.io.File(path);
+        var parent = f.getParentFile();
+        if (parent && !parent.exists()) parent.mkdirs();
+        var w = new java.io.OutputStreamWriter(new java.io.FileOutputStream(f, false), "UTF-8");
+        w.write(data);
+        w.close();
+        return true;
+    } catch (e) {}
+    return false;
+}
+
+function fileRead(path) {
+    try {
+        if (typeof FileStream !== "undefined" && FileStream && FileStream.read) {
+            var r = FileStream.read(path);
+            if (r !== null && r !== undefined && String(r) !== "") return String(r);
+        }
+    } catch (e) {}
+    try {
+        var f = new java.io.File(path);
+        if (!f.exists()) return null;
+        var br = new java.io.BufferedReader(
+            new java.io.InputStreamReader(new java.io.FileInputStream(f), "UTF-8"));
+        var sb = new java.lang.StringBuilder(), line;
+        while ((line = br.readLine()) !== null) { sb.append(line); sb.append("\n"); }
+        br.close();
+        return String(sb.toString());
+    } catch (e) {}
+    return null;
+}
+
+/** 백그라운드 실행 — 메시지 흐름에서 네트워크를 절대 기다리지 않기 위해 */
+function runAsync(fn) {
+    var body = function () { try { fn(); } catch (e) {} };
+    try {
+        var t = new java.lang.Thread(body);
+        t.setDaemon(true); t.start();
+        return true;
+    } catch (e) {}
+    return false;   // 스레드를 못 만들면 그냥 포기한다 (여기서 직접 돌리면 봇이 멈춘다)
+}
+
+/** 마지막으로 성공한 본체 코드를 두는 곳 — 깃헙이 안 될 때 이걸로 버틴다 */
+function codeCachePath() {
+    return botFolder() + "카페봇본체캐시.js";
+}
+
 /** 예전에 받아둔 모듈 파일 정리 (지금 쓰는 것만 남김) */
 function cleanOldModules(dir, keep) {
     try {
@@ -171,11 +229,44 @@ function loadViaRequire(code) {
 
 // ─── 본체 불러오기 ───
 
-function loadRemote() {
-    // 깃헙 raw 에 잠깐 캐시가 걸려 옛 코드가 오는 일이 있어 시각을 붙인다
-    var code = fetchText(SRC_URL + "?t=" + new Date().getTime());
-    if (code.indexOf("function response") === -1) {
-        throw "받아온 코드가 올바르지 않아요 (URL 확인 필요)";
+/**
+ * 본체를 준비한다.
+ *
+ * @param useNetwork 깃헙에서 받아올지. false 면 폰에 저장해 둔 마지막 코드만 쓴다.
+ *
+ * ※ 깃헙이 잠깐이라도 안 되면 봇이 통째로 죽던 문제 때문에 캐시를 둔다.
+ *   예전에는 받아오기가 실패하면 본체가 없는 채로 남았고, 그 뒤로는 메시지가
+ *   올 때마다 메시지 흐름에서 네트워크를 다시 시도하며 최대 20초씩 멈췄다.
+ */
+function loadRemote(useNetwork) {
+    var code = null, netErr = null;
+
+    if (useNetwork !== false) {
+        try {
+            // 깃헙 raw 에 잠깐 캐시가 걸려 옛 코드가 오는 일이 있어 시각을 붙인다
+            var got = fetchText(SRC_URL + "?t=" + new Date().getTime());
+            if (String(got).indexOf("function response") === -1) {
+                netErr = "받아온 코드가 올바르지 않아요 (URL 확인 필요)";
+            } else {
+                code = got;
+            }
+        } catch (e) {
+            netErr = String(e);
+        }
+    }
+
+    var fromCache = false;
+    if (!code) {
+        code = fileRead(codeCachePath());
+        if (code && String(code).indexOf("function response") !== -1) {
+            fromCache = true;
+        } else {
+            code = null;
+        }
+    }
+
+    if (!code) {
+        throw "본체를 받지 못했고 폰에 저장된 것도 없어요" + (netErr ? "\n· " + netErr : "");
     }
 
     var factory = null, evalErr = null, reqErr = null;
@@ -201,7 +292,10 @@ function loadRemote() {
 
     remoteResponse = factory(MY_ROOMS, MY_TOKEN, SUPER_ADMINS);
     loadedAt = new Date();
-    lastError = null;
+    codeFrom = fromCache ? "폰에 저장된 코드" : "깃헙";
+    // 깃헙에서 제대로 받았을 때만 저장해 둔다 (다음에 깃헙이 안 될 때 쓸 것)
+    if (!fromCache) { try { fileWrite(codeCachePath(), code); } catch (e) {} }
+    lastError = fromCache ? netErr : null;
 }
 
 /** 오류를 방에 알릴지 판단 — 명령어일 때만, 1분에 한 번까지 */
@@ -228,7 +322,7 @@ function handle(room, msg, sender, isGroupChat, replier) {
         // 로더 자체 명령: 본체 코드 + 자동응답 데이터 새로고침 (관리자만)
         if (text === "/카페업데이트") {
             if (!isLoaderAdmin(sender)) return;
-            loadRemote();
+            loadRemote(true);   // 관리자가 직접 시킨 것이니 여기서는 기다린다
             replier.reply("🔄 깃헙에서 최신 카페봇 코드를 불러왔어요! (" + loadMethod + ")");
             return;
         }
@@ -238,7 +332,8 @@ function handle(room, msg, sender, isGroupChat, replier) {
                 "API2 리스너: " + (api2Ready ? "등록됨 ✅" : "미등록 (API1 모드)") + "\n" +
                 "방 이름: [" + room + "]\n" +
                 "보낸 사람: [" + sender + "]\n" +
-                "본체 로드: " + (remoteResponse ? "정상 ✅ (" + loadMethod + ")" : "아직 안 됨 ❌") +
+                "본체 로드: " + (remoteResponse ? "정상 ✅ (" + loadMethod + ")" : "아직 안 됨 ❌") + "\n" +
+                "코드 출처: " + (codeFrom || "(아직 없음)") +
                 (loadedAt ? "\n마지막 로드: " + loadedAt.toLocaleString() : "") +
                 (lastError ? "\n최근 오류: " + lastError : ""));
             return;
@@ -246,10 +341,18 @@ function handle(room, msg, sender, isGroupChat, replier) {
 
         // 본체가 아직 없으면 지금 불러오기 (실패가 반복될 땐 1분 간격으로만 재시도)
         if (remoteResponse === null) {
-            var t = new Date().getTime();
-            if (t - lastLoadTryAt < 60000) return;
-            lastLoadTryAt = t;
-            loadRemote();
+            try { loadRemote(false); } catch (e) { lastError = String(e); }
+
+            if (remoteResponse === null) {
+                var t = new Date().getTime();
+                if (t - lastLoadTryAt >= 60000) {
+                    lastLoadTryAt = t;
+                    runAsync(function () {
+                        try { loadRemote(true); } catch (e2) { lastError = String(e2); }
+                    });
+                }
+                return;
+            }
         }
 
         remoteResponse(room, msg, sender, isGroupChat, replier);
@@ -293,5 +396,11 @@ function response(room, msg, sender, isGroupChat, replier) {
     } catch (e) { lastError = "addListener: " + e; }
 })();
 
-// 컴파일 시 미리 로드 (실패해도 첫 메시지 때 다시 시도)
-try { loadRemote(); } catch (e) { lastError = String(e); }
+// 컴파일 시 준비.
+// 폰에 저장된 코드로 먼저 즉시 띄우고(네트워크를 기다리지 않는다),
+// 깃헙에서 받아오는 건 백그라운드로 넘긴다. 깃헙이 잠깐 안 되어도 봇은 살아 있다.
+try { loadRemote(false); } catch (e) {}
+if (!runAsync(function () { try { loadRemote(true); } catch (e2) { lastError = String(e2); } })) {
+    // 스레드를 못 만드는 앱이면 어쩔 수 없이 여기서 받아온다
+    try { loadRemote(true); } catch (e3) { lastError = String(e3); }
+}
