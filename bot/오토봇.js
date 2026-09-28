@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════════
  *  오토봇 — 등록된 문구에 자동으로 응답하는 봇 (읽기 전용)
  *
- *  ◆ 명령어
+ *  ◆ 명령어 (아래 /등록·/삭제 는 REG_ROOM 에서만, 등록분은 REG_ROOMS 에서 반응)
  *    /리스트   → 이 방에서 반응하는 트리거 목록 (누구나)
  *    /오토     → 진단 (방 인식·데이터 상태·버전) — 모든 방에서 동작
  *    /삭제내역 /삭제내역1 /삭제내역2 → 보관된 대화 되짚어보기 (지정한 방에서만, 누구나)
@@ -75,7 +75,11 @@ var LOG_CMDS = [
 // ── 방에서 직접 등록하는 자동응답 ──
 // 한 방에서 넣고 빼면, 다른 방들에서 반응한다. 넣고 빼는 건 누구나 할 수 있다.
 var REG_ROOM = "공백기 근무표";                   // /등록 /삭제 를 쓸 수 있는 방
-var REG_ROOMS = ["오토2", "오토2프프"];           // 등록분이 실제로 반응하는 방
+var REG_ROOMS = [                                 // 등록분이 실제로 반응하는 방
+    "오토2",
+    "오토2프프",
+    "공백기 근무표"
+];
 var REG_SEP = "_";                                // /등록_명령어_할말
 var REG_MAX = 200;                                // 등록 최대 개수
 // ────────────────────────────────────────────────────────
@@ -534,8 +538,8 @@ function logText(targetRoom, around) {
 
 function listText(room) {
     var table = tableFor(room);
-    // 등록·삭제를 하는 방에서는, 그 방이 반응하지 않더라도 목록은 보여준다
-    if (room === REG_ROOM) {
+    // 등록·삭제를 하는 방이 반응하는 방에서 빠져 있더라도, 목록은 보여준다
+    if (room === REG_ROOM && REG_ROOMS.indexOf(room) === -1) {
         var regs = loadRegs();
         for (var rk in regs) if (regs.hasOwnProperty(rk) && !table.hasOwnProperty(rk)) table[rk] = regs[rk];
     }
@@ -557,7 +561,7 @@ function listText(room) {
     }
     return "📋 이 방의 자동응답 (" + keys.length + "개)\n─────────────\n" +
         lines.join("\n") + tail +
-        (room === REG_ROOM
+        (room === REG_ROOM && REG_ROOMS.indexOf(room) === -1
             ? ("\n─────────────\n※ " + PREFIX + "등록 으로 넣은 건 " +
                REG_ROOMS.join("·") + " 에서 동작합니다")
             : "");
