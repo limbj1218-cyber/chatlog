@@ -6,12 +6,15 @@
  *    /리스트   → 이 방에서 반응하는 트리거 목록 (누구나)
  *    /오토     → 진단 (방 인식·데이터 상태·버전) — 모든 방에서 동작
  *    /삭제내역 /삭제내역1 /삭제내역2 → 보관된 대화 되짚어보기 (지정한 방에서만, 누구나)
- *    ※ 등록/삭제 명령은 없다. 내용은 깃헙의 bot/오토봇데이터.json 을 고쳐서 관리한다.
+ *    /등록_명령어_할말 /삭제_명령어 → 방에서 직접 넣고 빼기 (공백기 근무표에서만, 누구나)
  *
- *  ◆ 데이터
- *    깃헙에서 오토봇데이터.json 을 받아 쓰고, 받은 내용을 폰에 캐시한다.
- *    네트워크가 죽어도 마지막으로 받은 내용으로 계속 동작한다.
- *    갱신: 앱 시작 시 / 30분마다 / 방에서 /오토업데이트 (즉시)
+ *  ◆ 데이터 — 두 갈래다
+ *    ① 고정: 깃헙에서 오토봇데이터.json 을 받아 쓰고, 받은 내용을 폰에 캐시한다.
+ *       네트워크가 죽어도 마지막으로 받은 내용으로 계속 동작한다.
+ *       갱신: 앱 시작 시 / 30분마다 / 방에서 /오토업데이트 (즉시)
+ *    ② 등록: 방에서 /등록 으로 넣은 것. 폰 파일(등록응답.json)에만 있고 깃헙에는 올라가지 않는다.
+ *       메시지 흐름에서 네트워크를 쓰면 봇이 멈추기 때문이다. 앱을 지우면 같이 사라진다.
+ *       고정 트리거와 이름이 겹치면 등록을 거절한다 (고정을 덮어쓸 수 없다).
  *
  *  ◆ 카페 새글 알림은 이 봇에 없다 — 별도 스크립트 bot/카페봇.js 가 담당한다.
  *    (네트워크·타이머가 얽힌 쪽을 같이 두면 문제가 생겼을 때 자동응답까지 느려진다)
@@ -26,7 +29,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "0915-1";
+var BOT_VER = "0928-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -68,6 +71,13 @@ var LOG_CMDS = [
     ["삭제내역1", "오토2"],
     ["삭제내역2", "오토2프프"]
 ];
+
+// ── 방에서 직접 등록하는 자동응답 ──
+// 한 방에서 넣고 빼면, 다른 방들에서 반응한다. 넣고 빼는 건 누구나 할 수 있다.
+var REG_ROOM = "공백기 근무표";                   // /등록 /삭제 를 쓸 수 있는 방
+var REG_ROOMS = ["오토2", "오토2프프"];           // 등록분이 실제로 반응하는 방
+var REG_SEP = "_";                                // /등록_명령어_할말
+var REG_MAX = 200;                                // 등록 최대 개수
 // ────────────────────────────────────────────────────────
 
 var REFRESH_MS = REFRESH_MIN * 60 * 1000;
@@ -143,6 +153,7 @@ function pickBaseDir() {
 var BASE_DIR = pickBaseDir();
 var CACHE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇캐시.json") : null;
 var LOG_FILE = BASE_DIR ? (BASE_DIR + "/대화기록.json") : null;
+var REG_FILE = BASE_DIR ? (BASE_DIR + "/등록응답.json") : null;
 
 /** 깃헙에서 텍스트 가져오기 — jsoup 우선, 없으면 순수 자바 HTTP */
 function fetchText(url) {
@@ -244,15 +255,69 @@ function refreshIfStale() {
     runAsync(function () { loadData(); });
 }
 
-/** 이 방에 적용되는 트리거표 — 공통 위에 방별을 덮어쓴다 */
-function tableFor(room) {
+// ═══════════════ 방에서 등록한 자동응답 ═══════════════
+// 깃헙 데이터와 달리 폰 파일에만 있다. 파일이 작아서 저장이 금방 끝나므로
+// (대화기록과 달리) 그 자리에서 저장하고 성공/실패를 바로 알려준다.
+
+var REGS = null;            // { 트리거: 할말 }
+var lastRegErr = null;
+
+function loadRegs() {
+    if (REGS !== null) return REGS;
+    REGS = {};
+    if (!REG_FILE) return REGS;
+    try {
+        var t = fileRead(REG_FILE);
+        if (t) {
+            var o = JSON.parse(String(t));
+            if (o && typeof o === "object") REGS = o;
+        }
+    } catch (e) { lastRegErr = String(e); }
+    return REGS;
+}
+
+function saveRegs() {
+    if (!REG_FILE) { lastRegErr = "폰에 저장할 곳을 못 찾았어요"; return false; }
+    try {
+        if (fileWrite(REG_FILE, JSON.stringify(loadRegs()))) { lastRegErr = null; return true; }
+        lastRegErr = "파일 쓰기 실패";
+    } catch (e) { lastRegErr = String(e); }
+    return false;
+}
+
+function regCount() {
+    var n = 0, k, regs = loadRegs();
+    for (k in regs) if (regs.hasOwnProperty(k)) n++;
+    return n;
+}
+
+/**
+ * 이 방에 적용되는 트리거표 — 공통 위에 방별을 덮어쓴다.
+ * withRegs 가 false 가 아니면 등록분도 얹는다 (고정 트리거는 덮어쓰지 않는다).
+ */
+function tableFor(room, withRegs) {
     var out = {}, k;
-    if (!DATA) return out;
-    var common = DATA[COMMON_KEY];
-    if (common) for (k in common) if (common.hasOwnProperty(k)) out[k] = common[k];
-    var own = DATA[room];
-    if (own) for (k in own) if (own.hasOwnProperty(k)) out[k] = own[k];
+    if (DATA) {
+        var common = DATA[COMMON_KEY];
+        if (common) for (k in common) if (common.hasOwnProperty(k)) out[k] = common[k];
+        var own = DATA[room];
+        if (own) for (k in own) if (own.hasOwnProperty(k)) out[k] = own[k];
+    }
+    if (withRegs !== false && REG_ROOMS.indexOf(room) !== -1) {
+        var regs = loadRegs();
+        for (k in regs) if (regs.hasOwnProperty(k) && !out.hasOwnProperty(k)) out[k] = regs[k];
+    }
     return out;
+}
+
+/** 깃헙에서 관리하는 고정 트리거인지 (등록분은 빼고 본다) */
+function isFixed(trigger) {
+    for (var i = 0; i < REG_ROOMS.length; i++) {
+        var t = tableFor(REG_ROOMS[i], false);
+        if (t.hasOwnProperty(trigger)) return true;
+        if (t.hasOwnProperty(CONTAIN_MARK + trigger)) return true;
+    }
+    return false;
 }
 
 function isArray(v) {
@@ -468,7 +533,13 @@ function logText(targetRoom, around) {
 // ═══════════════ 명령어 ═══════════════
 
 function listText(room) {
-    var keys = triggersOf(tableFor(room));
+    var table = tableFor(room);
+    // 등록·삭제를 하는 방에서는, 그 방이 반응하지 않더라도 목록은 보여준다
+    if (room === REG_ROOM) {
+        var regs = loadRegs();
+        for (var rk in regs) if (regs.hasOwnProperty(rk) && !table.hasOwnProperty(rk)) table[rk] = regs[rk];
+    }
+    var keys = triggersOf(table);
     if (keys.length === 0) {
         return "등록된 자동응답이 없어요.\n(관리자에게 등록을 요청하세요)";
     }
@@ -485,7 +556,67 @@ function listText(room) {
             : k);
     }
     return "📋 이 방의 자동응답 (" + keys.length + "개)\n─────────────\n" +
-        lines.join("\n") + tail;
+        lines.join("\n") + tail +
+        (room === REG_ROOM
+            ? ("\n─────────────\n※ " + PREFIX + "등록 으로 넣은 건 " +
+               REG_ROOMS.join("·") + " 에서 동작합니다")
+            : "");
+}
+
+/** "/등록_" 뒤쪽을 받아 등록한다 */
+function regAdd(rest) {
+    var usage = "이렇게 써 주세요\n" +
+        PREFIX + "등록" + REG_SEP + "명령어" + REG_SEP + "할말";
+    var cut = String(rest).indexOf(REG_SEP);
+    if (cut === -1) return usage;
+
+    var trigger = rest.substring(0, cut).trim();
+    var say = rest.substring(cut + REG_SEP.length).trim();   // 뒤쪽은 밑줄·줄바꿈 그대로 둔다
+
+    if (!trigger || !say) return usage;
+    if (trigger.charAt(0) === PREFIX) return "명령어는 " + PREFIX + " 로 시작할 수 없어요.";
+    if (trigger.charAt(0) === CONTAIN_MARK) return CONTAIN_MARK + " 로 시작하는 이름은 쓸 수 없어요.";
+    if (isFixed(trigger)) {
+        return "「" + trigger + "」 는 깃헙에서 관리하는 고정 명령어예요.\n" +
+            "여기서는 덮어쓸 수 없으니 다른 이름을 써 주세요.";
+    }
+
+    var regs = loadRegs();
+    if (regs.hasOwnProperty(trigger)) {
+        return "「" + trigger + "」 는 이미 등록돼 있어요.\n" +
+            "바꾸려면 먼저 " + PREFIX + "삭제" + REG_SEP + trigger + " 하고 다시 등록해 주세요.";
+    }
+    if (regCount() >= REG_MAX) return "등록이 " + REG_MAX + "개까지예요. 안 쓰는 걸 먼저 지워 주세요.";
+
+    regs[trigger] = say;
+    if (!saveRegs()) {
+        delete regs[trigger];
+        return "폰에 저장을 못 했어요 — 등록하지 않았습니다.\n" + (lastRegErr || "");
+    }
+    return "✅ 등록했어요 (" + regCount() + "개)\n─────────────\n" +
+        trigger + "\n  ↓\n" + say;
+}
+
+/** "/삭제_" 뒤쪽을 받아 지운다 — 등록분만 지울 수 있다 */
+function regDel(rest) {
+    var trigger = String(rest).trim();
+    if (!trigger) return "이렇게 써 주세요\n" + PREFIX + "삭제" + REG_SEP + "명령어";
+
+    var regs = loadRegs();
+    if (!regs.hasOwnProperty(trigger)) {
+        if (isFixed(trigger)) {
+            return "「" + trigger + "」 는 깃헙에서 관리하는 고정 명령어라 여기서는 못 지워요.";
+        }
+        return "「" + trigger + "」 는 등록된 게 없어요.";
+    }
+
+    var backup = regs[trigger];
+    delete regs[trigger];
+    if (!saveRegs()) {
+        regs[trigger] = backup;
+        return "폰에 저장을 못 했어요 — 지우지 않았습니다.\n" + (lastRegErr || "");
+    }
+    return "🗑️ 지웠어요 (" + regCount() + "개 남음)\n" + trigger;
 }
 
 function diagText(room, sender) {
@@ -497,12 +628,15 @@ function diagText(room, sender) {
         "이 방 활성화됨: " + (active ? "예 ✅" : "아니오 ❌ (코드의 ROOMS 목록에 추가하세요)") + "\n" +
         "데이터 출처: " + DATA_FROM + "\n" +
         "이 방 트리거: " + n + "개\n" +
+        "방에서 등록한 것: " + regCount() + "개" +
+        (REG_ROOMS.indexOf(room) !== -1 ? " (이 방에서 동작)" : "") + "\n" +
         "마지막 갱신: " + (lastOkAt ? lastOkAt.toLocaleString() : "(아직 없음)") + "\n" +
         "기록 보관: " + (LOG_ROOMS.indexOf(room) !== -1
             ? ((loadLogs()[room] || []).length + "/" + LOG_MAX + "개") : "안 함") + "\n" +
         "캐시 위치: " + (CACHE_FILE ? CACHE_FILE : "(저장 불가 — 깃헙만 사용)") +
         (lastLoadErr ? "\n최근 오류: " + lastLoadErr : "") +
-        (lastLogErr ? "\n기록 저장 오류: " + lastLogErr : "");
+        (lastLogErr ? "\n기록 저장 오류: " + lastLogErr : "") +
+        (lastRegErr ? "\n등록 저장 오류: " + lastRegErr : "");
 }
 
 // ═══════════════ 메시지 처리 ═══════════════
@@ -564,6 +698,17 @@ function response(room, msg, sender, isGroupChat, replier) {
         if (text === PREFIX + "리스트") {
             replier.reply(listText(room));
             return;
+        }
+
+        // ⑤-2 방에서 직접 넣고 빼기 — 정해진 방에서만, 누구나
+        //     "/삭제_" 로 받으므로 위에서 처리한 /삭제내역 과 겹치지 않는다
+        if (room === REG_ROOM) {
+            var addCmd = PREFIX + "등록" + REG_SEP;
+            var delCmd = PREFIX + "삭제" + REG_SEP;
+            if (text === PREFIX + "등록") { replier.reply(regAdd("")); return; }
+            if (text === PREFIX + "삭제") { replier.reply(regDel("")); return; }
+            if (text.indexOf(addCmd) === 0) { replier.reply(regAdd(text.substring(addCmd.length))); return; }
+            if (text.indexOf(delCmd) === 0) { replier.reply(regDel(text.substring(delCmd.length))); return; }
         }
 
         // ⑥ 등록된 트리거 — 메시지 전체가 정확히 일치할 때
