@@ -32,7 +32,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "1001-3";
+var BOT_VER = "1001-4";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -90,6 +90,24 @@ var REG_KINDS = [
 
 // /리스트 를 방별로 갈라 보여줄 방 (REG_ROOM 에서 쓴다)
 var LIST_SPLIT_ROOMS = ["오토2", "오토2프프"];
+
+// 사람에게 보여줄 때만 쓰는 이름. ※ 방을 가려내는 기준은 끝까지 실제 방 이름이다 —
+//   ROOMS·REG_KINDS·LOG_ROOMS 같은 목록에는 절대 이 이름을 쓰지 말 것.
+var ROOM_LABELS = {
+    "오토2": "오토2사담방",
+    "오토2프프": "오토2프반"
+};
+
+function roomLabel(room) {
+    return ROOM_LABELS.hasOwnProperty(room) ? ROOM_LABELS[room] : room;
+}
+
+/** 방 목록을 보여줄 때 (예: "오토2사담방·오토2프반") */
+function roomLabels(rooms) {
+    var out = [];
+    for (var i = 0; i < rooms.length; i++) out.push(roomLabel(rooms[i]));
+    return out.join("·");
+}
 // ────────────────────────────────────────────────────────
 
 var REFRESH_MS = REFRESH_MIN * 60 * 1000;
@@ -624,7 +642,7 @@ function listText(room) {
         for (var i = 0; i < LIST_SPLIT_ROOMS.length; i++) {
             var r = LIST_SPLIT_ROOMS[i];
             var ks = triggersOf(tableFor(r));
-            parts.push("───── " + r + " (" + ks.length + "개) ─────\n" +
+            parts.push("───── " + roomLabel(r) + " (" + ks.length + "개) ─────\n" +
                 (ks.length ? listLines(ks) : "(없음)"));
         }
         return "📋 명령어 목록\n" + parts.join("\n\n");
@@ -671,7 +689,7 @@ function regAdd(kind, rest) {
         delete regs[trigger];
         return "폰에 저장을 못 했어요 — 등록하지 않았습니다.\n" + (lastRegErr || "");
     }
-    return "✅ 등록했어요 (" + kind.rooms.join("·") + " / " + countOf(kind) + "개)\n" +
+    return "✅ 등록했어요 (" + roomLabels(kind.rooms) + " / " + countOf(kind) + "개)\n" +
         "─────────────\n" + trigger + "\n  ↓\n" + say;
 }
 
