@@ -302,6 +302,23 @@ function loadRemote(useNetwork) {
     lastError = fromCache ? netErr : null;
 }
 
+/**
+ * 본체의 /오토 진단을 받아와 한 메시지에 같이 보여주려고 모아 둔다.
+ * 본체에 직접 말을 거는 게 아니라, 받아 적는 replier 를 넘겨 답을 가로챈다.
+ * 본체가 없거나 실패하면 빈 문자열 — /오토업데이트 응답 자체는 그대로 나간다.
+ */
+function bodyDiag(room, sender) {
+    if (!remoteResponse) return "";
+    var lines = [];
+    var sink = { reply: function (m) { lines.push(String(m)); } };
+    try {
+        remoteResponse(room, "/오토", sender, true, sink);
+    } catch (e) {
+        return "";
+    }
+    return lines.length ? "\n─────────────\n" + lines.join("\n") : "";
+}
+
 /** 오류를 방에 알릴지 판단 — 명령어일 때만, 1분에 한 번까지 */
 function shouldReportError(text) {
     if (String(text).indexOf("/") !== 0) return false;
@@ -327,7 +344,7 @@ function handle(room, msg, sender, isGroupChat, replier) {
         if (text === "/오토업데이트") {
             if (!isLoaderAdmin(sender)) return;
             loadRemote(true);   // 관리자가 직접 시킨 것이니 여기서는 기다린다
-            replier.reply("🔄 깃헙에서 최신 오토봇 코드와 자동응답 내용을 불러왔어요! (" + loadMethod + ")");
+            replier.reply("🔄 최신으로 바꿨어요 (" + (codeFrom || loadMethod) + ")" + bodyDiag(room, sender));
             return;
         }
         if (text === "/오토로더") {

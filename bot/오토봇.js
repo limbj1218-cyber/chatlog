@@ -29,7 +29,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "1001-1";
+var BOT_VER = "1001-2";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -623,24 +623,34 @@ function regDel(rest) {
     return "🗑️ 지웠어요 (" + regCount() + "개 남음)\n" + trigger;
 }
 
+/** "10/01 14:32" */
+function shortTime(d) {
+    function p(n) { return n < 10 ? "0" + n : String(n); }
+    return p(d.getMonth() + 1) + "/" + p(d.getDate()) + " " +
+        p(d.getHours()) + ":" + p(d.getMinutes());
+}
+
+/**
+ * 진단 — 평소에는 짧게, 문제가 있을 때만 길어진다.
+ * 로더의 /오토업데이트 가 이 내용을 그대로 덧붙여 보여주므로 짧게 유지할 것.
+ */
 function diagText(room, sender) {
-    var active = inRooms(room);
-    var n = triggersOf(tableFor(room)).length;
-    return "🤖 오토봇 진단 (v" + BOT_VER + ")\n─────────────\n" +
-        "방 이름: [" + room + "]\n" +
-        "보낸 사람: [" + sender + "]\n" +
-        "이 방 활성화됨: " + (active ? "예 ✅" : "아니오 ❌ (코드의 ROOMS 목록에 추가하세요)") + "\n" +
-        "데이터 출처: " + DATA_FROM + "\n" +
-        "이 방 트리거: " + n + "개\n" +
-        "방에서 등록한 것: " + regCount() + "개" +
-        (REG_ROOMS.indexOf(room) !== -1 ? " (이 방에서 동작)" : "") + "\n" +
-        "마지막 갱신: " + (lastOkAt ? lastOkAt.toLocaleString() : "(아직 없음)") + "\n" +
-        "기록 보관: " + (LOG_ROOMS.indexOf(room) !== -1
-            ? ((loadLogs()[room] || []).length + "/" + LOG_MAX + "개") : "안 함") + "\n" +
-        "캐시 위치: " + (CACHE_FILE ? CACHE_FILE : "(저장 불가 — 깃헙만 사용)") +
-        (lastLoadErr ? "\n최근 오류: " + lastLoadErr : "") +
-        (lastLogErr ? "\n기록 저장 오류: " + lastLogErr : "") +
-        (lastRegErr ? "\n등록 저장 오류: " + lastRegErr : "");
+    var reg = regCount();
+    var out = "🤖 오토봇 v" + BOT_VER + "\n" +
+        "방 [" + room + "] " + (inRooms(room) ? "동작 중 ✅" : "목록에 없음 ❌") + "\n" +
+        "트리거 " + triggersOf(tableFor(room)).length + "개" +
+        (reg > 0 && REG_ROOMS.indexOf(room) !== -1 ? " (등록 " + reg + "개 포함)" : "") + "\n" +
+        "데이터 " + DATA_FROM + (lastOkAt ? " · " + shortTime(lastOkAt) : " · 아직 못 받음");
+
+    if (LOG_ROOMS.indexOf(room) !== -1) {
+        out += "\n기록 " + (loadLogs()[room] || []).length + "개";
+    }
+    // 아래는 문제가 있을 때만 — 평소에는 보이지 않는다
+    if (!CACHE_FILE) out += "\n⚠️ 폰에 저장할 곳이 없어 깃헙만 씁니다";
+    if (lastLoadErr) out += "\n⚠️ 데이터: " + lastLoadErr;
+    if (lastLogErr) out += "\n⚠️ 기록 저장: " + lastLogErr;
+    if (lastRegErr) out += "\n⚠️ 등록 저장: " + lastRegErr;
+    return out;
 }
 
 // ═══════════════ 메시지 처리 ═══════════════
