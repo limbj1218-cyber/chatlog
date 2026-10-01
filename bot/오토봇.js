@@ -2,11 +2,14 @@
  * ═══════════════════════════════════════════════════════════
  *  오토봇 — 등록된 문구에 자동으로 응답하는 봇 (읽기 전용)
  *
- *  ◆ 명령어 (아래 /등록·/삭제 는 REG_ROOM 에서만, 등록분은 REG_ROOMS 에서 반응)
+ *  ◆ 명령어 (아래 /등록·/프반·/삭제 는 REG_ROOM 에서만, 등록분은 갈래마다 정해진 방에서 반응)
  *    /리스트   → 이 방에서 반응하는 트리거 목록 (누구나)
+ *               REG_ROOM 에서는 오토2·오토2프프 를 갈라서 보여준다
  *    /오토     → 진단 (방 인식·데이터 상태·버전) — 모든 방에서 동작
  *    /삭제내역 /삭제내역1 /삭제내역2 → 보관된 대화 되짚어보기 (지정한 방에서만, 누구나)
- *    /등록_명령어_할말 /삭제_명령어 → 방에서 직접 넣고 빼기 (공백기 근무표에서만, 누구나)
+ *    /등록_명령어_할말 → 오토2·오토2프프·공백기 근무표에서 반응 (공백기 근무표에서만, 누구나)
+ *    /프반_명령어_할말 → 오토2프프에서만 반응 (공백기 근무표에서만, 누구나)
+ *    /삭제_명령어      → 위 둘 중 어느 쪽으로 넣었든 지운다
  *
  *  ◆ 데이터 — 두 갈래다
  *    ① 고정: 깃헙에서 오토봇데이터.json 을 받아 쓰고, 받은 내용을 폰에 캐시한다.
@@ -29,7 +32,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "1001-2";
+var BOT_VER = "1001-3";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -73,15 +76,20 @@ var LOG_CMDS = [
 ];
 
 // ── 방에서 직접 등록하는 자동응답 ──
-// 한 방에서 넣고 빼면, 다른 방들에서 반응한다. 넣고 빼는 건 누구나 할 수 있다.
-var REG_ROOM = "공백기 근무표";                   // /등록 /삭제 를 쓸 수 있는 방
-var REG_ROOMS = [                                 // 등록분이 실제로 반응하는 방
-    "오토2",
-    "오토2프프",
-    "공백기 근무표"
-];
+// 한 방(REG_ROOM)에서 넣고 빼면, 갈래마다 정해진 방에서 반응한다. 넣고 빼는 건 누구나 할 수 있다.
+var REG_ROOM = "공백기 근무표";                   // /등록 /프반 /삭제 를 쓸 수 있는 방
 var REG_SEP = "_";                                // /등록_명령어_할말
-var REG_MAX = 200;                                // 등록 최대 개수
+var REG_MAX = 200;                                // 갈래마다 등록 최대 개수
+
+// 등록 갈래 — 명령어 / 폰에 저장할 파일 / 실제로 반응하는 방
+// 갈래를 늘리려면 여기에 한 줄 더 적으면 된다.
+var REG_KINDS = [
+    { cmd: "등록", file: "등록응답.json", rooms: ["오토2", "오토2프프", "공백기 근무표"] },
+    { cmd: "프반", file: "프반응답.json", rooms: ["오토2프프"] }
+];
+
+// /리스트 를 방별로 갈라 보여줄 방 (REG_ROOM 에서 쓴다)
+var LIST_SPLIT_ROOMS = ["오토2", "오토2프프"];
 // ────────────────────────────────────────────────────────
 
 var REFRESH_MS = REFRESH_MIN * 60 * 1000;
@@ -157,7 +165,10 @@ function pickBaseDir() {
 var BASE_DIR = pickBaseDir();
 var CACHE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇캐시.json") : null;
 var LOG_FILE = BASE_DIR ? (BASE_DIR + "/대화기록.json") : null;
-var REG_FILE = BASE_DIR ? (BASE_DIR + "/등록응답.json") : null;
+// 갈래마다 저장 경로를 붙여 둔다 (BASE_DIR 이 없으면 저장은 못 하고 메모리로만 동작)
+for (var ki = 0; ki < REG_KINDS.length; ki++) {
+    REG_KINDS[ki].path = BASE_DIR ? (BASE_DIR + "/" + REG_KINDS[ki].file) : null;
+}
 
 /** 깃헙에서 텍스트 가져오기 — jsoup 우선, 없으면 순수 자바 HTTP */
 function fetchText(url) {
@@ -263,36 +274,75 @@ function refreshIfStale() {
 // 깃헙 데이터와 달리 폰 파일에만 있다. 파일이 작아서 저장이 금방 끝나므로
 // (대화기록과 달리) 그 자리에서 저장하고 성공/실패를 바로 알려준다.
 
-var REGS = null;            // { 트리거: 할말 }
 var lastRegErr = null;
 
-function loadRegs() {
-    if (REGS !== null) return REGS;
-    REGS = {};
-    if (!REG_FILE) return REGS;
+/** 갈래 하나의 { 트리거: 할말 } — 처음 찾을 때 파일에서 읽어 들인다 */
+function regsOf(kind) {
+    if (kind.cache) return kind.cache;
+    kind.cache = {};
+    if (!kind.path) return kind.cache;
     try {
-        var t = fileRead(REG_FILE);
+        var t = fileRead(kind.path);
         if (t) {
             var o = JSON.parse(String(t));
-            if (o && typeof o === "object") REGS = o;
+            if (o && typeof o === "object") kind.cache = o;
         }
     } catch (e) { lastRegErr = String(e); }
-    return REGS;
+    return kind.cache;
 }
 
-function saveRegs() {
-    if (!REG_FILE) { lastRegErr = "폰에 저장할 곳을 못 찾았어요"; return false; }
+function saveRegs(kind) {
+    if (!kind.path) { lastRegErr = "폰에 저장할 곳을 못 찾았어요"; return false; }
     try {
-        if (fileWrite(REG_FILE, JSON.stringify(loadRegs()))) { lastRegErr = null; return true; }
+        if (fileWrite(kind.path, JSON.stringify(regsOf(kind)))) { lastRegErr = null; return true; }
         lastRegErr = "파일 쓰기 실패";
     } catch (e) { lastRegErr = String(e); }
     return false;
 }
 
-function regCount() {
-    var n = 0, k, regs = loadRegs();
+function kindByCmd(cmd) {
+    for (var i = 0; i < REG_KINDS.length; i++) {
+        if (REG_KINDS[i].cmd === cmd) return REG_KINDS[i];
+    }
+    return null;
+}
+
+/** 이 트리거가 이미 등록돼 있는 갈래. 없으면 null */
+function kindHaving(trigger) {
+    for (var i = 0; i < REG_KINDS.length; i++) {
+        if (regsOf(REG_KINDS[i]).hasOwnProperty(trigger)) return REG_KINDS[i];
+    }
+    return null;
+}
+
+function countOf(kind) {
+    var n = 0, k, regs = regsOf(kind);
     for (k in regs) if (regs.hasOwnProperty(k)) n++;
     return n;
+}
+
+/** 모든 갈래를 합친 등록 개수 */
+function regCount() {
+    var n = 0;
+    for (var i = 0; i < REG_KINDS.length; i++) n += countOf(REG_KINDS[i]);
+    return n;
+}
+
+/** 이 방에서 실제로 동작하는 등록 개수 */
+function regCountFor(room) {
+    var n = 0;
+    for (var i = 0; i < REG_KINDS.length; i++) {
+        if (REG_KINDS[i].rooms.indexOf(room) !== -1) n += countOf(REG_KINDS[i]);
+    }
+    return n;
+}
+
+/** 이 방에서 등록분이 하나라도 동작하는지 */
+function regActive(room) {
+    for (var i = 0; i < REG_KINDS.length; i++) {
+        if (REG_KINDS[i].rooms.indexOf(room) !== -1) return true;
+    }
+    return false;
 }
 
 /**
@@ -307,19 +357,29 @@ function tableFor(room, withRegs) {
         var own = DATA[room];
         if (own) for (k in own) if (own.hasOwnProperty(k)) out[k] = own[k];
     }
-    if (withRegs !== false && REG_ROOMS.indexOf(room) !== -1) {
-        var regs = loadRegs();
-        for (k in regs) if (regs.hasOwnProperty(k) && !out.hasOwnProperty(k)) out[k] = regs[k];
+    if (withRegs !== false) {
+        for (var i = 0; i < REG_KINDS.length; i++) {
+            if (REG_KINDS[i].rooms.indexOf(room) === -1) continue;
+            var regs = regsOf(REG_KINDS[i]);
+            // 고정(깃헙) 트리거는 덮어쓰지 않는다
+            for (k in regs) if (regs.hasOwnProperty(k) && !out.hasOwnProperty(k)) out[k] = regs[k];
+        }
     }
     return out;
 }
 
 /** 깃헙에서 관리하는 고정 트리거인지 (등록분은 빼고 본다) */
 function isFixed(trigger) {
-    for (var i = 0; i < REG_ROOMS.length; i++) {
-        var t = tableFor(REG_ROOMS[i], false);
-        if (t.hasOwnProperty(trigger)) return true;
-        if (t.hasOwnProperty(CONTAIN_MARK + trigger)) return true;
+    var seen = {};
+    for (var i = 0; i < REG_KINDS.length; i++) {
+        for (var j = 0; j < REG_KINDS[i].rooms.length; j++) {
+            var room = REG_KINDS[i].rooms[j];
+            if (seen[room]) continue;
+            seen[room] = true;
+            var t = tableFor(room, false);
+            if (t.hasOwnProperty(trigger)) return true;
+            if (t.hasOwnProperty(CONTAIN_MARK + trigger)) return true;
+        }
     }
     return false;
 }
@@ -536,17 +596,8 @@ function logText(targetRoom, around) {
 
 // ═══════════════ 명령어 ═══════════════
 
-function listText(room) {
-    var table = tableFor(room);
-    // 등록·삭제를 하는 방이 반응하는 방에서 빠져 있더라도, 목록은 보여준다
-    if (room === REG_ROOM && REG_ROOMS.indexOf(room) === -1) {
-        var regs = loadRegs();
-        for (var rk in regs) if (regs.hasOwnProperty(rk) && !table.hasOwnProperty(rk)) table[rk] = regs[rk];
-    }
-    var keys = triggersOf(table);
-    if (keys.length === 0) {
-        return "등록된 자동응답이 없어요.\n(관리자에게 등록을 요청하세요)";
-    }
+/** 트리거 이름 목록을 보기 좋은 줄로 (개수 제한 포함) */
+function listLines(keys) {
     var shown = keys, tail = "";
     if (keys.length > LIST_MAX) {
         shown = keys.slice(0, LIST_MAX);
@@ -559,18 +610,37 @@ function listText(room) {
             ? (k.substring(1) + "  (말 속에 있어도)")
             : k);
     }
-    return "📋 이 방의 자동응답 (" + keys.length + "개)\n─────────────\n" +
-        lines.join("\n") + tail +
-        (room === REG_ROOM && REG_ROOMS.indexOf(room) === -1
-            ? ("\n─────────────\n※ " + PREFIX + "등록 으로 넣은 건 " +
-               REG_ROOMS.join("·") + " 에서 동작합니다")
-            : "");
+    return lines.join("\n") + tail;
 }
 
-/** "/등록_" 뒤쪽을 받아 등록한다 */
-function regAdd(rest) {
+/**
+ * /리스트
+ *  - 보통 방: 그 방이 반응하는 것 전부를 한 목록으로 (고정·등록 구분 없이)
+ *  - 등록하는 방(REG_ROOM): 어느 방 것인지 갈라서 (LIST_SPLIT_ROOMS)
+ */
+function listText(room) {
+    if (room === REG_ROOM) {
+        var parts = [];
+        for (var i = 0; i < LIST_SPLIT_ROOMS.length; i++) {
+            var r = LIST_SPLIT_ROOMS[i];
+            var ks = triggersOf(tableFor(r));
+            parts.push("───── " + r + " (" + ks.length + "개) ─────\n" +
+                (ks.length ? listLines(ks) : "(없음)"));
+        }
+        return "📋 명령어 목록\n" + parts.join("\n\n");
+    }
+
+    var keys = triggersOf(tableFor(room));
+    if (keys.length === 0) {
+        return "등록된 자동응답이 없어요.\n(관리자에게 등록을 요청하세요)";
+    }
+    return "📋 이 방의 자동응답 (" + keys.length + "개)\n─────────────\n" + listLines(keys);
+}
+
+/** 갈래의 명령 뒤쪽을 받아 등록한다 */
+function regAdd(kind, rest) {
     var usage = "이렇게 써 주세요\n" +
-        PREFIX + "등록" + REG_SEP + "명령어" + REG_SEP + "할말";
+        PREFIX + kind.cmd + REG_SEP + "명령어" + REG_SEP + "할말";
     var cut = String(rest).indexOf(REG_SEP);
     if (cut === -1) return usage;
 
@@ -585,20 +655,24 @@ function regAdd(rest) {
             "여기서는 덮어쓸 수 없으니 다른 이름을 써 주세요.";
     }
 
-    var regs = loadRegs();
-    if (regs.hasOwnProperty(trigger)) {
-        return "「" + trigger + "」 는 이미 등록돼 있어요.\n" +
+    // 갈래가 달라도 이름이 겹치면 어느 쪽이 나갈지 헷갈리므로 막는다
+    var owner = kindHaving(trigger);
+    if (owner) {
+        return "「" + trigger + "」 는 이미 " + PREFIX + owner.cmd + " 으로 등록돼 있어요.\n" +
             "바꾸려면 먼저 " + PREFIX + "삭제" + REG_SEP + trigger + " 하고 다시 등록해 주세요.";
     }
-    if (regCount() >= REG_MAX) return "등록이 " + REG_MAX + "개까지예요. 안 쓰는 걸 먼저 지워 주세요.";
+    if (countOf(kind) >= REG_MAX) {
+        return "등록이 " + REG_MAX + "개까지예요. 안 쓰는 걸 먼저 지워 주세요.";
+    }
 
+    var regs = regsOf(kind);
     regs[trigger] = say;
-    if (!saveRegs()) {
+    if (!saveRegs(kind)) {
         delete regs[trigger];
         return "폰에 저장을 못 했어요 — 등록하지 않았습니다.\n" + (lastRegErr || "");
     }
-    return "✅ 등록했어요 (" + regCount() + "개)\n─────────────\n" +
-        trigger + "\n  ↓\n" + say;
+    return "✅ 등록했어요 (" + kind.rooms.join("·") + " / " + countOf(kind) + "개)\n" +
+        "─────────────\n" + trigger + "\n  ↓\n" + say;
 }
 
 /** "/삭제_" 뒤쪽을 받아 지운다 — 등록분만 지울 수 있다 */
@@ -606,21 +680,23 @@ function regDel(rest) {
     var trigger = String(rest).trim();
     if (!trigger) return "이렇게 써 주세요\n" + PREFIX + "삭제" + REG_SEP + "명령어";
 
-    var regs = loadRegs();
-    if (!regs.hasOwnProperty(trigger)) {
+    // 어느 갈래로 등록했든 같은 /삭제 로 지운다
+    var kind = kindHaving(trigger);
+    if (!kind) {
         if (isFixed(trigger)) {
             return "「" + trigger + "」 는 깃헙에서 관리하는 고정 명령어라 여기서는 못 지워요.";
         }
         return "「" + trigger + "」 는 등록된 게 없어요.";
     }
 
+    var regs = regsOf(kind);
     var backup = regs[trigger];
     delete regs[trigger];
-    if (!saveRegs()) {
+    if (!saveRegs(kind)) {
         regs[trigger] = backup;
         return "폰에 저장을 못 했어요 — 지우지 않았습니다.\n" + (lastRegErr || "");
     }
-    return "🗑️ 지웠어요 (" + regCount() + "개 남음)\n" + trigger;
+    return "🗑️ 지웠어요 (" + PREFIX + kind.cmd + " / " + countOf(kind) + "개 남음)\n" + trigger;
 }
 
 /** "10/01 14:32" */
@@ -635,11 +711,11 @@ function shortTime(d) {
  * 로더의 /오토업데이트 가 이 내용을 그대로 덧붙여 보여주므로 짧게 유지할 것.
  */
 function diagText(room, sender) {
-    var reg = regCount();
+    var reg = regCountFor(room);
     var out = "🤖 오토봇 v" + BOT_VER + "\n" +
         "방 [" + room + "] " + (inRooms(room) ? "동작 중 ✅" : "목록에 없음 ❌") + "\n" +
         "트리거 " + triggersOf(tableFor(room)).length + "개" +
-        (reg > 0 && REG_ROOMS.indexOf(room) !== -1 ? " (등록 " + reg + "개 포함)" : "") + "\n" +
+        (reg > 0 ? " (등록 " + reg + "개 포함)" : "") + "\n" +
         "데이터 " + DATA_FROM + (lastOkAt ? " · " + shortTime(lastOkAt) : " · 아직 못 받음");
 
     if (LOG_ROOMS.indexOf(room) !== -1) {
@@ -717,11 +793,17 @@ function response(room, msg, sender, isGroupChat, replier) {
         // ⑤-2 방에서 직접 넣고 빼기 — 정해진 방에서만, 누구나
         //     "/삭제_" 로 받으므로 위에서 처리한 /삭제내역 과 겹치지 않는다
         if (room === REG_ROOM) {
-            var addCmd = PREFIX + "등록" + REG_SEP;
+            for (var kk = 0; kk < REG_KINDS.length; kk++) {
+                var kind = REG_KINDS[kk];
+                var addCmd = PREFIX + kind.cmd + REG_SEP;
+                if (text === PREFIX + kind.cmd) { replier.reply(regAdd(kind, "")); return; }
+                if (text.indexOf(addCmd) === 0) {
+                    replier.reply(regAdd(kind, text.substring(addCmd.length)));
+                    return;
+                }
+            }
             var delCmd = PREFIX + "삭제" + REG_SEP;
-            if (text === PREFIX + "등록") { replier.reply(regAdd("")); return; }
             if (text === PREFIX + "삭제") { replier.reply(regDel("")); return; }
-            if (text.indexOf(addCmd) === 0) { replier.reply(regAdd(text.substring(addCmd.length))); return; }
             if (text.indexOf(delCmd) === 0) { replier.reply(regDel(text.substring(delCmd.length))); return; }
         }
 
