@@ -32,7 +32,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "1001-4";
+var BOT_VER = "1001-5";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -638,14 +638,22 @@ function listLines(keys) {
  */
 function listText(room) {
     if (room === REG_ROOM) {
-        var parts = [];
+        // 앞 방에 이미 나온 명령어는 뒤 방에서 빼고 보여준다 (겹치는 게 많아 목록이 길어지므로)
+        var parts = [], seen = {}, dropped = false;
         for (var i = 0; i < LIST_SPLIT_ROOMS.length; i++) {
             var r = LIST_SPLIT_ROOMS[i];
-            var ks = triggersOf(tableFor(r));
-            parts.push("───── " + roomLabel(r) + " (" + ks.length + "개) ─────\n" +
-                (ks.length ? listLines(ks) : "(없음)"));
+            var all = triggersOf(tableFor(r));
+            var ks = [];
+            for (var j = 0; j < all.length; j++) {
+                if (seen[all[j]]) { dropped = true; continue; }
+                seen[all[j]] = true;
+                ks.push(all[j]);
+            }
+            parts.push("───── " + roomLabel(r) + " (" + (i === 0 ? "" : "+") + ks.length + "개) ─────\n" +
+                (ks.length ? listLines(ks) : "(겹치는 것 말고는 없음)"));
         }
-        return "📋 명령어 목록\n" + parts.join("\n\n");
+        return "📋 명령어 목록\n" + parts.join("\n\n") +
+            (dropped ? "\n\n※ 겹치는 명령어는 뒤쪽 방에서 뺐습니다" : "");
     }
 
     var keys = triggersOf(tableFor(room));
