@@ -23,8 +23,15 @@
  *       값이 문자열이면 메시지 1개, 목록이면 항목마다 나눠서 여러 개를 보낸다.
  *       명령어 이름이 "*" 로 시작하면 그 낱말이 말 속에 섞여 있기만 해도 응답한다 (방마다 20분 쿨다운).
  *       갱신: 앱 시작 시 / 30분마다 / 방에서 /강의업데이트 (즉시)
- *    ② 등록: 조교방에서 /등록·/프반 으로 넣은 것. 폰 파일에만 강의별로 저장되고 깃헙에는 올라가지 않는다.
+ *    ② 등록: 조교방에서 /등록·/프반 으로 넣은 것. 폰 파일에 강의별로 저장하고 바로 답한다.
  *       고정 명령어와 이름이 겹치면 등록을 거절한다 (고정을 덮어쓸 수 없다).
+ *       **깃헙 저장**: 등록이 바뀌면 백그라운드에서 깃헙 bot/강의등록/강의이름.json 에 폰 파일 전체를 올린다.
+ *       강의마다 올리는 담당 스레드는 하나뿐이고(바뀜 깃발 + 담당 하나), 올리는 중에 또 바뀌면 끝난 뒤 한 번 더 올린다.
+ *       그래서 같은 강의에서 연달아 등록해도 깃헙에는 항상 폰과 같은 전체 내용이 들어간다.
+ *       sha 불일치(409/422)면 최신 sha 를 받아 한 번 재시도하고, 그래도 실패하면 30분 뒤 갱신 때 다시 올린다.
+ *       갱신 때는 깃헙 쪽 sha 가 바뀌어 있으면(깃헙에서 직접 고침 / 폰을 새로 깐 경우) 받아와 폰에 적용한다.
+ *       폰에 바뀜 깃발이 서 있으면 폰이 우선이다. 로더에 토큰이 없으면 깃헙 저장은 꺼지고 폰에만 남는다.
+ *       ※ 메시지 흐름에서는 깃헙을 기다리지 않는다 — 등록 응답은 폰 저장 직후 바로 나간다.
  *
  *  ◆ 오토봇과의 관계 — 없다. 오토봇(오토2·오토2프프·공백기 근무표)은 그대로 두고,
  *    이 봇은 별개의 스크립트로 돈다. 강의목록에 오토봇의 방을 넣으면 둘이 같이 답하므로 넣지 말 것.
@@ -34,11 +41,29 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "강의봇";
-var BOT_VER = "1004-1";
+var BOT_VER = "1005-1";
 
 // ─────────────── 설정 ───────────────
-// /강의전체 를 볼 수 있는 사람 (대화명에 포함되면 허용). 로더(SUPER_ADMINS)가 덮어쓴다.
-var ADMINS = ["후파", "임병진"];
+// /강의전체 를 볼 수 있는 사람 (대화명에 포함되면 허용). 로더가 __ADMINS__ 로 넘겨주면 그걸 쓴다.
+var ADMINS = (typeof __ADMINS__ !== "undefined" && __ADMINS__ && __ADMINS__.length > 0)
+    ? __ADMINS__ : ["후파", "임병진"];
+
+// 등록분을 올려 둘 깃헙 저장소. 토큰은 로더(폰)에만 두고 __TOKEN__ 으로 받는다 — 깃헙에 올리지 않는다.
+// 저장소를 바꾸려면 로더의 REG_REPO 에 "소유자/저장소" 를 적는다 (비공개 저장소도 토큰만 맞으면 된다).
+var GITHUB = {
+    TOKEN: (typeof __TOKEN__ !== "undefined" && __TOKEN__) ? String(__TOKEN__) : "",
+    OWNER: "limbj1218-cyber",
+    REPO: "chatlog",
+    BRANCH: "main",
+    DIR: "bot/강의등록"              // 강의마다 DIR/강의이름.json
+};
+if (typeof __REPO__ !== "undefined" && __REPO__) {
+    var __repoParts = String(__REPO__).split("/");
+    if (__repoParts.length === 2 && __repoParts[0] && __repoParts[1]) {
+        GITHUB.OWNER = __repoParts[0];
+        GITHUB.REPO = __repoParts[1];
+    }
+}
 
 var PREFIX = "/";                  // 명령어 접두사
 var COMMON_KEY = "_공통";          // 강의의 세 방 모두에 적용되는 데이터 키
@@ -148,6 +173,7 @@ function pickBaseDir() {
 
 var BASE_DIR = pickBaseDir();
 var CACHE_FILE = BASE_DIR ? (BASE_DIR + "/강의봇캐시.json") : null;
+var SYNC_FILE = BASE_DIR ? (BASE_DIR + "/깃헙동기화.json") : null;   // 강의이름 → 마지막으로 맞춘 깃헙 sha
 
 /** 깃헙에서 텍스트 가져오기 — jsoup 우선, 없으면 순수 자바 HTTP. 200 이 아니면 던진다 */
 function fetchText(url) {
@@ -281,6 +307,12 @@ function loadAll() {
     lastOkAt = new Date();
     lastLoadErr = null;
     saveCache();
+
+    // 등록분 깃헙 동기화 — 깃헙에서 바뀐 게 있으면 받아오고, 폰에 미반영이 남아 있으면 올린다
+    for (var si = 0; si < list.length; si++) {
+        try { syncPull(list[si]); }
+        catch (e3) { syncOf(String(list[si]["이름"])).err = String(e3); }
+    }
     return true;
 }
 
@@ -478,6 +510,289 @@ function findContain(table, text) {
     return null;
 }
 
+// ═══════════════ 등록분 깃헙 저장 (백업 · 복원) ═══════════════
+//
+// 폰 파일이 기준이고 깃헙은 그 사본이다. 깃헙 쓰기는 전부 백그라운드에서만 한다.
+//  - 바뀌면: 그 강의에 "바뀜(dirty)" 깃발을 올리고 올리기 담당(pushLoop)을 깨운다. 담당은 강의마다 하나만 돈다.
+//  - 담당: 깃발을 내리고 폰 파일 전체를 올린다 → 끝나고 깃발이 다시 서 있으면 한 번 더 → 깃발이 내려가 있으면 끝.
+//  - 갱신(30분·시작): 깃헙 sha 가 마지막으로 맞춘 것과 다르면 깃헙 쪽이 바뀐 것이니 받아와 폰에 적용한다.
+//    폰에 깃발이 서 있으면(미반영) 받아오지 않고 올린다 — 조교방 등록이 우선.
+
+var SYNC = {};             // 강의이름 → { dirty, running, sha, err, okAt }
+var syncShaLoaded = false;
+
+function syncOf(name) {
+    if (!SYNC[name]) SYNC[name] = { dirty: false, running: false, sha: null, err: null, okAt: null };
+    return SYNC[name];
+}
+
+/** 폰에 적어 둔 "마지막으로 맞춘 sha" — 앱을 다시 켜도 깃헙 쪽 변화를 알아보기 위해 */
+function loadSyncShas() {
+    if (syncShaLoaded) return;
+    syncShaLoaded = true;
+    if (!SYNC_FILE) return;
+    try {
+        var t = fileRead(SYNC_FILE);
+        if (!t) return;
+        var o = JSON.parse(String(t));
+        for (var k in o) if (o.hasOwnProperty(k) && o[k]) syncOf(k).sha = String(o[k]);
+    } catch (e) {}
+}
+
+function saveSyncShas() {
+    if (!SYNC_FILE) return;
+    var o = {};
+    for (var k in SYNC) if (SYNC.hasOwnProperty(k) && SYNC[k].sha) o[k] = SYNC[k].sha;
+    try { fileWrite(SYNC_FILE, JSON.stringify(o)); } catch (e) {}
+}
+
+function ghPath(course) {
+    return GITHUB.DIR + "/" + String(course["이름"]) + ".json";
+}
+
+function ghUrl(path) {
+    var segs = String(path).split("/");
+    for (var i = 0; i < segs.length; i++) segs[i] = encodeURIComponent(segs[i]);
+    return "https://api.github.com/repos/" + GITHUB.OWNER + "/" + GITHUB.REPO + "/contents/" + segs.join("/");
+}
+
+/** 깃헙 API 호출 → { code, body } */
+function httpReq(method, urlStr, bodyStr) {
+    var conn = new java.net.URL(urlStr).openConnection();
+    conn.setRequestMethod(method);
+    conn.setRequestProperty("Authorization", "Bearer " + GITHUB.TOKEN);
+    conn.setRequestProperty("Accept", "application/vnd.github+json");
+    conn.setRequestProperty("User-Agent", "coursebot");
+    conn.setConnectTimeout(10000);
+    conn.setReadTimeout(20000);
+    if (bodyStr) {
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        var os = conn.getOutputStream();
+        os.write(new java.lang.String(bodyStr).getBytes("UTF-8"));
+        os.close();
+    }
+    var code = Number(conn.getResponseCode());
+    var is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+    var body = "";
+    if (is) {
+        var br = new java.io.BufferedReader(new java.io.InputStreamReader(is, "UTF-8"));
+        var line;
+        while ((line = br.readLine()) !== null) body += line;
+        br.close();
+    }
+    conn.disconnect();
+    return { code: code, body: body };
+}
+
+var B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/** UTF-8 → Base64. 앱마다 쓸 수 있는 구현이 달라서 순서대로 시도 */
+function base64utf8(str) {
+    var bytes = new java.lang.String(str).getBytes("UTF-8");
+    try {
+        if (typeof android !== "undefined" && android.util && android.util.Base64) {
+            return String(android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP));
+        }
+    } catch (e) {}
+    try { return String(java.util.Base64.getEncoder().encodeToString(bytes)); } catch (e) {}
+    var out = "", i = 0, n = bytes.length;
+    while (i < n) {
+        var b0 = bytes[i++] & 0xff;
+        var b1 = i < n ? bytes[i++] & 0xff : -1;
+        var b2 = i < n ? bytes[i++] & 0xff : -1;
+        out += B64.charAt(b0 >> 2);
+        out += B64.charAt(((b0 & 3) << 4) | (b1 < 0 ? 0 : b1 >> 4));
+        out += b1 < 0 ? "=" : B64.charAt(((b1 & 15) << 2) | (b2 < 0 ? 0 : b2 >> 6));
+        out += b2 < 0 ? "=" : B64.charAt(b2 & 63);
+    }
+    return out;
+}
+
+/** Base64 → UTF-8 문자열. 깃헙은 60자마다 줄바꿈을 넣어 주므로 공백을 견디는 쪽을 쓴다 */
+function base64decodeUtf8(b64) {
+    var s = String(b64).replace(/[\s=]/g, "");
+    try {
+        if (typeof android !== "undefined" && android.util && android.util.Base64) {
+            var ab = android.util.Base64.decode(s, android.util.Base64.DEFAULT);
+            return String(new java.lang.String(ab, "UTF-8"));
+        }
+    } catch (e) {}
+    try {
+        var jb = java.util.Base64.getMimeDecoder().decode(s);
+        return String(new java.lang.String(jb, "UTF-8"));
+    } catch (e) {}
+    // 최후 수단: 직접 풀어서 UTF-8 로 해석
+    var bytes = [], bits = 0, acc = 0;
+    for (var i = 0; i < s.length; i++) {
+        var v = B64.indexOf(s.charAt(i));
+        if (v < 0) continue;
+        acc = (acc << 6) | v; bits += 6;
+        if (bits >= 8) { bits -= 8; bytes.push((acc >> bits) & 0xff); }
+    }
+    var out = "", j = 0;
+    while (j < bytes.length) {
+        var c = bytes[j++];
+        if (c < 0x80) out += String.fromCharCode(c);
+        else if (c < 0xe0) out += String.fromCharCode(((c & 0x1f) << 6) | (bytes[j++] & 0x3f));
+        else if (c < 0xf0) out += String.fromCharCode(((c & 0x0f) << 12) | ((bytes[j++] & 0x3f) << 6) | (bytes[j++] & 0x3f));
+        else {
+            var cp = ((c & 0x07) << 18) | ((bytes[j++] & 0x3f) << 12) | ((bytes[j++] & 0x3f) << 6) | (bytes[j++] & 0x3f);
+            cp -= 0x10000;
+            out += String.fromCharCode(0xd800 + (cp >> 10), 0xdc00 + (cp & 0x3ff));
+        }
+    }
+    return out;
+}
+
+/** 이 강의의 등록분 전체 — { "등록": {명령어:할말}, "프반": {...} } (깃헙 파일 모양) */
+function regsSnapshot(course) {
+    var o = {};
+    for (var i = 0; i < REG_KINDS.length; i++) {
+        var src = regsOf(course, REG_KINDS[i]), copy = {}, k;
+        for (k in src) if (src.hasOwnProperty(k)) copy[k] = src[k];
+        o[REG_KINDS[i].cmd] = copy;
+    }
+    return o;
+}
+
+function regsEmpty(course) {
+    for (var i = 0; i < REG_KINDS.length; i++) if (countOf(course, REG_KINDS[i]) > 0) return false;
+    return true;
+}
+
+/** 깃헙에서 받은 등록분을 폰에 적용한다 (갈래별 파일로 저장) */
+function adoptRegs(course, data) {
+    if (!data || typeof data !== "object" || isArray(data)) throw "깃헙 등록 파일 형식이 올바르지 않아요";
+    var name = String(course["이름"]);
+    if (!REGS[name]) REGS[name] = {};
+    for (var i = 0; i < REG_KINDS.length; i++) {
+        var kind = REG_KINDS[i], src = data[kind.cmd], o = {}, k;
+        if (src && typeof src === "object" && !isArray(src)) {
+            for (k in src) if (src.hasOwnProperty(k) && k && src[k]) o[k] = src[k];
+        }
+        REGS[name][kind.cmd] = o;
+        saveRegs(course, kind);
+    }
+}
+
+/** 깃헙의 등록 파일 → { code, sha, data } */
+function ghGetRegs(course) {
+    var res = httpReq("GET", ghUrl(ghPath(course)) + "?ref=" + GITHUB.BRANCH, null);
+    if (res.code !== 200) return { code: res.code };
+    var j = JSON.parse(res.body);
+    var txt = base64decodeUtf8(j.content);
+    return { code: 200, sha: String(j.sha), data: JSON.parse(txt) };
+}
+
+/** 폰 파일 전체를 깃헙에 한 번 올린다. sha 가 어긋나면 최신 sha 로 한 번 재시도 */
+function ghPush(course) {
+    var name = String(course["이름"]), s = syncOf(name);
+    var url = ghUrl(ghPath(course));
+    var content = JSON.stringify(regsSnapshot(course), null, 2);
+    var body = { message: "강의등록: " + name, branch: GITHUB.BRANCH, content: base64utf8(content) };
+    if (s.sha) body.sha = s.sha;
+
+    var res = httpReq("PUT", url, JSON.stringify(body));
+    if (res.code === 409 || res.code === 422) {
+        var g = httpReq("GET", url + "?ref=" + GITHUB.BRANCH, null);
+        if (g.code === 200) body.sha = String(JSON.parse(g.body).sha);
+        else if (g.code === 404) delete body.sha;
+        res = httpReq("PUT", url, JSON.stringify(body));
+    }
+    if (res.code === 200 || res.code === 201) {
+        s.sha = String(JSON.parse(res.body).content.sha);
+        s.err = null;
+        s.okAt = new Date();
+        saveSyncShas();
+        return true;
+    }
+    s.err = "HTTP " + res.code + " " + String(res.body).substring(0, 80);
+    return false;
+}
+
+/** 올리기 담당 — 강의마다 하나만 돈다 (백그라운드) */
+function pushLoop(course) {
+    var s = syncOf(String(course["이름"]));
+    try {
+        while (s.dirty) {
+            s.dirty = false;                  // 올리는 동안 또 바뀌면 다시 서는 깃발
+            if (!ghPush(course)) { s.dirty = true; break; }   // 실패 → 깃발 그대로, 다음 갱신 때
+        }
+    } catch (e) {
+        s.err = String(e);
+        s.dirty = true;
+    }
+    s.running = false;
+    // 담당이 끝나는 찰나에 들어온 등록은 깃발만 서 있으니 다시 깨운다 (오류로 멈춘 경우는 제외)
+    if (s.dirty && !s.err) kickPush(course);
+}
+
+function kickPush(course) {
+    if (!GITHUB.TOKEN) return;
+    var s = syncOf(String(course["이름"]));
+    if (s.running) return;
+    s.running = true;
+    if (!runAsync(function () { pushLoop(course); })) s.running = false;   // 스레드를 못 만들면 다음 갱신 때
+}
+
+/** 등록이 바뀌었다 — 깃헙 올리기를 백그라운드로 예약한다 */
+function markDirty(course) {
+    syncOf(String(course["이름"])).dirty = true;
+    kickPush(course);
+}
+
+/**
+ * 갱신 때(백그라운드) 깃헙과 맞춘다.
+ *  - 폰에 미반영이 있으면 올린다 (폰 우선)
+ *  - 깃헙 sha 가 마지막으로 맞춘 것과 다르면 깃헙 쪽이 바뀐 것 → 받아와 폰에 적용
+ *    단, 아직 한 번도 맞춘 적이 없고 폰에 등록이 있으면 폰을 올린다 (첫 만남엔 폰이 기준)
+ *  - 깃헙에 파일이 없는데 폰에 등록이 있으면 올린다 (복원 아님 → 새로 만듦)
+ *  - 토큰이 없으면 쓰기는 못 하고, 폰이 비어 있을 때 공개 raw 에서 복원만 시도한다
+ */
+function syncPull(course) {
+    var name = String(course["이름"]), s = syncOf(name);
+    loadSyncShas();
+
+    if (!GITHUB.TOKEN) {
+        if (!regsEmpty(course)) return;
+        try {
+            var raw = fetchText("https://raw.githubusercontent.com/" + GITHUB.OWNER + "/" + GITHUB.REPO + "/" +
+                GITHUB.BRANCH + "/" + ghPath(course).split("/").map(encodeURIComponent).join("/") + "?t=" + new Date().getTime());
+            adoptRegs(course, JSON.parse(raw));
+        } catch (e) {}   // 없으면 그냥 빈 채로
+        return;
+    }
+
+    if (s.dirty) { kickPush(course); return; }
+
+    var r = ghGetRegs(course);
+    if (r.code === 200) {
+        if (r.sha === s.sha) { s.err = null; return; }
+        if (s.sha === null && !regsEmpty(course)) { markDirty(course); return; }
+        adoptRegs(course, r.data);
+        s.sha = r.sha;
+        s.err = null;
+        saveSyncShas();
+    } else if (r.code === 404) {
+        s.sha = null;
+        if (!regsEmpty(course)) markDirty(course);
+        else s.err = null;
+    } else {
+        s.err = "HTTP " + r.code;
+    }
+}
+
+/** 진단 한 줄 */
+function syncLine(name) {
+    if (!GITHUB.TOKEN) return "깃헙 저장 꺼짐 (로더에 토큰 없음)";
+    var s = syncOf(name);
+    if (s.err) return "⚠️ 깃헙 미반영: " + s.err;
+    if (s.dirty || s.running) return "깃헙 올리는 중…";
+    if (s.okAt) return "깃헙 반영 · " + shortTime(s.okAt);
+    return s.sha ? "깃헙 동기화됨" : "깃헙 등록 없음";
+}
+
 // ═══════════════ 명령어 ═══════════════
 
 function listLines(keys) {
@@ -560,6 +875,7 @@ function regAdd(course, kind, rest) {
         delete regs[trigger];
         return "폰에 저장을 못 했어요 — 등록하지 않았습니다.\n" + (lastRegErr || "");
     }
+    markDirty(course);   // 깃헙 올리기는 백그라운드로 — 여기서는 기다리지 않는다
     return "✅ 등록했어요 (" + roleLabels(course, kind.roles) + " / " + countOf(course, kind) + "개)\n" +
         "─────────────\n" + trigger + "\n  ↓\n" + say;
 }
@@ -584,6 +900,7 @@ function regDel(course, rest) {
         regs[trigger] = backup;
         return "폰에 저장을 못 했어요 — 지우지 않았습니다.\n" + (lastRegErr || "");
     }
+    markDirty(course);
     return "🗑️ 지웠어요 (" + PREFIX + kind.cmd + " / " + countOf(course, kind) + "개 남음)\n" + trigger;
 }
 
@@ -621,6 +938,7 @@ function diagText(room) {
             (reg > 0 ? " (등록 " + reg + "개 포함)" : "");
         if (hit.dup) out += "\n⚠️ 이 방 이름이 여러 강의에 들어 있어요 (첫 강의로 동작)";
         if (courseErr[name]) out += "\n⚠️ " + courseErrText(name);
+        out += "\n" + syncLine(name);
     }
     out += "\n데이터 " + DATA_FROM + (lastOkAt ? " · " + shortTime(lastOkAt) : " · 아직 못 받음");
 
@@ -648,6 +966,7 @@ function allText() {
             out += "\n  " + ROLES[r2] + ": " + (c[ROLES[r2]] ? c[ROLES[r2]] : "(없음)");
         }
         if (courseErr[name]) out += "\n  ⚠️ " + courseErrText(name);
+        out += "\n  " + syncLine(name);
     }
     return out;
 }

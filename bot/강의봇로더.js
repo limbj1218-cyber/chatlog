@@ -6,6 +6,7 @@
  *  동작: GitHub에 있는 본체 코드(bot/강의봇.js)를 읽어와 실행합니다.
  *  - 방 목록은 여기에 없습니다 — 본체가 깃헙 bot/강의목록.json 에서 강의(방 3개 묶음)를 받아옵니다
  *  - 코드·강의목록·고정 자동응답이 바뀌면 방에서 /강의업데이트 (관리자만) 또는 재컴파일
+ *  - GITHUB_TOKEN 을 넣으면 조교방 등록분이 깃헙에도 저장됩니다 (폰을 바꿔도 복원됨)
  *
  *  ◆ 지원: 메신저봇R 신버전(API2) / 구버전(API1) / 다크토네이도 챗봇
  *  ◆ 본체 로드: ① 동적 평가 → ② modules 폴더 + require (API2처럼 eval 막힌 앱)
@@ -18,6 +19,15 @@ var GLOBAL_SCOPE = this;
 // ── 폰에만 두는 설정 ────────────────────────────────────────
 // /강의업데이트·/강의전체 를 쓸 수 있는 사람 (대화명에 이 문자열이 포함되면 허용)
 var SUPER_ADMINS = ["후파", "임병진"];
+
+// 조교방에서 등록한 명령어를 깃헙(bot/강의등록/강의이름.json)에도 저장하기 위한 토큰.
+// 저장소 Contents 읽기/쓰기 권한만 있으면 된다. 비워 두면 깃헙 저장은 꺼지고 폰에만 남는다.
+// ★ 이 값은 폰에만 두고 절대 깃헙에 올리지 않는다.
+var GITHUB_TOKEN = "";
+
+// 등록분을 올릴 저장소를 바꾸고 싶을 때 "소유자/저장소" (비워 두면 limbj1218-cyber/chatlog).
+// 등록 내용을 공개하고 싶지 않으면 비공개 저장소를 만들어 여기에 적고, 토큰에 그 저장소 권한을 준다.
+var REG_REPO = "";
 // ────────────────────────────────────────────────────────────
 
 var SRC_URL = "https://raw.githubusercontent.com/limbj1218-cyber/chatlog/main/bot/" +
@@ -186,8 +196,7 @@ function loadViaRequire(code) {
     try { new java.io.File(dir).mkdirs(); } catch (e) {}
 
     var fname = "coursebot_core_" + new Date().getTime();
-    var body = "module.exports = function (__ADMINS__) {\n" + code +
-        "\nif (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;" +
+    var body = "module.exports = function (__ADMINS__, __TOKEN__, __REPO__) {\n" + code +
         "\nreturn response;\n};";
     if (typeof FileStream !== "undefined" && FileStream && FileStream.write) {
         FileStream.write(dir + "/" + fname + ".js", body);
@@ -260,8 +269,8 @@ function loadRemote(useNetwork) {
     var factory = null, evalErr = null, reqErr = null;
 
     // ① 동적 평가 허용 앱
-    var wrapped = "(function (__ADMINS__) {\n" + code +
-        "\nif (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;" +
+    // 본체는 __ADMINS__·__TOKEN__·__REPO__ 를 스스로 읽는다 (코드 맨 위에서, 시작 시 깃헙 동기화에 토큰이 필요하므로)
+    var wrapped = "(function (__ADMINS__, __TOKEN__, __REPO__) {\n" + code +
         "\nreturn response;\n})";
     try { factory = evalCode(wrapped); loadMethod = "동적 평가"; }
     catch (e) { evalErr = String(e); }
@@ -276,7 +285,7 @@ function loadRemote(useNetwork) {
         throw "본체 실행 실패\n· 평가: " + evalErr + "\n· 모듈: " + reqErr;
     }
 
-    remoteResponse = factory(SUPER_ADMINS);
+    remoteResponse = factory(SUPER_ADMINS, GITHUB_TOKEN, REG_REPO);
     loadedAt = new Date();
     codeFrom = fromCache ? "폰에 저장된 코드" : "깃헙";
     // 깃헙에서 제대로 받았을 때만 저장해 둔다 (다음에 깃헙이 안 될 때 쓸 것)
