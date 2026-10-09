@@ -34,7 +34,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "1009-3";
+var BOT_VER = "1009-4";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -351,18 +351,6 @@ function canManage(kind, sender) {
     return false;
 }
 
-/** 권한이 없을 때 돌려줄 말 */
-function noPermText(kind) {
-    return "이 방에서는 대화명에 " + joinNames(kind.admin) + " 중 하나가 들어간 분만 " +
-        "등록·삭제할 수 있어요.";
-}
-
-/** ["[조교]","버터떡"] → 「[조교]」·「버터떡」 */
-function joinNames(names) {
-    var out = [];
-    for (var i = 0; i < names.length; i++) out.push("「" + names[i] + "」");
-    return out.join("·");
-}
 
 /** 두 갈래가 반응하는 방이 하나라도 겹치는지 — 겹칠 때만 이름이 부딪힌다 */
 function overlaps(a, b) {
@@ -888,7 +876,7 @@ function response(room, msg, sender, isGroupChat, replier) {
                 var kind = myKinds[kk];
                 var addCmd = PREFIX + kind.cmd + REG_SEP;
                 if (text !== PREFIX + kind.cmd && text.indexOf(addCmd) !== 0) continue;
-                if (!canManage(kind, sender)) { replier.reply(noPermText(kind)); return; }
+                if (!canManage(kind, sender)) return;   // 권한 없으면 조용히 넘어간다
                 replier.reply(regAdd(kind, text === PREFIX + kind.cmd
                     ? "" : text.substring(addCmd.length)));
                 return;
@@ -901,7 +889,7 @@ function response(room, msg, sender, isGroupChat, replier) {
                 for (var dk = 0; dk < myKinds.length; dk++) {
                     if (canManage(myKinds[dk], sender)) { can = myKinds[dk]; break; }
                 }
-                if (!can) { replier.reply(noPermText(myKinds[0])); return; }
+                if (!can) return;                      // 권한 없으면 조용히 넘어간다
                 replier.reply(regDel(room,
                     text === PREFIX + "삭제" ? "" : text.substring(delCmd.length), sender));
                 return;
