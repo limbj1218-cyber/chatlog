@@ -10,7 +10,7 @@
  *
  *    [공백기 근무표]  /등록_명령어_할말 → 오토2·오토2프프·공백기 근무표에서 반응
  *                    /프반_명령어_할말 → 오토2프프에서만 반응
- *    [멱살반2]        /등록_명령어_할말 → 멱살반2에서만 반응
+ *    [멱살반2]        /등록_명령어_할말 → 멱살반2에서만 반응 (대화명에 "[조교]"·"버터떡" 이 있는 사람만)
  *    /삭제_명령어      → 그 방에서 넣은 것만 지운다 (다른 방 것은 못 건드린다)
  *
  *  ◆ 데이터 — 두 갈래다
@@ -34,7 +34,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "1009-2";
+var BOT_VER = "1009-3";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -87,10 +87,12 @@ var REG_MAX = 200;                                // 갈래마다 등록 최대 
 // 등록 갈래 — 넣는 방 / 명령어 / 폰에 저장할 파일 / 반응하는 방
 // 갈래를 늘리려면 여기에 한 줄 더 적으면 된다.
 // ※ cmd 는 갈래끼리 겹쳐도 된다 — 넣는 방(from)이 다르면 서로 다른 갈래로 친다.
+// admin 을 적으면 대화명에 그 중 하나라도 든 사람만 넣고 뺄 수 있다. 없으면 누구나.
 var REG_KINDS = [
     { from: "공백기 근무표", cmd: "등록", file: "등록응답.json", rooms: ["오토2", "오토2프프", "공백기 근무표"] },
     { from: "공백기 근무표", cmd: "프반", file: "프반응답.json", rooms: ["오토2프프"] },
-    { from: "멱살반2",      cmd: "등록", file: "멱살응답.json", rooms: ["멱살반2"] }
+    { from: "멱살반2",      cmd: "등록", file: "멱살응답.json", rooms: ["멱살반2"],
+      admin: ["[조교]", "버터떡"] }
 ];
 
 // /리스트 를 방별로 갈라 보여줄 방. 여기 없는 방은 자기 것만 한 목록으로 보여준다.
@@ -337,6 +339,29 @@ function kindsFrom(room) {
 /** 등록하는 방인지 */
 function isRegRoom(room) {
     return kindsFrom(room).length > 0;
+}
+
+/** 이 갈래를 넣고 뺄 수 있는 사람인지 — admin 이 없으면 누구나 */
+function canManage(kind, sender) {
+    if (!kind.admin || kind.admin.length === 0) return true;
+    var name = String(sender);
+    for (var i = 0; i < kind.admin.length; i++) {
+        if (name.indexOf(kind.admin[i]) !== -1) return true;
+    }
+    return false;
+}
+
+/** 권한이 없을 때 돌려줄 말 */
+function noPermText(kind) {
+    return "이 방에서는 대화명에 " + joinNames(kind.admin) + " 중 하나가 들어간 분만 " +
+        "등록·삭제할 수 있어요.";
+}
+
+/** ["[조교]","버터떡"] → 「[조교]」·「버터떡」 */
+function joinNames(names) {
+    var out = [];
+    for (var i = 0; i < names.length; i++) out.push("「" + names[i] + "」");
+    return out.join("·");
 }
 
 /** 두 갈래가 반응하는 방이 하나라도 겹치는지 — 겹칠 때만 이름이 부딪힌다 */
@@ -737,13 +762,14 @@ function regAdd(kind, rest) {
 }
 
 /** "/삭제_" 뒤쪽을 받아 지운다 — 등록분만 지울 수 있다 */
-function regDel(room, rest) {
+function regDel(room, rest, sender) {
     var trigger = String(rest).trim();
     if (!trigger) return "이렇게 써 주세요\n" + PREFIX + "삭제" + REG_SEP + "명령어";
 
-    // 이 방에서 넣은 갈래만 지울 수 있다 — 다른 방이 관리하는 건 건드리지 않는다
+    // 이 방에서 넣은 갈래만, 그것도 권한이 있는 갈래만 지울 수 있다
     var mine = kindsFrom(room), kind = null;
     for (var i = 0; i < mine.length; i++) {
+        if (!canManage(mine[i], sender)) continue;
         if (regsOf(mine[i]).hasOwnProperty(trigger)) { kind = mine[i]; break; }
     }
     if (!kind) {
@@ -861,16 +887,23 @@ function response(room, msg, sender, isGroupChat, replier) {
             for (var kk = 0; kk < myKinds.length; kk++) {
                 var kind = myKinds[kk];
                 var addCmd = PREFIX + kind.cmd + REG_SEP;
-                if (text === PREFIX + kind.cmd) { replier.reply(regAdd(kind, "")); return; }
-                if (text.indexOf(addCmd) === 0) {
-                    replier.reply(regAdd(kind, text.substring(addCmd.length)));
-                    return;
-                }
+                if (text !== PREFIX + kind.cmd && text.indexOf(addCmd) !== 0) continue;
+                if (!canManage(kind, sender)) { replier.reply(noPermText(kind)); return; }
+                replier.reply(regAdd(kind, text === PREFIX + kind.cmd
+                    ? "" : text.substring(addCmd.length)));
+                return;
             }
+
             var delCmd = PREFIX + "삭제" + REG_SEP;
-            if (text === PREFIX + "삭제") { replier.reply(regDel(room, "")); return; }
-            if (text.indexOf(delCmd) === 0) {
-                replier.reply(regDel(room, text.substring(delCmd.length)));
+            if (text === PREFIX + "삭제" || text.indexOf(delCmd) === 0) {
+                // 이 방에서 하나라도 다룰 수 있어야 /삭제 를 받아준다
+                var can = null;
+                for (var dk = 0; dk < myKinds.length; dk++) {
+                    if (canManage(myKinds[dk], sender)) { can = myKinds[dk]; break; }
+                }
+                if (!can) { replier.reply(noPermText(myKinds[0])); return; }
+                replier.reply(regDel(room,
+                    text === PREFIX + "삭제" ? "" : text.substring(delCmd.length), sender));
                 return;
             }
         }
