@@ -2,14 +2,16 @@
  * ═══════════════════════════════════════════════════════════
  *  오토봇 — 등록된 문구에 자동으로 응답하는 봇 (읽기 전용)
  *
- *  ◆ 명령어 (아래 /등록·/프반·/삭제 는 REG_ROOM 에서만, 등록분은 갈래마다 정해진 방에서 반응)
+ *  ◆ 명령어 (등록·삭제는 REG_KINDS 의 from 방에서만, 등록분은 그 갈래의 rooms 에서 반응)
  *    /리스트   → 이 방에서 반응하는 트리거 목록 (누구나)
- *               REG_ROOM 에서는 오토2·오토2프프 를 갈라서 보여준다
+ *               LIST_SPLIT 에 있는 방에서는 방별로 갈라서 보여준다
  *    /오토     → 진단 (방 인식·데이터 상태·버전) — 모든 방에서 동작
  *    /삭제내역 /삭제내역1 /삭제내역2 → 보관된 대화 되짚어보기 (지정한 방에서만, 누구나)
- *    /등록_명령어_할말 → 오토2·오토2프프·공백기 근무표에서 반응 (공백기 근무표에서만, 누구나)
- *    /프반_명령어_할말 → 오토2프프에서만 반응 (공백기 근무표에서만, 누구나)
- *    /삭제_명령어      → 위 둘 중 어느 쪽으로 넣었든 지운다
+ *
+ *    [공백기 근무표]  /등록_명령어_할말 → 오토2·오토2프프·공백기 근무표에서 반응
+ *                    /프반_명령어_할말 → 오토2프프에서만 반응
+ *    [멱살반2]        /등록_명령어_할말 → 멱살반2에서만 반응
+ *    /삭제_명령어      → 그 방에서 넣은 것만 지운다 (다른 방 것은 못 건드린다)
  *
  *  ◆ 데이터 — 두 갈래다
  *    ① 고정: 깃헙에서 오토봇데이터.json 을 받아 쓰고, 받은 내용을 폰에 캐시한다.
@@ -32,7 +34,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "1009-1";
+var BOT_VER = "1009-2";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -77,20 +79,24 @@ var LOG_CMDS = [
 ];
 
 // ── 방에서 직접 등록하는 자동응답 ──
-// 한 방(REG_ROOM)에서 넣고 빼면, 갈래마다 정해진 방에서 반응한다. 넣고 빼는 건 누구나 할 수 있다.
-var REG_ROOM = "공백기 근무표";                   // /등록 /프반 /삭제 를 쓸 수 있는 방
+// 넣고 빼는 건 누구나 할 수 있다. 갈래마다 "어느 방에서 넣는지(from)" 와
+// "어느 방에서 반응하는지(rooms)" 가 따로 정해져 있다.
 var REG_SEP = "_";                                // /등록_명령어_할말
 var REG_MAX = 200;                                // 갈래마다 등록 최대 개수
 
-// 등록 갈래 — 명령어 / 폰에 저장할 파일 / 실제로 반응하는 방
+// 등록 갈래 — 넣는 방 / 명령어 / 폰에 저장할 파일 / 반응하는 방
 // 갈래를 늘리려면 여기에 한 줄 더 적으면 된다.
+// ※ cmd 는 갈래끼리 겹쳐도 된다 — 넣는 방(from)이 다르면 서로 다른 갈래로 친다.
 var REG_KINDS = [
-    { cmd: "등록", file: "등록응답.json", rooms: ["오토2", "오토2프프", "공백기 근무표"] },
-    { cmd: "프반", file: "프반응답.json", rooms: ["오토2프프"] }
+    { from: "공백기 근무표", cmd: "등록", file: "등록응답.json", rooms: ["오토2", "오토2프프", "공백기 근무표"] },
+    { from: "공백기 근무표", cmd: "프반", file: "프반응답.json", rooms: ["오토2프프"] },
+    { from: "멱살반2",      cmd: "등록", file: "멱살응답.json", rooms: ["멱살반2"] }
 ];
 
-// /리스트 를 방별로 갈라 보여줄 방 (REG_ROOM 에서 쓴다)
-var LIST_SPLIT_ROOMS = ["오토2", "오토2프프"];
+// /리스트 를 방별로 갈라 보여줄 방. 여기 없는 방은 자기 것만 한 목록으로 보여준다.
+var LIST_SPLIT = {
+    "공백기 근무표": ["오토2", "오토2프프"]
+};
 
 // 사람에게 보여줄 때만 쓰는 이름. ※ 방을 가려내는 기준은 끝까지 실제 방 이름이다 —
 //   ROOMS·REG_KINDS·LOG_ROOMS 같은 목록에는 절대 이 이름을 쓰지 말 것.
@@ -319,16 +325,36 @@ function saveRegs(kind) {
     return false;
 }
 
-function kindByCmd(cmd) {
+/** 이 방에서 넣고 뺄 수 있는 갈래들 */
+function kindsFrom(room) {
+    var out = [];
     for (var i = 0; i < REG_KINDS.length; i++) {
-        if (REG_KINDS[i].cmd === cmd) return REG_KINDS[i];
+        if (REG_KINDS[i].from === room) out.push(REG_KINDS[i]);
     }
-    return null;
+    return out;
 }
 
-/** 이 트리거가 이미 등록돼 있는 갈래. 없으면 null */
-function kindHaving(trigger) {
+/** 등록하는 방인지 */
+function isRegRoom(room) {
+    return kindsFrom(room).length > 0;
+}
+
+/** 두 갈래가 반응하는 방이 하나라도 겹치는지 — 겹칠 때만 이름이 부딪힌다 */
+function overlaps(a, b) {
+    for (var i = 0; i < a.rooms.length; i++) {
+        if (b.rooms.indexOf(a.rooms[i]) !== -1) return true;
+    }
+    return false;
+}
+
+/**
+ * 이 트리거가 이미 등록돼 있는 갈래. 없으면 null.
+ * kind 를 주면 그 갈래와 **반응하는 방이 겹치는** 갈래만 본다 —
+ * 겹치지 않으면 같은 이름을 써도 어느 쪽이 나갈지 헷갈릴 일이 없다.
+ */
+function kindHaving(trigger, kind) {
     for (var i = 0; i < REG_KINDS.length; i++) {
+        if (kind && !overlaps(kind, REG_KINDS[i])) continue;
         if (regsOf(REG_KINDS[i]).hasOwnProperty(trigger)) return REG_KINDS[i];
     }
     return null;
@@ -387,18 +413,25 @@ function tableFor(room, withRegs) {
     return out;
 }
 
-/** 깃헙에서 관리하는 고정 트리거인지 (등록분은 빼고 본다) */
-function isFixed(trigger) {
-    var seen = {};
-    for (var i = 0; i < REG_KINDS.length; i++) {
-        for (var j = 0; j < REG_KINDS[i].rooms.length; j++) {
-            var room = REG_KINDS[i].rooms[j];
-            if (seen[room]) continue;
-            seen[room] = true;
-            var t = tableFor(room, false);
-            if (t.hasOwnProperty(trigger)) return true;
-            if (t.hasOwnProperty(CONTAIN_MARK + trigger)) return true;
+/**
+ * 깃헙에서 관리하는 고정 트리거인지 (등록분은 빼고 본다).
+ * kind 를 주면 그 갈래가 반응하는 방만 본다 — 다른 방의 고정 트리거까지 막을 이유는 없다.
+ */
+function isFixed(trigger, kind) {
+    var rooms = [], seen = {}, i, j;
+    if (kind) {
+        rooms = kind.rooms;
+    } else {
+        for (i = 0; i < REG_KINDS.length; i++) {
+            for (j = 0; j < REG_KINDS[i].rooms.length; j++) rooms.push(REG_KINDS[i].rooms[j]);
         }
+    }
+    for (i = 0; i < rooms.length; i++) {
+        if (seen[rooms[i]]) continue;
+        seen[rooms[i]] = true;
+        var t = tableFor(rooms[i], false);
+        if (t.hasOwnProperty(trigger)) return true;
+        if (t.hasOwnProperty(CONTAIN_MARK + trigger)) return true;
     }
     return false;
 }
@@ -635,14 +668,15 @@ function listLines(keys) {
 /**
  * /리스트
  *  - 보통 방: 그 방이 반응하는 것 전부를 한 목록으로 (고정·등록 구분 없이)
- *  - 등록하는 방(REG_ROOM): 어느 방 것인지 갈라서 (LIST_SPLIT_ROOMS)
+ *  - LIST_SPLIT 에 있는 방: 어느 방 것인지 갈라서
  */
 function listText(room) {
-    if (room === REG_ROOM) {
+    var split = LIST_SPLIT.hasOwnProperty(room) ? LIST_SPLIT[room] : null;
+    if (split) {
         // 앞 방에 이미 나온 명령어는 뒤 방에서 빼고 보여준다 (겹치는 게 많아 목록이 길어지므로)
         var parts = [], seen = {}, dropped = false;
-        for (var i = 0; i < LIST_SPLIT_ROOMS.length; i++) {
-            var r = LIST_SPLIT_ROOMS[i];
+        for (var i = 0; i < split.length; i++) {
+            var r = split[i];
             var all = triggersOf(tableFor(r));
             var ks = [];
             for (var j = 0; j < all.length; j++) {
@@ -677,13 +711,13 @@ function regAdd(kind, rest) {
     if (!trigger || !say) return usage;
     if (trigger.charAt(0) === PREFIX) return "명령어는 " + PREFIX + " 로 시작할 수 없어요.";
     if (trigger.charAt(0) === CONTAIN_MARK) return CONTAIN_MARK + " 로 시작하는 이름은 쓸 수 없어요.";
-    if (isFixed(trigger)) {
+    if (isFixed(trigger, kind)) {
         return "「" + trigger + "」 는 깃헙에서 관리하는 고정 명령어예요.\n" +
             "여기서는 덮어쓸 수 없으니 다른 이름을 써 주세요.";
     }
 
-    // 갈래가 달라도 이름이 겹치면 어느 쪽이 나갈지 헷갈리므로 막는다
-    var owner = kindHaving(trigger);
+    // 반응하는 방이 겹치는 갈래에 같은 이름이 있으면 어느 쪽이 나갈지 헷갈리므로 막는다
+    var owner = kindHaving(trigger, kind);
     if (owner) {
         return "「" + trigger + "」 는 이미 " + PREFIX + owner.cmd + " 으로 등록돼 있어요.\n" +
             "바꾸려면 먼저 " + PREFIX + "삭제" + REG_SEP + trigger + " 하고 다시 등록해 주세요.";
@@ -703,17 +737,20 @@ function regAdd(kind, rest) {
 }
 
 /** "/삭제_" 뒤쪽을 받아 지운다 — 등록분만 지울 수 있다 */
-function regDel(rest) {
+function regDel(room, rest) {
     var trigger = String(rest).trim();
     if (!trigger) return "이렇게 써 주세요\n" + PREFIX + "삭제" + REG_SEP + "명령어";
 
-    // 어느 갈래로 등록했든 같은 /삭제 로 지운다
-    var kind = kindHaving(trigger);
+    // 이 방에서 넣은 갈래만 지울 수 있다 — 다른 방이 관리하는 건 건드리지 않는다
+    var mine = kindsFrom(room), kind = null;
+    for (var i = 0; i < mine.length; i++) {
+        if (regsOf(mine[i]).hasOwnProperty(trigger)) { kind = mine[i]; break; }
+    }
     if (!kind) {
         if (isFixed(trigger)) {
             return "「" + trigger + "」 는 깃헙에서 관리하는 고정 명령어라 여기서는 못 지워요.";
         }
-        return "「" + trigger + "」 는 등록된 게 없어요.";
+        return "「" + trigger + "」 는 (이 방에서) 등록된 게 없어요.";
     }
 
     var regs = regsOf(kind);
@@ -819,9 +856,10 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         // ⑤-2 방에서 직접 넣고 빼기 — 정해진 방에서만, 누구나
         //     "/삭제_" 로 받으므로 위에서 처리한 /삭제내역 과 겹치지 않는다
-        if (room === REG_ROOM) {
-            for (var kk = 0; kk < REG_KINDS.length; kk++) {
-                var kind = REG_KINDS[kk];
+        var myKinds = kindsFrom(room);
+        if (myKinds.length > 0) {
+            for (var kk = 0; kk < myKinds.length; kk++) {
+                var kind = myKinds[kk];
                 var addCmd = PREFIX + kind.cmd + REG_SEP;
                 if (text === PREFIX + kind.cmd) { replier.reply(regAdd(kind, "")); return; }
                 if (text.indexOf(addCmd) === 0) {
@@ -830,8 +868,11 @@ function response(room, msg, sender, isGroupChat, replier) {
                 }
             }
             var delCmd = PREFIX + "삭제" + REG_SEP;
-            if (text === PREFIX + "삭제") { replier.reply(regDel("")); return; }
-            if (text.indexOf(delCmd) === 0) { replier.reply(regDel(text.substring(delCmd.length))); return; }
+            if (text === PREFIX + "삭제") { replier.reply(regDel(room, "")); return; }
+            if (text.indexOf(delCmd) === 0) {
+                replier.reply(regDel(room, text.substring(delCmd.length)));
+                return;
+            }
         }
 
         // ⑥ 등록된 트리거 — 메시지 전체가 정확히 일치할 때
