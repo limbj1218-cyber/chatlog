@@ -14,6 +14,9 @@
  *    .질문                    → 클로드가 답한다 (관리자가 켰을 때, 답은 1~2분 뒤)
  *    .. / ...                 → 클로드 답변 켜기 / 끄기 (관리자)
  *    /클로드 /클로드토큰      → 클로드 상태 / 깃헙 토큰 등록 (토큰은 관리자)
+ *    /지정_유저명_값          → 그 사람의 재련값을 값으로 바꾼다 (관리자)
+ *    /초기화_유저명           → 그 사람의 재련 기록을 지운다 (관리자)
+ *    /전부_값                 → 이 방 사람 모두의 재련값을 값으로 바꾼다 (관리자)
  *    /초기화 /삭제            → 관리자 전용
  *
  *  ◆ 제련봇(bot/제련봇.js)과는 완전히 별개다.
@@ -29,7 +32,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "사건봇";
-var BOT_VER = "1112-11";
+var BOT_VER = "1112-14";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["사건"];
@@ -205,6 +208,97 @@ function isAdmin(sender) {
     return false;
 }
 
+// ═══════════════ 재련값 지정 (관리자, 2026-11-12) ═══════════════
+// /지정_유저명_값 → 그 사람의 재련 단계를 값으로 바꾼다. 값은 1 ~ 확률표의 마지막 단계.
+// 대화명에 "_" 가 들어 있을 수 있어 "마지막 _" 에서 값과 나눈다.
+// 오타로 없는 사람이 랭킹에 생기지 않게, 재련 기록이 있거나 이 방에서 말한 적 있는 대화명만 받는다 (정확히 일치).
+// 파괴 상태가 있는 봇(루나봇)이면 파괴도 풀어 준다 — 관리자가 단계를 정해 준 것이므로.
+function maxRefineLevel() {
+    var m = 1;
+    for (var k in chances) if (chances.hasOwnProperty(k) && Number(k) > m) m = Number(k);
+    return m;
+}
+
+/** /지정_ 명령이면 답장 문구, 아니면 null */
+function handleSetLevel(room, raw, sender) {
+    if (raw.indexOf("/지정_") !== 0) return null;
+    if (!isAdmin(sender)) return "해당 명령어를 사용할 수 있는 권한이 없습니다.";
+    var rest = raw.substring(4);
+    var cut = rest.lastIndexOf("_");
+    var name = cut === -1 ? "" : rest.substring(0, cut).trim();
+    var valStr = cut === -1 ? "" : rest.substring(cut + 1).trim();
+    if (!name || !/^\d+$/.test(valStr)) return "형식: /지정_유저명_값\n예) /지정_철수_7";
+    var val = parseInt(valStr, 10), max = maxRefineLevel();
+    if (val < 1 || val > max) return "값은 1~" + max + " 사이로 넣어 주세요.";
+    var inRoom = roomUsers[room] || {};
+    if (!userData.hasOwnProperty(name) && !inRoom[name]) {
+        return "\"" + name + "\" 님을 찾을 수 없어요.\n이 방에서 말한 적 있는 대화명을 정확히 써 주세요.";
+    }
+    var prev = userData[name] || 1;
+    userData[name] = val;
+    inRoom[name] = true;
+    roomUsers[room] = inRoom;
+    var unbroken = false;
+    if (typeof broken !== "undefined" && broken[name]) {
+        delete broken[name];
+        if (typeof repairPrompt !== "undefined") delete repairPrompt[name];
+        unbroken = true;
+    }
+    saveData();
+    return "✏️ " + name + "님의 재련값을 " + prev + " → " + val + "(으)로 바꿨습니다." +
+        (unbroken ? "\n(파괴 상태도 풀었어요)" : "");
+}
+
+// ═══════════════ 한 사람 재련 기록 지우기 (관리자, 2026-11-12) ═══════════════
+// /초기화_유저명 → 그 사람의 재련값·오늘 횟수(·파괴 상태)를 모두 지운다. 랭킹에서 빠지고 다음 재련은 1부터.
+// 전체 "/초기화"(모두의 오늘 횟수)와 헷갈리지 않게 반드시 "/초기화_" 로 받는다. 대화명은 정확히 일치해야 한다.
+
+/** /초기화_ 명령이면 답장 문구, 아니면 null */
+function handleResetUser(room, raw, sender) {
+    if (raw.indexOf("/초기화_") !== 0) return null;
+    if (!isAdmin(sender)) return "해당 명령어를 사용할 수 있는 권한이 없습니다.";
+    var name = raw.substring(5).trim();
+    if (!name) return "형식: /초기화_유저명\n예) /초기화_철수";
+    var had = userData.hasOwnProperty(name) || dailyLimit.hasOwnProperty(name) ||
+        (typeof broken !== "undefined" && broken.hasOwnProperty(name));
+    if (!had) return "\"" + name + "\" 님의 재련 기록이 없어요.\n대화명을 정확히 써 주세요.";
+    var prev = userData[name];
+    delete userData[name];
+    delete dailyLimit[name];
+    if (typeof broken !== "undefined") delete broken[name];
+    if (typeof repairPrompt !== "undefined") delete repairPrompt[name];
+    saveData();
+    return "🧹 " + name + "님의 재련 기록을 지웠습니다." + (prev ? " (" + prev + "재련)" : "") +
+        "\n다음 재련은 1부터 시작해요.";
+}
+
+// ═══════════════ 방 전체 재련값 일괄 지정 (관리자, 2026-11-12) ═══════════════
+// /전부_값 → 이 방에서 말한 적 있는 사람 모두의 재련값을 값으로 바꾼다 (봇은 말한 사람만 안다).
+// 재련 기록이 없던 사람도 포함되므로 그 사람들도 랭킹에 나온다. 다른 방 사람은 건드리지 않는다.
+// 파괴 상태가 있는 봇(루나봇)이면 파괴도 풀어 준다 (/지정 과 같은 규칙).
+
+/** /전부_ 명령이면 답장 문구, 아니면 null */
+function handleSetAll(room, raw, sender) {
+    if (raw.indexOf("/전부_") !== 0) return null;
+    if (!isAdmin(sender)) return "해당 명령어를 사용할 수 있는 권한이 없습니다.";
+    var valStr = raw.substring(4).trim();
+    if (!/^\d+$/.test(valStr)) return "형식: /전부_값\n예) /전부_5";
+    var val = parseInt(valStr, 10), max = maxRefineLevel();
+    if (val < 1 || val > max) return "값은 1~" + max + " 사이로 넣어 주세요.";
+    var inRoom = roomUsers[room] || {};
+    var count = 0;
+    for (var name in inRoom) {
+        if (!inRoom.hasOwnProperty(name) || !inRoom[name]) continue;
+        userData[name] = val;
+        if (typeof broken !== "undefined") delete broken[name];
+        if (typeof repairPrompt !== "undefined") delete repairPrompt[name];
+        count++;
+    }
+    if (!count) return "이 방에서 말한 사람이 아직 없어요.";
+    saveData();
+    return "✏️ 이 방 " + count + "명의 재련값을 모두 " + val + "(으)로 바꿨습니다.";
+}
+
 // ═══════════════ 명령어 등록 (2026-11-12) ═══════════════
 // /등록_명령어_할말 → 그 방에서 "명령어"를 그대로 치면 "할말"을 보낸다.
 // /삭제_명령어 로 지우고, /리스트 로 본다. 누구나 넣고 뺄 수 있다 (관리자 아님). 방별로 따로 저장.
@@ -216,7 +310,7 @@ var RESERVED = ["재련가즈아", "제련가즈아", "/랭킹", "/확률", "/�
 function isReserved(trigger) {
     var t = trigger.toLowerCase();
     if (RESERVED.indexOf(t) !== -1) return true;
-    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
+    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/지정") === 0 || t.indexOf("/초기화") === 0 || t.indexOf("/전부") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
         || t.charAt(0) === "." || t.indexOf("/클로드") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
         for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
@@ -938,6 +1032,18 @@ function response(room, msg, sender, isGroupChat, replier) {
         // ── 명령어 등록·삭제·목록 (누구나) ──
         var regReply = handleRegister(room, raw);
         if (regReply !== null) return replier.reply(regReply);
+
+        // ── 재련값 지정 (관리자) ──
+        var setReply = handleSetLevel(room, raw, sender);
+        if (setReply !== null) return replier.reply(setReply);
+
+        // ── 한 사람 재련 기록 지우기 (관리자) ──
+        var resetReply = handleResetUser(room, raw, sender);
+        if (resetReply !== null) return replier.reply(resetReply);
+
+        // ── 방 전체 재련값 일괄 지정 (관리자) ──
+        var allReply = handleSetAll(room, raw, sender);
+        if (allReply !== null) return replier.reply(allReply);
 
         // ── 거짓말 탐지기 (누구나) ──
         var detectReply = handleDetect(raw);
