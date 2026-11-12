@@ -41,7 +41,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-30";
+var BOT_VER = "1112-31";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -846,7 +846,7 @@ var EXP_MONSTERS = [
 [125,"그랜드 페코",885,885,2],
 [126,"블루 베나투",897,299,3],
 [126,"고트",598,598,3],
-[126,"저주받은 묘지기",449,1346,2],
+[126,"레이스 데드",449,1346,2],
 [127,"오렌지 베나투",455,758,3],
 [127,"선더링 디미크",606,606,3],
 [128,"하피",614,614,3],
@@ -1550,7 +1550,7 @@ var CARD_MONSTERS = [
 ["그랜드 페코","Grand Peco",125,"신발","Max HP +20% / 염속성 저항 +37.5%"],
 ["블루 베나투","Blue Venatu",126,"무기","소형 몬스터에 입히는 대미지 +25%"],
 ["고트","Goat",126,"무기","ATK +20%"],
-["저주받은 묘지기","Cursed Grave Keeper",126,"무기","대형 몬스터에 입히는 대미지 +25%"],
+["레이스 데드","Cursed Grave Keeper",126,"무기","대형 몬스터에 입히는 대미지 +25%"],
 ["오렌지 베나투","Orange Venatu",127,"액세서리","상태이상 관통 +12.5 / 최종 물리 대미지 추가 +10%"],
 ["선더링 디미크","Sundering Dimik",127,"머리장식","독속성 강화 +25% / 염속성 강화 +25%"],
 ["하피","Harpy",128,"무기","MATK +20%"],
@@ -1614,6 +1614,13 @@ var CARD_MONSTERS = [
 
 function cardKey(str) { return String(str).replace(/\s+/g, "").toLowerCase(); }
 
+// 다른 이름으로도 찾기 — { 다른 이름: 지금 표의 이름 }
+// 경험치표의 Lv.111 이상 한글 이름은 영문을 옮긴 것이라 게임 이름과 다를 수 있다. 게임 이름이 확인되면
+// 표(CARD_MONSTERS·EXP_MONSTERS)는 게임 이름으로 고치고, 옛 이름은 여기 남겨 계속 찾히게 한다.
+var CARD_ALIASES = {
+    "저주받은 묘지기": "레이스 데드"     // 2026-11-12 사용자 확인: 게임 이름은 레이스 데드
+};
+
 var CARD_INDEX = (function () {
     var idx = {}, base = {}, i, k;
     for (i = 0; i < CARD_MONSTERS.length; i++) {
@@ -1623,6 +1630,9 @@ var CARD_INDEX = (function () {
         if (b !== cardKey(CARD_MONSTERS[i][0])) base[b] = base.hasOwnProperty(b) ? -1 : i;
     }
     for (k in base) if (base.hasOwnProperty(k) && base[k] >= 0 && !idx.hasOwnProperty(k)) idx[k] = base[k];
+    for (k in CARD_ALIASES) {
+        if (CARD_ALIASES.hasOwnProperty(k) && idx.hasOwnProperty(cardKey(CARD_ALIASES[k]))) idx[cardKey(k)] = idx[cardKey(CARD_ALIASES[k])];
+    }
     return idx;
 })();
 
