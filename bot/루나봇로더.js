@@ -11,6 +11,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
+var LOADER_VER = "1112-1";   // 로더를 다시 붙여넣었는지 /루나로더 에서 확인용 (1112-1: /내정보 추가)
 var GLOBAL_SCOPE = this;
 
 // ── 폰에만 두는 설정 (비워두면 본체 기본값 사용) ────────────
@@ -190,8 +191,90 @@ function shouldReportError(text) {
     return true;
 }
 
+// ─── 보낸 사람 식별 (대화명을 바꿔도 같은 사람인지 알아보려고, 2026-11-12) ───
+// 카톡 알림에는 회원 ID 가 없다. 대신 쓸 수 있는 값 두 가지를 모은다:
+//   ① 메신저봇R API2 의 author.hash (앱 버전에 따라 없을 수 있다)
+//   ② 프로필 사진으로 만든 지문 (사진을 바꾸면 달라지고, 기본 프사끼리는 겹친다)
+// 메시지마다 사진을 해시하면 무거우니 ②는 필요할 때만 계산한다 (who.profileKey()).
+// extra: API2 면 { m: 메시지 객체 }, API1 이면 { imageDB: ... }
+
+function sha1Hex(str) {
+    var md = java.security.MessageDigest.getInstance("SHA-1");
+    var b = md.digest(new java.lang.String(str).getBytes("UTF-8"));
+    var out = "";
+    for (var i = 0; i < b.length; i++) {
+        var v = b[i] & 0xff;
+        out += (v < 16 ? "0" : "") + v.toString(16);
+    }
+    return out;
+}
+
+function authorHash(extra) {
+    try {
+        var a = extra && extra.m ? extra.m.author : null;
+        if (a && a.hash !== undefined && a.hash !== null) {
+            var h = String(a.hash);
+            if (h && h !== "undefined" && h !== "null") return h;
+        }
+    } catch (e) {}
+    return null;
+}
+
+function profileBase64(extra) {
+    try {
+        var a = extra && extra.m ? extra.m.author : null;
+        if (a && a.avatar && typeof a.avatar.getBase64 === "function") {
+            var s = a.avatar.getBase64();
+            if (s) return String(s);
+        }
+    } catch (e) {}
+    try {
+        var db = extra ? extra.imageDB : null;
+        if (db) {
+            if (typeof db.getProfileBase64 === "function") return String(db.getProfileBase64());
+            if (typeof db.getProfileImage === "function") return String(db.getProfileImage());
+        }
+    } catch (e) {}
+    return null;
+}
+
+function profileKey(extra) {
+    var b = profileBase64(extra);
+    if (!b) return null;
+    try { return sha1Hex(b).substring(0, 12); } catch (e) { return null; }
+}
+
+/** 본체에 넘길 보낸 사람 정보 (지금 본체는 쓰지 않는다 — 기록을 사람 단위로 바꿀 때 쓴다) */
+function makeWho(sender, extra) {
+    return {
+        name: String(sender),
+        hash: authorHash(extra),
+        profileKey: function () { return profileKey(extra); }
+    };
+}
+
+/** /내정보 — 이 폰의 앱이 사람을 구분할 값을 주는지 확인 */
+function myInfoText(sender, extra) {
+    var lines = ["🪪 내 정보 (루나봇 로더 " + LOADER_VER + ")", "대화명: " + sender, "받은 방식: " + apiMode];
+    var h = authorHash(extra);
+    lines.push("보낸 사람 hash: " + (h ? h : "없음 ❌"));
+    var b64 = profileBase64(extra);
+    var pk = profileKey(extra);
+    lines.push("프로필 사진 지문: " + (pk ? pk + " (사진 " + b64.length + "자)" : "없음 ❌"));
+    try {
+        var a = extra && extra.m ? extra.m.author : null;
+        if (a) {
+            var keys = [];
+            for (var k in a) { if (keys.length < 15) keys.push(String(k)); }
+            if (keys.length) lines.push("보낸 사람 항목: " + keys.join(", "));
+        }
+    } catch (e) {}
+    lines.push("", "👉 대화명을 바꾼 뒤 다시 /내정보 를 쳐서 hash·지문이 그대로인지 봐 주세요.");
+    return lines.join("\n");
+}
+
 /** 실제 처리 (API1/API2 공통 진입점) */
-function handle(room, msg, sender, isGroupChat, replier) {
+function handle(room, msg, sender, isGroupChat, replier, extra) {
     var text = "";
     try {
         text = String(msg).trim();
@@ -209,8 +292,13 @@ function handle(room, msg, sender, isGroupChat, replier) {
             replier.reply("🔄 깃헙에서 최신 루나봇 코드를 불러왔어요! (" + loadMethod + ")");
             return;
         }
+        if (text === "/내정보") {
+            if (MY_ROOMS.length && MY_ROOMS.indexOf(String(room)) === -1) return;
+            replier.reply(myInfoText(sender, extra));
+            return;
+        }
         if (text === "/루나로더") {
-            replier.reply("🧩 루나봇 로더 상태\n" +
+            replier.reply("🧩 루나봇 로더 상태 (로더 " + LOADER_VER + ")\n" +
                 "API 방식: " + apiMode + "\n" +
                 "API2 리스너: " + (api2Ready ? "등록됨 ✅" : "미등록 (API1 모드)") + "\n" +
                 "방 이름: [" + room + "]\n" +
@@ -229,7 +317,7 @@ function handle(room, msg, sender, isGroupChat, replier) {
             loadRemote();
         }
 
-        remoteResponse(room, msg, sender, isGroupChat, replier);
+        remoteResponse(room, msg, sender, isGroupChat, replier, makeWho(sender, extra));
     } catch (e) {
         lastError = String(e);
         if (shouldReportError(text)) {
@@ -239,9 +327,9 @@ function handle(room, msg, sender, isGroupChat, replier) {
 }
 
 // ① 구버전 API (메신저봇R API1 / 다크토네이도 챗봇 등)
-function response(room, msg, sender, isGroupChat, replier) {
+function response(room, msg, sender, isGroupChat, replier, imageDB) {
     apiMode = "API1 (response)";
-    handle(room, msg, sender, isGroupChat, replier);
+    handle(room, msg, sender, isGroupChat, replier, { imageDB: imageDB });
 }
 
 // ② 신버전 API (메신저봇R API2)
@@ -263,7 +351,8 @@ function response(room, msg, sender, isGroupChat, replier) {
                 String(m.content),
                 String(m.author ? m.author.name : ""),
                 !!m.isGroupChat,
-                { reply: function (t) { m.reply(t); } }
+                { reply: function (t) { m.reply(t); } },
+                { m: m }
             );
         });
         api2Ready = true;
