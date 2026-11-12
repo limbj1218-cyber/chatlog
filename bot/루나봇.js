@@ -38,7 +38,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-23";
+var BOT_VER = "1112-25";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -147,6 +147,7 @@ function loadData() {
         custom: parsed.custom || {},              // { 방: { 명령어: 할말 } } 등록 명령어
         askOn: parsed.askOn || {},                // { 방: true } 클로드 답변 켜짐
         startLevel: parsed.startLevel || {},      // { 방: 숫자 } 기록 없는 사람의 시작 재련값 (/전부_)
+        appliedFixes: parsed.appliedFixes || [],  // 한 번만 하는 데이터 손질 중 이미 한 것 (ONE_TIME_FIXES)
         people: parsed.people || {},              // { "#h:해시": { name: 최초 대화명, last: 최근 대화명 } } (절대 화면에 안 나감)
         roomUsers: rooms
     };
@@ -162,6 +163,7 @@ var custom = store.custom;
 var askOn = store.askOn;
 var startLevel = store.startLevel;
 var people = store.people;
+var appliedFixes = store.appliedFixes;
 
 /** 이 방에서 기록 없는 사람이 시작하는 재련값 (/전부_ 로 정한다, 기본 1) */
 function roomStart(room) {
@@ -184,6 +186,7 @@ function saveData() {
     out.askOn = askOn;
     out.startLevel = startLevel;
     out.people = people;
+    out.appliedFixes = appliedFixes;
     try { __LUNA_DATA__ = out; } catch (e) {}       // 파일 저장이 막혀도 메모리에는 유지
     fileWrite(DATA_FILE, JSON.stringify(out));
 }
@@ -1186,6 +1189,76 @@ function handleAsk(room, raw, sender, isGroupChat) {
     return "🤔 클로드가 생각 중이에요… (1~2분 걸려요)";
 }
 
+// ═══════════════ 한 번만 하는 데이터 손질 (관리자 요청) ═══════════════
+// 방에 명령을 치지 않고 재련 기록을 바로잡을 때 쓴다 — 업데이트 뒤 그 방에 첫 메시지가 올 때 조용히 한 번만 적용하고
+// appliedFixes 에 id 를 남겨 다시 하지 않는다. 방에는 아무 말도 하지 않는다.
+// ★ 이 본체는 설명서를 보고 다른 사람도 받아 쓰므로, 엉뚱한 봇의 데이터를 지우지 않게
+//   ① 그 방(fx.room)에 메시지가 왔을 때만 ② 랭킹 이름 중 3명 이상을 이 봇이 알고 있을 때만 적용한다.
+// 이름은 랭킹에 보이는 대화명 그대로. hash 로 묶인 사람이면 그 사람(최초·최근 대화명으로 찾음)에게 넣고 표시 이름도 이 이름으로 맞춘다.
+// ※ 오늘 쓴 재련 횟수(dailyLimit)는 건드리지 않는다 — 횟수가 갑자기 다시 생기면 사람들이 눈치챈다.
+var ONE_TIME_FIXES = [
+    {
+        id: "luna-ranking-2026-11-12",   // 2026-11-12: 루나 방 재련 기록을 전부 지우고 이 랭킹으로 다시 세팅
+        room: "루나",
+        wipe: true,
+        levels: [
+            ["송곳/세이지", 6],
+            ["퐁듀맛/나이트", 5],
+            ["샤르롱/법사", 5],
+            ["악당토끼", 4],
+            ["츄링/kwave/마닌", 4],
+            ["비폭력주의/책세이지", 4],
+            ["찡이.영술사", 4],
+            ["멱살잡힌스쳐(후파)", 4],
+            ["차니얌/스나", 4],
+            ["오태식 / 스나", 4],
+            ["쫑블리 / 닌자", 4],
+            ["아기공룡둘리", 3]
+        ]
+    }
+];
+
+function fixKeyFor(name) {
+    var k;
+    for (k in people) if (people.hasOwnProperty(k) && people[k].name === name) return k;
+    for (k in people) if (people.hasOwnProperty(k) && people[k].last === name) return k;
+    return name;
+}
+
+/** 이 봇이 아는 이름인가 (말한 적 있음·재련 기록·hash 사람의 최초/최근 대화명) */
+function fixKnowsName(room, name) {
+    if (fixKeyFor(name) !== name) return true;
+    return userData.hasOwnProperty(name) || !!(roomUsers[room] && roomUsers[room][name]);
+}
+
+function applyOneTimeFixes(room) {
+    var changed = false;
+    for (var i = 0; i < ONE_TIME_FIXES.length; i++) {
+        var fx = ONE_TIME_FIXES[i];
+        if (fx.room !== room || appliedFixes.indexOf(fx.id) !== -1) continue;
+        var known = 0;
+        for (var n = 0; n < fx.levels.length; n++) if (fixKnowsName(room, fx.levels[n][0])) known++;
+        if (known < 3) continue;   // 이 방 사람들이 아니다 — 건드리지 않는다
+        if (fx.wipe) {
+            // 재련값·파괴 상태 전부 삭제 (이 봇은 한 방 전용이라 전체를 지운다)
+            var k;
+            for (k in userData) if (userData.hasOwnProperty(k)) delete userData[k];
+            for (k in broken) if (broken.hasOwnProperty(k)) delete broken[k];
+            for (k in repairPrompt) if (repairPrompt.hasOwnProperty(k)) delete repairPrompt[k];
+        }
+        if (!roomUsers[fx.room]) roomUsers[fx.room] = {};
+        for (var j = 0; j < fx.levels.length; j++) {
+            var name = fx.levels[j][0], key = fixKeyFor(name);
+            userData[key] = fx.levels[j][1];
+            roomUsers[fx.room][key] = true;
+            if (people[key]) people[key].name = name;   // 화면 이름도 랭킹에 적힌 이름으로
+        }
+        appliedFixes.push(fx.id);
+        changed = true;
+    }
+    if (changed) saveData();
+}
+
 // ═══════════════ 메시지 처리 ═══════════════
 
 function response(room, msg, sender, isGroupChat, replier, who) {
@@ -1194,6 +1267,10 @@ function response(room, msg, sender, isGroupChat, replier, who) {
 
         // 보낸 사람 — 기록은 uKey(사람), 화면엔 uName(최초 대화명). 관리자 검사(isAdmin)는 지금 대화명 그대로
         var uKey = userKeyOf(sender, who);
+
+        // 한 번만 하는 데이터 손질 (조용히) — 보낸 사람의 최근 대화명을 먼저 적어 둔 뒤에 해야 그 사람을 이름으로 찾는다
+        applyOneTimeFixes(room);
+
         var uName = displayName(uKey);
         CUR_USER_KEY = uKey;
         CUR_USER_NAME = uName;
