@@ -12,6 +12,7 @@
  *    /리스트                  → 등록된 명령어 목록
  *    /탐지 할말               → 거짓말 탐지기 (참·거짓·중립 무작위, 누구나)
  *    /경험치 레벨             → ROX 사냥터 추천 (그 레벨~+3 몬스터 중 경험치×마릿수 1등, 누구나)
+ *    /메뉴얼 (/매뉴얼)        → 사용법 안내 (누구나)
  *    /초기화 /삭제            → 관리자 전용 (대화명에 "후파"가 들어간 사람)
  *
  *  ◆ 사건봇(bot/사건봇.js)을 복사해 루나 방용으로 따로 만든 봇이다 (2026-11-12).
@@ -31,7 +32,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-11";
+var BOT_VER = "1112-13";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -235,7 +236,7 @@ var RESERVED = ["재련가즈아", "제련가즈아", "/랭킹", "/확률", "/�
 function isReserved(trigger) {
     var t = trigger.toLowerCase();
     if (RESERVED.indexOf(t) !== -1) return true;
-    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/경험치") === 0) return true;
+    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼") return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
         for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
             if (REPAIR_KEYWORDS[i].toLowerCase() === t) return true;
@@ -637,6 +638,31 @@ function handleExp(raw) {
         + "\n※ 한 번에 젠되는 마릿수 기준 (대형 2 · 중형 3 · 소형 5마리)";
 }
 
+// ═══════════════ 사용법 (2026-11-12) ═══════════════
+// /메뉴얼 → 이 봇의 사용법. 맞춤법이 헷갈리기 쉬워 /매뉴얼 도 받는다.
+// ※ 명령어를 늘리거나 바꾸면 여기도 같이 고칠 것. 관리자 명령(/초기화·/삭제)은 일부러 뺐다 (사용자 요청).
+var MANUAL_TEXT = [
+    "📖 루나봇 사용법",
+    "",
+    "⚔️ 재련 (하루 2번)",
+    "재련가즈아 — 장비 재련. 성공하면 +1, 실패하면 그대로거나 1 내려가요",
+    "4단계부터는 파괴될 수도 있어요 💥",
+    "/확률 — 단계별 성공·유지·하락·파괴 확률",
+    "/랭킹 — 이 방 재련 순위",
+    "",
+    "🛠️ 파괴됐을 때",
+    "재련가즈아를 치면 수리 문구를 알려줘요. 그 문구를 그대로 외치면 복구!",
+    "",
+    "📝 명령어 등록 (누구나)",
+    "/등록_명령어_할말 — 예) /등록_공지_오늘 8시에 모여요",
+    "/삭제_명령어 — 등록한 명령어 지우기",
+    "/리스트 — 등록된 명령어 보기",
+    "",
+    "🎲 놀이 (누구나)",
+    "/탐지 할말 — 거짓말 탐지기 (참·거짓·중립)",
+    "/경험치 레벨 — ROX 추천 몬스터 (예: /경험치 110)"
+].join("\n");
+
 // ═══════════════ 메시지 처리 ═══════════════
 
 function response(room, msg, sender, isGroupChat, replier) {
@@ -663,6 +689,9 @@ function response(room, msg, sender, isGroupChat, replier) {
         // ── ROX 경험치 추천 (누구나) ──
         var expReply = handleExp(raw);
         if (expReply !== null) return replier.reply(expReply);
+
+        // ── 사용법 (누구나) ──
+        if (raw === "/메뉴얼" || raw === "/매뉴얼") return replier.reply(MANUAL_TEXT);
 
         // ── 재련 시도 ──
         if (msg === "제련가즈아" || msg === "재련가즈아") {
