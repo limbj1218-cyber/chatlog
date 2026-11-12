@@ -41,7 +41,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-31";
+var BOT_VER = "1112-32";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -1637,13 +1637,29 @@ var CARD_INDEX = (function () {
 })();
 
 /** 몬스터 이름이면 카드 안내, 아니면 null */
+// ── 보기 좋게 (2026-11-12 사용자 요청: 시인성) — 부위마다 그림, 옵션은 한 줄에 하나씩 ──
+var CARD_SLOT_ORDER = ["무기", "머리장식", "의상", "걸칠것", "신발", "액세서리"];
+var CARD_SLOT_ICON = { "무기": "⚔️", "머리장식": "🎩", "의상": "👕", "걸칠것": "🧥", "신발": "👟", "액세서리": "💍" };
+var CARD_LINE = "━━━━━━━━━━━━";
+
+function cardSlotLabel(slot) {
+    return (CARD_SLOT_ICON[slot] || "🃏") + " " + (slot || "부위 모름");
+}
+
+function cardOptionLines(opt, indent) {
+    var segs = String(opt).split(" / "), out = [];
+    for (var i = 0; i < segs.length; i++) out.push(indent + "· " + segs[i]);
+    return out;
+}
+
 function handleCard(raw) {
     var k = cardKey(raw);
     if (!k || !CARD_INDEX.hasOwnProperty(k)) return null;
     var m = CARD_MONSTERS[CARD_INDEX[k]];
-    var head = "🃏 " + m[0] + " 카드 (Lv." + m[2] + ")";
-    if (!m[4]) return head + "\n카드 정보가 아직 없어요.";
-    return head + "\n부위: " + (m[3] || "?") + "\n옵션: " + m[4];
+    var lines = ["🃏 " + m[0] + " 카드", "Lv." + m[2] + (m[4] ? "  |  " + cardSlotLabel(m[3]) : ""), CARD_LINE];
+    if (!m[4]) lines.push("카드 정보가 아직 없어요.");
+    else lines = lines.concat(cardOptionLines(m[4], ""));
+    return lines.join("\n");
 }
 
 // ═══════════════ 옵션으로 카드 찾기 (2026-11-12, 누구나) ═══════════════
@@ -1687,15 +1703,33 @@ function handleCardSearch(raw) {
         if (found) hits.push(m);
     }
     if (!hits.length) {
-        return "🔎 \"" + shown + "\" 옵션이 붙은 카드를 못 찾았어요.\n예) /카드 풍속증가, /카드 ATK, /카드 MaxHP";
+        return "🔎 \"" + shown + "\" 카드\n" + CARD_LINE + "\n찾는 옵션이 붙은 카드가 없어요.\n예) /카드 풍속증가 · /카드 ATK · /카드 MaxHP";
     }
+    // 레벨 낮은 순으로 고른 뒤, 부위별로 묶어서 보여준다
     hits.sort(function (a, b) { return a[2] - b[2]; });
-    var lines = [];
-    for (var k = 0; k < hits.length && k < CARD_SEARCH_MAX; k++) {
-        lines.push("• " + (hits[k][3] || "?") + " · " + hits[k][0] + "(Lv." + hits[k][2] + "): " + hits[k][4]);
+    var shownHits = hits.slice(0, CARD_SEARCH_MAX);
+    var groups = {}, order = [], g, k;
+    for (k = 0; k < shownHits.length; k++) {
+        g = shownHits[k][3] || "";
+        if (!groups.hasOwnProperty(g)) { groups[g] = []; order.push(g); }
+        groups[g].push(shownHits[k]);
     }
-    return "🔎 \"" + shown + "\" 카드 " + hits.length + "장\n" + lines.join("\n") +
-        (hits.length > CARD_SEARCH_MAX ? "\n… 외 " + (hits.length - CARD_SEARCH_MAX) + "장 (더 자세히 써 주세요)" : "");
+    order.sort(function (a, b) {
+        var ia = CARD_SLOT_ORDER.indexOf(a), ib = CARD_SLOT_ORDER.indexOf(b);
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
+    var lines = ["🔎 \"" + shown + "\" 카드 · " + hits.length + "장", CARD_LINE];
+    for (var o = 0; o < order.length; o++) {
+        if (o > 0) lines.push("");
+        lines.push(cardSlotLabel(order[o]));
+        var list = groups[order[o]];
+        for (var j = 0; j < list.length; j++) {
+            lines.push(" ▸ " + list[j][0] + " (Lv." + list[j][2] + ")");
+            lines = lines.concat(cardOptionLines(list[j][4], "    "));
+        }
+    }
+    if (hits.length > CARD_SEARCH_MAX) lines.push("", "… 외 " + (hits.length - CARD_SEARCH_MAX) + "장 (더 자세히 써 주세요)");
+    return lines.join("\n");
 }
 
 // ═══════════════ 메시지 처리 ═══════════════
