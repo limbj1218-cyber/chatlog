@@ -41,7 +41,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-32";
+var BOT_VER = "1113-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -1276,6 +1276,13 @@ var ONE_TIME_FIXES = [
             ["쫑블리 / 닌자", 4],
             ["아기공룡둘리", 3]
         ]
+    },
+    {
+        id: "luna-rename-2026-11-13",    // 2026-11-13: 랭킹의 샤르롱/법사 를 미르ss / Kwave 로 (재련값은 그대로)
+        room: "루나",
+        renames: [
+            ["샤르롱/법사", "미르ss / Kwave"]
+        ]
     }
 ];
 
@@ -1292,11 +1299,53 @@ function fixKnowsName(room, name) {
     return userData.hasOwnProperty(name) || !!(roomUsers[room] && roomUsers[room][name]);
 }
 
+/** 랭킹에 보이는 이름 from 을 to 로 바꾼다 (재련값·오늘 횟수·파괴는 from 쪽 그대로). 한 일이 있으면 true
+ *  · hash 사람이면 화면 이름(people.name)만 to 로 바꾼다
+ *  · 대화명 기록이면 기록을 to 이름으로 옮긴다
+ *  · to 이름의 대화명 기록이 따로 있으면(같은 사람의 옛 기록) 랭킹에 둘이 뜨지 않게 이 사람 쪽으로 합치고 재련값은 from 것을 남긴다 */
+function renameForFix(room, from, to) {
+    if (!fixKnowsName(room, from)) return false;
+    var key = fixKeyFor(from);
+    var keep = userData.hasOwnProperty(key) ? userData[key] : null;
+    if (key !== from || people[key]) {
+        // hash 사람
+        if (key !== to && !people[to] && hasNameRecord(to)) mergeNameInto(to, key);
+        if (keep !== null) userData[key] = keep;
+        people[key].name = to;
+        return true;
+    }
+    // 대화명 기록 → to 이름으로 옮김 (to 쪽에 남은 기록이 있으면 from 쪽 값이 이긴다)
+    var objs = [userData, dailyLimit];
+    if (typeof broken !== "undefined") objs.push(broken);
+    if (typeof repairPrompt !== "undefined") objs.push(repairPrompt);
+    for (var i = 0; i < objs.length; i++) {
+        if (objs[i].hasOwnProperty(from)) { objs[i][to] = objs[i][from]; delete objs[i][from]; }
+    }
+    for (var r in roomUsers) {
+        if (roomUsers.hasOwnProperty(r) && roomUsers[r] && roomUsers[r][from]) {
+            delete roomUsers[r][from];
+            roomUsers[r][to] = true;
+        }
+    }
+    return true;
+}
+
 function applyOneTimeFixes(room) {
     var changed = false;
     for (var i = 0; i < ONE_TIME_FIXES.length; i++) {
         var fx = ONE_TIME_FIXES[i];
         if (fx.room !== room || appliedFixes.indexOf(fx.id) !== -1) continue;
+        if (fx.renames) {
+            // 이름 바꾸기 — 바꿀 이름을 이 봇이 알 때만 (모르면 다음 메시지 때 다시 본다)
+            var did = false;
+            for (var rn = 0; rn < fx.renames.length; rn++) {
+                if (renameForFix(room, fx.renames[rn][0], fx.renames[rn][1])) did = true;
+            }
+            if (!did) continue;
+            appliedFixes.push(fx.id);
+            changed = true;
+            continue;
+        }
         var known = 0;
         for (var n = 0; n < fx.levels.length; n++) if (fixKnowsName(room, fx.levels[n][0])) known++;
         if (known < 3) continue;   // 이 방 사람들이 아니다 — 건드리지 않는다
