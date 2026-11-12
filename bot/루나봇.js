@@ -38,7 +38,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-19";
+var BOT_VER = "1112-20";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -144,8 +144,9 @@ function loadData() {
         dailyLimit: parsed.dailyLimit || {},
         broken: parsed.broken || {},              // { 이름: true } 장비 파괴 상태
         repairPrompt: parsed.repairPrompt || {},  // { 이름: 수리 문구 }
-        custom: parsed.custom || {},
-        askOn: parsed.askOn || {},                // { 방: true } 클로드 답변 켜짐              // { 방: { 명령어: 할말 } } 등록 명령어
+        custom: parsed.custom || {},              // { 방: { 명령어: 할말 } } 등록 명령어
+        askOn: parsed.askOn || {},                // { 방: true } 클로드 답변 켜짐
+        startLevel: parsed.startLevel || {},      // { 방: 숫자 } 기록 없는 사람의 시작 재련값 (/전부_)
         roomUsers: rooms
     };
 }
@@ -158,6 +159,13 @@ var repairPrompt = store.repairPrompt;
 var roomUsers = store.roomUsers;
 var custom = store.custom;
 var askOn = store.askOn;
+var startLevel = store.startLevel;
+
+/** 이 방에서 기록 없는 사람이 시작하는 재련값 (/전부_ 로 정한다, 기본 1) */
+function roomStart(room) {
+    var v = Number(startLevel[room]);
+    return v >= 1 ? v : 1;
+}
 
 function saveData() {
     var out = { userData: userData, dailyLimit: dailyLimit,
@@ -172,6 +180,7 @@ function saveData() {
     }
     out.custom = custom;
     out.askOn = askOn;
+    out.startLevel = startLevel;
     try { __LUNA_DATA__ = out; } catch (e) {}       // 파일 저장이 막혀도 메모리에는 유지
     fileWrite(DATA_FILE, JSON.stringify(out));
 }
@@ -275,7 +284,7 @@ function handleSetLevel(room, raw, sender) {
     if (!userData.hasOwnProperty(name) && !inRoom[name]) {
         return "\"" + name + "\" 님을 찾을 수 없어요.\n이 방에서 말한 적 있는 대화명을 정확히 써 주세요.";
     }
-    var prev = userData[name] || 1;
+    var prev = userData[name] || roomStart(room);
     userData[name] = val;
     inRoom[name] = true;
     roomUsers[room] = inRoom;
@@ -291,7 +300,7 @@ function handleSetLevel(room, raw, sender) {
 }
 
 // ═══════════════ 한 사람 재련 기록 지우기 (관리자, 2026-11-12) ═══════════════
-// /초기화_유저명 → 그 사람의 재련값·오늘 횟수(·파괴 상태)를 모두 지운다. 랭킹에서 빠지고 다음 재련은 1부터.
+// /초기화_유저명 → 그 사람의 재련값·오늘 횟수(·파괴 상태)를 모두 지운다. 랭킹에서 빠지고 다음 재련은 방 시작 값(기본 1)부터.
 // 전체 "/초기화"(모두의 오늘 횟수)와 헷갈리지 않게 반드시 "/초기화_" 로 받는다. 대화명은 정확히 일치해야 한다.
 
 /** /초기화_ 명령이면 답장 문구, 아니면 null */
@@ -310,12 +319,14 @@ function handleResetUser(room, raw, sender) {
     if (typeof repairPrompt !== "undefined") delete repairPrompt[name];
     saveData();
     return "🧹 " + name + "님의 재련 기록을 지웠습니다." + (prev ? " (" + prev + "재련)" : "") +
-        "\n다음 재련은 1부터 시작해요.";
+        "\n다음 재련은 " + roomStart(room) + "부터 시작해요.";
 }
 
 // ═══════════════ 방 전체 재련값 일괄 지정 (관리자, 2026-11-12) ═══════════════
-// /전부_값 → 이 방에서 말한 적 있는 사람 모두의 재련값을 값으로 바꾼다 (봇은 말한 사람만 안다).
-// 재련 기록이 없던 사람도 포함되므로 그 사람들도 랭킹에 나온다. 다른 방 사람은 건드리지 않는다.
+// /전부_값 → 이 방에서 말한 적 있는 사람 모두의 재련값을 값으로 바꾸고, 방 "시작 값"도 값으로 정한다.
+// 카톡은 방 멤버 목록을 주지 않아 봇은 말한 사람만 안다 → 아직 말 안 한 사람은 시작 값으로 처리한다:
+// 기록이 없는 사람이 처음 재련하면 1이 아니라 시작 값부터 (2026-11-12, 38명 방에서 11명만 바뀐 문제).
+// 다른 방 사람은 건드리지 않는다.
 // 파괴 상태가 있는 봇(루나봇)이면 파괴도 풀어 준다 (/지정 과 같은 규칙).
 
 /** /전부_ 명령이면 답장 문구, 아니면 null */
@@ -335,9 +346,10 @@ function handleSetAll(room, raw, sender) {
         if (typeof repairPrompt !== "undefined") delete repairPrompt[name];
         count++;
     }
-    if (!count) return "이 방에서 말한 사람이 아직 없어요.";
+    startLevel[room] = val;
     saveData();
-    return "✏️ 이 방 " + count + "명의 재련값을 모두 " + val + "(으)로 바꿨습니다.";
+    return "✏️ 이 방 " + count + "명의 재련값을 모두 " + val + "(으)로 바꿨습니다." +
+        "\n아직 재련 기록이 없는 사람도 처음 재련하면 " + val + "부터 시작해요.";
 }
 
 // ═══════════════ 명령어 등록 (2026-11-12) ═══════════════
@@ -1128,7 +1140,7 @@ function response(room, msg, sender, isGroupChat, replier) {
                 return replier.reply("오늘 할 수 있는 재련 기회를 모두 사용하셨습니다.");
             }
 
-            if (!userData[sender]) userData[sender] = 1;
+            if (!userData[sender]) userData[sender] = roomStart(room);
 
             var level = userData[sender];
             var prevLevel = level;
@@ -1226,6 +1238,7 @@ function response(room, msg, sender, isGroupChat, replier) {
             }
             broken = {};          // 재련값을 1로 돌리면 파괴 상태도 함께 푼다
             repairPrompt = {};
+            delete startLevel[room];    // 방 시작 값도 1로
             saveData();
             return replier.reply("모든 유저의 재련값이 1으로 초기화되었습니다.");
         }
