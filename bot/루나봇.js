@@ -7,6 +7,9 @@
  *    /랭킹                    → 이 방 참여자들의 재련 랭킹
  *    /확률                    → 단계별 [성공, 유지, 하락, 파괴] 확률표 (누구나)
  *    (수리 문구)              → 장비가 파괴되면 봇이 알려주는 문구를 그대로 외치면 복구
+ *    /등록_명령어_할말        → 명령어 등록 (누구나)
+ *    /삭제_명령어             → 등록한 명령어 삭제 (누구나)
+ *    /리스트                  → 등록된 명령어 목록
  *    /초기화 /삭제            → 관리자 전용 (대화명에 "후파"가 들어간 사람)
  *
  *  ◆ 사건봇(bot/사건봇.js)을 복사해 루나 방용으로 따로 만든 봇이다 (2026-11-12).
@@ -26,7 +29,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-4";
+var BOT_VER = "1112-5";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -132,6 +135,7 @@ function loadData() {
         dailyLimit: parsed.dailyLimit || {},
         broken: parsed.broken || {},              // { 이름: true } 장비 파괴 상태
         repairPrompt: parsed.repairPrompt || {},  // { 이름: 수리 문구 }
+        custom: parsed.custom || {},              // { 방: { 명령어: 할말 } } 등록 명령어
         roomUsers: rooms
     };
 }
@@ -142,6 +146,7 @@ var dailyLimit = store.dailyLimit;
 var broken = store.broken;
 var repairPrompt = store.repairPrompt;
 var roomUsers = store.roomUsers;
+var custom = store.custom;
 
 function saveData() {
     var out = { userData: userData, dailyLimit: dailyLimit,
@@ -154,6 +159,7 @@ function saveData() {
         }
         out.roomUsers[room] = arr;                    // 원본과 같은 배열 형태로 저장
     }
+    out.custom = custom;
     try { __LUNA_DATA__ = out; } catch (e) {}       // 파일 저장이 막혀도 메모리에는 유지
     fileWrite(DATA_FILE, JSON.stringify(out));
 }
@@ -216,19 +222,90 @@ function isAdmin(sender) {
     return false;
 }
 
+// ═══════════════ 명령어 등록 (2026-11-12) ═══════════════
+// /등록_명령어_할말 → 그 방에서 "명령어"를 그대로 치면 "할말"을 보낸다.
+// /삭제_명령어 로 지우고, /리스트 로 본다. 누구나 넣고 뺄 수 있다 (관리자 아님). 방별로 따로 저장.
+// 명령어 쪽엔 "_" 를 못 쓰지만(첫 "_" 에서 끊는다) 할말 쪽 "_"·줄바꿈은 그대로 남는다.
+// ※ "/삭제"(관리자 재련값 초기화)와 헷갈리지 않게 지우기는 꼭 "/삭제_" 로 받는다.
+// ※ 봇이 이미 쓰는 말(재련가즈아·/랭킹 등)은 등록을 거절한다 — 등록해도 절대 응답할 수 없어서.
+var RESERVED = ["재련가즈아", "제련가즈아", "/랭킹", "/확률", "/초기화", "/삭제", "/리스트"];
+
+function isReserved(trigger) {
+    var t = trigger.toLowerCase();
+    if (RESERVED.indexOf(t) !== -1) return true;
+    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0) return true;
+    if (typeof REPAIR_KEYWORDS !== "undefined") {
+        for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
+            if (REPAIR_KEYWORDS[i].toLowerCase() === t) return true;
+        }
+    }
+    return false;
+}
+
+/** 등록 관련 명령이면 답장 문구, 아니면 null */
+function handleRegister(room, raw) {
+    var list = custom[room] || {};
+
+    if (raw.indexOf("/등록_") === 0) {
+        var rest = raw.substring(4);
+        var cut = rest.indexOf("_");
+        var trigger = cut === -1 ? "" : rest.substring(0, cut).trim();
+        var text = cut === -1 ? "" : rest.substring(cut + 1);
+        if (!trigger || !text.trim()) {
+            return "형식: /등록_명령어_할말\n예) /등록_공지_오늘 8시에 모여요";
+        }
+        if (isReserved(trigger)) {
+            return "\"" + trigger + "\" 은(는) 봇이 이미 쓰는 말이라 등록할 수 없습니다.";
+        }
+        if (list.hasOwnProperty(trigger)) {
+            return "\"" + trigger + "\" 은(는) 이미 등록되어 있습니다.\n바꾸려면 /삭제_" + trigger + " 후 다시 등록해 주세요.";
+        }
+        list[trigger] = text;
+        custom[room] = list;
+        saveData();
+        return "✅ \"" + trigger + "\" 등록 완료! 이제 " + trigger + " 라고 치면 답합니다.";
+    }
+
+    if (raw.indexOf("/삭제_") === 0) {
+        var name = raw.substring(4).trim();
+        if (!name) return "형식: /삭제_명령어";
+        if (!list.hasOwnProperty(name)) {
+            return "\"" + name + "\" 은(는) 등록된 명령어가 아닙니다. /리스트 로 확인해 주세요.";
+        }
+        delete list[name];
+        saveData();
+        return "🗑️ \"" + name + "\" 삭제 완료!";
+    }
+
+    if (raw === "/리스트") {
+        var names = [];
+        for (var k in list) if (list.hasOwnProperty(k)) names.push(k);
+        if (!names.length) return "등록된 명령어가 없습니다.\n/등록_명령어_할말 로 누구나 넣을 수 있어요.";
+        names.sort();
+        return "📋 등록된 명령어 (" + names.length + "개)\n" + names.join("\n");
+    }
+
+    return null;
+}
+
 // ═══════════════ 메시지 처리 ═══════════════
 
 function response(room, msg, sender, isGroupChat, replier) {
     try {
         if (ROOMS.indexOf(room) === -1) return;
 
-        msg = String(msg).trim().toLowerCase();
+        var raw = String(msg).trim();         // 원문 (등록 명령어·할말은 이걸로)
+        msg = raw.toLowerCase();
         var today = new Date().toDateString();
         var user;
 
         // 이 방에서 말한 사람 기록 (랭킹 집계용)
         if (!roomUsers[room]) roomUsers[room] = {};
         roomUsers[room][sender] = true;
+
+        // ── 명령어 등록·삭제·목록 (누구나) ──
+        var regReply = handleRegister(room, raw);
+        if (regReply !== null) return replier.reply(regReply);
 
         // ── 재련 시도 ──
         if (msg === "제련가즈아" || msg === "재련가즈아") {
@@ -344,6 +421,10 @@ function response(room, msg, sender, isGroupChat, replier) {
             saveData();
             return replier.reply("모든 유저의 재련값이 1으로 초기화되었습니다.");
         }
+
+        // ── 등록된 명령어 응답 (메시지 전체가 일치할 때) ──
+        var rc = custom[room];
+        if (rc && rc.hasOwnProperty(raw)) return replier.reply(rc[raw]);
 
     } catch (e) {
         // 일반 대화 중에는 조용히 넘어간다 (명령어일 때만 알림)
