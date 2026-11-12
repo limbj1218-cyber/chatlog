@@ -5,10 +5,15 @@
  *  ◆ 명령어
  *    제련가즈아 / 재련가즈아 → 재련 시도 (하루 2회)
  *    /랭킹                    → 이 방 참여자들의 재련 랭킹
+ *    /확률                    → 단계별 [성공, 유지, 하락, 파괴] 확률표 (누구나)
+ *    (수리 문구)              → 장비가 파괴되면 봇이 알려주는 문구를 그대로 외치면 복구
  *    /초기화 /삭제            → 관리자 전용 (대화명에 "후파"가 들어간 사람)
  *
  *  ◆ 사건봇(bot/사건봇.js)을 복사해 루나 방용으로 따로 만든 봇이다 (2026-11-12).
- *    - 게임 규칙은 사건봇과 같지만 방(루나)·데이터 파일(luna_Database.json)·관리자가 따로다.
+ *    - 방(루나)·데이터 파일(luna_Database.json)·관리자가 사건봇과 따로다.
+ *    - 사건봇과 달리 파괴/수리가 있다 (제련봇 방식, 확률표도 제련봇과 같다).
+ *      파괴되면 재련이 막히고, 그때 재련가즈아를 치면 수리 문구(REPAIR_KEYWORDS 중 하나)를 알려준다.
+ *      파괴·수리 문구는 파일에 저장하므로 봇을 다시 켜도 유지된다. 수리는 재련 횟수를 쓰지 않는다.
  *    - 사건봇과 같은 폰에서 함께 돌려도 기록이 섞이지 않는다.
  *    - 제련봇·사건봇과 명령어(/랭킹 등)가 같으므로, 그 봇들 방 목록에 "루나"를 넣지 말 것.
  *
@@ -21,7 +26,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-1";
+var BOT_VER = "1112-3";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -125,6 +130,8 @@ function loadData() {
     return {
         userData: parsed.userData || {},
         dailyLimit: parsed.dailyLimit || {},
+        broken: parsed.broken || {},              // { 이름: true } 장비 파괴 상태
+        repairPrompt: parsed.repairPrompt || {},  // { 이름: 수리 문구 }
         roomUsers: rooms
     };
 }
@@ -132,10 +139,13 @@ function loadData() {
 var store = loadData();
 var userData = store.userData;
 var dailyLimit = store.dailyLimit;
+var broken = store.broken;
+var repairPrompt = store.repairPrompt;
 var roomUsers = store.roomUsers;
 
 function saveData() {
-    var out = { userData: userData, dailyLimit: dailyLimit, roomUsers: {} };
+    var out = { userData: userData, dailyLimit: dailyLimit,
+        broken: broken, repairPrompt: repairPrompt, roomUsers: {} };
     for (var room in roomUsers) {
         if (!roomUsers.hasOwnProperty(room)) continue;
         var arr = [];
@@ -150,31 +160,43 @@ function saveData() {
 
 // ═══════════════ 게임 규칙 ═══════════════
 
+// [성공, 유지, 하락, 파괴] — 제련봇과 같은 표. 넷의 합이 100 이다.
+// (사건봇은 파괴 칸이 없어서 그 몫이 하락으로 들어간다)
+// 15단계는 전부 0 → 아무것도 안 걸려 "유지" (사실상 최고 단계)
 var chances = {
-    1: [50, 50, 0],
-    2: [33, 67, 0],
-    3: [25, 75, 0],
-    4: [25, 40, 25],
-    5: [25, 40, 25],
-    6: [20, 40, 25],
-    7: [20, 40, 25],
-    8: [20, 35, 30],
-    9: [20, 35, 30],
-    10: [20, 30, 30],
-    11: [20, 30, 30],
-    12: [20, 25, 30],
-    13: [15, 20, 35],
-    14: [15, 15, 35],
-    15: [0, 0, 0]
+    1: [50, 50, 0, 0],
+    2: [33, 67, 0, 0],
+    3: [25, 75, 0, 0],
+    4: [25, 40, 25, 10],
+    5: [25, 40, 25, 10],
+    6: [20, 40, 25, 15],
+    7: [20, 40, 25, 15],
+    8: [20, 35, 30, 15],
+    9: [20, 35, 30, 15],
+    10: [20, 30, 30, 20],
+    11: [20, 30, 30, 20],
+    12: [20, 25, 30, 25],
+    13: [15, 20, 35, 30],
+    14: [15, 15, 35, 35],
+    15: [0, 0, 0, 0]
 };
+var RESULTS = ["성공", "유지", "하락", "파괴"];
+
+// 파괴되면 이 중 하나를 골라 "이렇게 외쳐주세요" 라고 알려준다 (제련봇과 같은 문구)
+var REPAIR_KEYWORDS = [
+    "그라비티개객끼", "그라비티 개객끼", "후파님 사랑해요",
+    "존경하는 후파님", "비경보상 400개내놔", "앗살라무 알레이꿈"
+];
 
 function refine(level) {
-    var row = chances[level] || [0, 0, 0];
-    var success = row[0], keep = row[1];
+    var row = chances[level] || [0, 0, 0, 0];
     var rand = Math.random() * 100;
-    if (rand < success) return "성공";
-    if (rand < success + keep) return "유지";
-    return "하락";
+    var sum = 0;
+    for (var i = 0; i < row.length; i++) {
+        sum += row[i];
+        if (rand < sum) return RESULTS[i];
+    }
+    return "유지";
 }
 
 function isAdmin(sender) {
@@ -200,6 +222,16 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         // ── 재련 시도 ──
         if (msg === "제련가즈아" || msg === "재련가즈아") {
+            // 파괴된 장비는 수리 전까지 재련 불가 (횟수도 쓰지 않는다)
+            if (broken[sender]) {
+                if (!repairPrompt[sender]) {
+                    repairPrompt[sender] = REPAIR_KEYWORDS[Math.floor(Math.random() * REPAIR_KEYWORDS.length)];
+                    saveData();
+                }
+                return replier.reply(sender + "님, 장비가 파괴되어 재련을 할 수 없습니다. 수리를 원하시면 \"" +
+                    repairPrompt[sender] + "\" 라고 외쳐주세요!");
+            }
+
             if (!dailyLimit[sender] || dailyLimit[sender].date !== today) {
                 dailyLimit[sender] = { count: 0, date: today };
             }
@@ -220,9 +252,13 @@ function response(room, msg, sender, isGroupChat, replier) {
                 message += prevLevel + " → " + level + " 재련에 성공하셨습니다!";
             } else if (result === "유지") {
                 message += prevLevel + " → " + level + " 재련에 실패하셨네요ㅜㅜ";
-            } else {
+            } else if (result === "하락") {
                 level = Math.max(1, level - 1);
                 message += "재련에 실패하여 " + prevLevel + " → " + level + "로 하락되었습니다ㅠㅠ";
+            } else {
+                broken[sender] = true;
+                delete repairPrompt[sender];
+                message += prevLevel + " → " + level + " 재련에 실패하여 장비가 파괴되었습니다💥";
             }
 
             userData[sender] = level;
@@ -230,6 +266,22 @@ function response(room, msg, sender, isGroupChat, replier) {
 
             saveData();
             return replier.reply(message);
+        }
+
+        // ── 수리 ── (봇이 알려준 문구와 똑같이 외쳐야 한다)
+        if (broken[sender] && repairPrompt[sender]) {
+            if (msg === String(repairPrompt[sender]).toLowerCase()) {
+                delete broken[sender];
+                delete repairPrompt[sender];
+                saveData();
+                return replier.reply(sender + "님 장비가 수리되어 재련을 하실 수 있습니다");
+            }
+            for (var k = 0; k < REPAIR_KEYWORDS.length; k++) {
+                if (msg === REPAIR_KEYWORDS[k].toLowerCase()) {
+                    return replier.reply(sender + "님, 잘못된 키워드를 입력하셨습니다. 다시 \"" +
+                        repairPrompt[sender] + "\" 라고 외쳐주세요!");
+                }
+            }
         }
 
         // ── 랭킹 ──
@@ -250,6 +302,15 @@ function response(room, msg, sender, isGroupChat, replier) {
                 : "현재 재련 기록이 없습니다.");
         }
 
+        // ── 확률표 ──
+        if (msg === "/확률") {
+            var rows = [];
+            for (var lv = 1; chances.hasOwnProperty(lv); lv++) {
+                rows.push(lv + ": [" + chances[lv].join(", ") + "]");
+            }
+            return replier.reply("*[재련확률표]*\n[성공, 유지, 하락, 파괴]\n" + rows.join("\n"));
+        }
+
         // ── 오늘 횟수 초기화 (관리자) ──
         if (msg === "/초기화") {
             if (!isAdmin(sender)) return replier.reply("해당 명령어를 사용할 수 있는 권한이 없습니다.");
@@ -268,6 +329,8 @@ function response(room, msg, sender, isGroupChat, replier) {
             for (user in userData) {
                 if (userData.hasOwnProperty(user)) userData[user] = 1;
             }
+            broken = {};          // 재련값을 1로 돌리면 파괴 상태도 함께 푼다
+            repairPrompt = {};
             saveData();
             return replier.reply("모든 유저의 재련값이 1으로 초기화되었습니다.");
         }
