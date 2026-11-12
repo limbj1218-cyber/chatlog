@@ -24,7 +24,7 @@
  *  ◆ 사건봇(bot/사건봇.js)을 복사해 루나 방용으로 따로 만든 봇이다 (2026-11-12).
  *    - 방(루나)·데이터 파일(luna_Database.json)·관리자가 사건봇과 따로다.
  *    - 사건봇과 달리 파괴/수리가 있다 (제련봇 방식, 확률표도 제련봇과 같다).
- *      파괴되면 재련이 막히고, 그때 재련가즈아를 치면 수리 문구(REPAIR_KEYWORDS — 지금은 "진상님 죄송해요")를 알려준다.
+ *      파괴되면 재련이 막히고, 그때 재련가즈아를 치면 수리 문구(REPAIR_KEYWORDS 7개 중 하나)를 알려준다. 수리하면 그날 재련 기회 +1.
  *      파괴·수리 문구는 파일에 저장하므로 봇을 다시 켜도 유지된다. 수리는 재련 횟수를 쓰지 않는다.
  *    - 사건봇과 같은 폰에서 함께 돌려도 기록이 섞이지 않는다.
  *    - 제련봇·사건봇과 명령어(/랭킹 등)가 같으므로, 그 봇들 방 목록에 "루나"를 넣지 말 것.
@@ -38,7 +38,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-17";
+var BOT_VER = "1112-19";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -201,7 +201,22 @@ var chances = {
 var RESULTS = ["성공", "유지", "하락", "파괴"];
 
 // 파괴되면 이 중 하나를 골라 "이렇게 외쳐주세요" 라고 알려준다 (2026-11-12 루나 전용 문구로 교체)
-var REPAIR_KEYWORDS = ["진상님 죄송해요"];
+// 띄어쓰기까지 정확히 쳐야 수리된다. 루나 방 11/12 대화에서 나온 말로 골랐다 (주문 3개 + 반성문 4개).
+// "진상님 죄송해요" 는 2026-11-12 사용자 요청으로 뺐다 — 이미 안내받은 사람은 봇 시작 때 아래 문구로 바뀐다.
+// ※ 특정인을 겨냥하거나 성적 지향을 소재로 한 말은 넣지 않는다 — 파괴될 때마다 모두가 따라 외치게 되므로.
+// 수리하면 그날 재련 기회를 1번 더 준다 (REPAIR_BONUS).
+var REPAIR_BONUS = 1;
+var REPAIR_KEYWORDS = [
+    // 주문
+    "아수라발발타",
+    "오이시쿠나레 모에모에뀽",
+    "가만히 있으면 반은 간다",
+    // 반성문
+    "이쁜말 고운말 쓰겠습니다",
+    "이방에서는 체통을 지키겠습니다",
+    "저는 구라비티의 노예입니다",
+    "버그도 실력입니다"
+];
 
 // 문구를 바꾸기 전에 안내받은 사람은 옛 문구가 저장돼 있다 → 지금 목록의 문구로 바꿔 준다
 (function refreshOldPrompts() {
@@ -753,6 +768,7 @@ var MANUAL_TEXT = [
     "",
     "🛠️ 파괴됐을 때",
     "재련가즈아를 치면 수리 문구를 알려줘요. 그 문구를 그대로 외치면 복구!",
+    "수리하면 오늘 재련 기회 +1 🎁",
     "",
     "📝 명령어 등록 (누구나)",
     "/등록_명령어_할말 — 예) /등록_공지_오늘 8시에 모여요",
@@ -1145,8 +1161,15 @@ function response(room, msg, sender, isGroupChat, replier) {
             if (msg === String(repairPrompt[sender]).toLowerCase()) {
                 delete broken[sender];
                 delete repairPrompt[sender];
+                // 수리 보상: 오늘 재련 기회 +1 (쓴 횟수를 1 줄인다 — 아직 안 썼으면 오늘 3번이 된다)
+                if (!dailyLimit[sender] || dailyLimit[sender].date !== today) {
+                    dailyLimit[sender] = { count: 0, date: today };
+                }
+                dailyLimit[sender].count -= REPAIR_BONUS;
                 saveData();
-                return replier.reply(sender + "님 장비가 수리되어 재련을 하실 수 있습니다");
+                var left = MAX_ATTEMPTS - dailyLimit[sender].count;
+                return replier.reply(sender + "님 장비가 수리되어 재련을 하실 수 있습니다\n🎁 수리 보너스! 오늘 재련 기회 +" +
+                    REPAIR_BONUS + " (남은 기회 " + left + "번)");
             }
             for (var k = 0; k < REPAIR_KEYWORDS.length; k++) {
                 if (msg === REPAIR_KEYWORDS[k].toLowerCase()) {
