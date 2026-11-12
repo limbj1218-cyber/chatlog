@@ -38,7 +38,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-20";
+var BOT_VER = "1112-21";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -360,9 +360,16 @@ function handleSetAll(room, raw, sender) {
 // ※ 봇이 이미 쓰는 말(재련가즈아·/랭킹 등)은 등록을 거절한다 — 등록해도 절대 응답할 수 없어서.
 var RESERVED = ["재련가즈아", "제련가즈아", "/랭킹", "/확률", "/초기화", "/삭제", "/리스트"];
 
+// 고정 응답 — 폰 파일(등록분)과 달리 코드에 있어서 앱을 지우거나 폰을 바꿔도 남는다.
+// 메시지 전체가 정확히 일치할 때만(앞뒤 공백만 무시) 답한다. 같은 이름은 /등록_ 으로 못 넣는다.
+var FIXED_REPLIES = {
+    "퉤": "후룹"      // 2026-11-12 사용자 요청
+};
+
 function isReserved(trigger) {
     var t = trigger.toLowerCase();
     if (RESERVED.indexOf(t) !== -1) return true;
+    if (typeof FIXED_REPLIES !== "undefined" && FIXED_REPLIES.hasOwnProperty(trigger)) return true;
     if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/지정") === 0 || t.indexOf("/초기화") === 0 || t.indexOf("/전부") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
         || t.charAt(0) === "." || t.indexOf("/클로드") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
@@ -1242,6 +1249,9 @@ function response(room, msg, sender, isGroupChat, replier) {
             saveData();
             return replier.reply("모든 유저의 재련값이 1으로 초기화되었습니다.");
         }
+
+        // ── 고정 응답 (코드에 있는 것 — 등록분보다 먼저) ──
+        if (FIXED_REPLIES.hasOwnProperty(raw)) return replier.reply(FIXED_REPLIES[raw]);
 
         // ── 등록된 명령어 응답 (메시지 전체가 일치할 때) ──
         var rc = custom[room];
