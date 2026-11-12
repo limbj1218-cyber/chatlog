@@ -13,6 +13,7 @@
  *    /탐지 할말               → 거짓말 탐지기 (참·거짓·중립 무작위, 누구나)
  *    /경험치 레벨             → ROX 사냥터 추천 (그 레벨~+3 몬스터 중 경험치×마릿수 1등, 누구나)
  *    /메뉴얼 (/매뉴얼)        → 사용법 안내 (누구나)
+ *    /닉변감지                → 대화명을 바꾼 사람 (처음 이름 → … → 지금 이름, 누구나)
  *    .질문                    → 클로드가 답한다 (관리자가 켰을 때, 답은 1~2분 뒤)
  *    .. / ...                 → 클로드 답변 켜기 / 끄기 (관리자)
  *    /클로드 /클로드토큰      → 클로드 상태 / 깃헙 토큰 등록 (토큰은 관리자)
@@ -38,7 +39,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-25";
+var BOT_VER = "1112-26";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -346,6 +347,7 @@ function userKeyOf(sender, who) {
         p = people[key] = { name: name, last: name };
         changed = true;
     } else if (p.last !== name) {
+        addNickHistory(p, name);
         p.last = name;
         changed = true;
     }
@@ -353,6 +355,50 @@ function userKeyOf(sender, who) {
     if (hasNameRecord(name)) { mergeNameInto(name, key); changed = true; }
     if (changed) saveData();
     return key;
+}
+
+// ═══════════════ 닉변 감지 (2026-11-12, 누구나) ═══════════════
+// /닉변감지 → 이 방에서 대화명을 바꾼 사람을 "처음 이름 → … → 지금 이름" 으로 보여준다 (최근에 바꾼 사람부터).
+// people[키].hist 에 바꾼 이름을 순서대로 남긴다 (최대 NICK_HIST_MAX 개, 첫 이름은 늘 남긴다).
+// hist 가 생기기 전(사람 구분 첫날)의 사람은 처음 이름 → 지금 이름 만 보인다.
+// ※ hash 는 절대 보이지 않는다. 사람 구분(hash)을 켠 뒤, 바꾼 이름으로 한 번이라도 말해야 잡힌다.
+var NICK_HIST_MAX = 10;
+var NICK_LIST_MAX = 30;
+
+function addNickHistory(p, newName) {
+    if (!p.hist || !p.hist.length) {
+        p.hist = [p.name];
+        if (p.last && p.last !== p.name) p.hist.push(p.last);
+    }
+    if (p.hist[p.hist.length - 1] !== newName) p.hist.push(newName);
+    while (p.hist.length > NICK_HIST_MAX) p.hist.splice(1, 1);   // 첫 이름은 남기고 오래된 중간 이름부터 버린다
+}
+
+function nickChain(p) {
+    var chain = (p.hist && p.hist.length) ? p.hist.slice(0) : [p.name, p.last];
+    if (chain[0] !== p.name) chain.unshift(p.name);
+    if (p.last && chain[chain.length - 1] !== p.last) chain.push(p.last);
+    var out = [];
+    for (var i = 0; i < chain.length; i++) {
+        if (chain[i] && (!out.length || out[out.length - 1] !== chain[i])) out.push(String(chain[i]));
+    }
+    return out;
+}
+
+function nickWatchText(room) {
+    var inRoom = roomUsers[room] || {};
+    var rows = [];
+    for (var k in people) {
+        if (!people.hasOwnProperty(k) || !inRoom[k]) continue;
+        var chain = nickChain(people[k]);
+        if (chain.length >= 2) rows.push({ at: Number(people[k].at || 0), text: "• " + chain.join(" → ") });
+    }
+    if (!rows.length) return "🕵️ 닉변 감지\n아직 대화명을 바꾼 사람이 없어요.\n(사람 구분을 켠 뒤, 바꾼 이름으로 말한 사람부터 잡혀요)";
+    rows.sort(function (a, b) { return b.at - a.at; });
+    var lines = [];
+    for (var i = 0; i < rows.length && i < NICK_LIST_MAX; i++) lines.push(rows[i].text);
+    return "🕵️ 닉변 감지 (" + rows.length + "명)\n" + lines.join("\n") +
+        (rows.length > NICK_LIST_MAX ? "\n… 외 " + (rows.length - NICK_LIST_MAX) + "명" : "");
 }
 
 /** 관리자가 친 이름 → 기록 키. 최초 대화명 → 최근 대화명 → 옛 대화명 기록 순서로 찾는다. 없으면 null */
@@ -480,7 +526,7 @@ function isReserved(trigger) {
     if (RESERVED.indexOf(t) !== -1) return true;
     if (typeof FIXED_REPLIES !== "undefined" && FIXED_REPLIES.hasOwnProperty(trigger)) return true;
     if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/지정") === 0 || t.indexOf("/초기화") === 0 || t.indexOf("/전부") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
-        || t.charAt(0) === "." || t.indexOf("/클로드") === 0) return true;
+        || t.charAt(0) === "." || t.indexOf("/클로드") === 0 || t === "/닉변감지") return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
         for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
             if (REPAIR_KEYWORDS[i].toLowerCase() === t) return true;
@@ -906,6 +952,7 @@ var MANUAL_TEXT = [
     "🎲 놀이 (누구나)",
     "/탐지 할말 — 거짓말 탐지기 (참·거짓·중립)",
     "/경험치 레벨 — ROX 추천 몬스터 (예: /경험치 110)",
+    "/닉변감지 — 대화명을 바꾼 사람 보기 (처음 이름 → 지금 이름)",
     "",
     "🤖 클로드 (관리자가 켰을 때만)",
     ".질문 — 점 하나 붙여서 물어보면 클로드가 답해요 (1~2분 걸려요)"
@@ -1310,6 +1357,9 @@ function response(room, msg, sender, isGroupChat, replier, who) {
 
         // ── 사용법 (누구나) ──
         if (raw === "/메뉴얼" || raw === "/매뉴얼") return replier.reply(MANUAL_TEXT);
+
+        // ── 닉변 감지 (누구나) ──
+        if (raw === "/닉변감지") return replier.reply(nickWatchText(room));
 
         // ── 클로드 답변 (켜기 .. / 끄기 ... / 질문 .할말) ──
         askReplier[room] = replier;
