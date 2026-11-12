@@ -8,6 +8,7 @@
  *    /등록_명령어_할말        → 명령어 등록 (누구나)
  *    /삭제_명령어             → 등록한 명령어 삭제 (누구나)
  *    /리스트                  → 등록된 명령어 목록
+ *    /탐지 할말               → 거짓말 탐지기 (참·거짓·중립 무작위, 누구나)
  *    /초기화 /삭제            → 관리자 전용
  *
  *  ◆ 제련봇(bot/제련봇.js)과는 완전히 별개다.
@@ -23,11 +24,14 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "사건봇";
-var BOT_VER = "1112-1";
+var BOT_VER = "1112-3";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["사건"];
 var ADMINS = ["사업처임병진", "가이아✡", "가이어트"];   // 정확히 일치해야 관리자
+// 추가 관리자 — 대화명에 이 낱말이 "들어 있기만" 하면 관리자 (2026-11-12 후파 추가).
+// ※ 로더의 MY_ADMINS 가 ADMINS 를 덮어쓰므로, 로더를 다시 붙여넣지 않아도 되게 따로 둔다
+var EXTRA_ADMIN_PARTS = ["후파"];
 var MAX_ATTEMPTS = 2;                                    // 하루 재련 횟수
 // ────────────────────────────────────────────────────────
 
@@ -187,6 +191,9 @@ function isAdmin(sender) {
     for (var i = 0; i < ADMINS.length; i++) {
         if (ADMINS[i] === sender) return true;
     }
+    for (var j = 0; j < EXTRA_ADMIN_PARTS.length; j++) {
+        if (EXTRA_ADMIN_PARTS[j] && String(sender).indexOf(EXTRA_ADMIN_PARTS[j]) !== -1) return true;
+    }
     return false;
 }
 
@@ -201,7 +208,7 @@ var RESERVED = ["재련가즈아", "제련가즈아", "/랭킹", "/확률", "/�
 function isReserved(trigger) {
     var t = trigger.toLowerCase();
     if (RESERVED.indexOf(t) !== -1) return true;
-    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0) return true;
+    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
         for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
             if (REPAIR_KEYWORDS[i].toLowerCase() === t) return true;
@@ -256,6 +263,28 @@ function handleRegister(room, raw) {
     return null;
 }
 
+// ═══════════════ 거짓말 탐지기 (2026-11-12) ═══════════════
+// /탐지 할말 → 참·거짓·중립 중 하나를 무작위로 답한다 (재미용 — 실제로 판별하지 않는다).
+// 같은 말이라도 칠 때마다 다르게 나온다 (사용자 요청). 횟수 제한·저장 없음.
+var DETECT_RESULTS = [
+    { word: "참", icon: "🟢", lines: ["진실 반응입니다. 바늘이 꿈쩍도 안 하네요.", "거짓말 탐지기가 고개를 끄덕입니다.", "맥박·호흡 모두 안정적. 사실로 보입니다."] },
+    { word: "거짓", icon: "🔴", lines: ["삐빅! 바늘이 크게 흔들렸습니다.", "동공이 흔들리는 게 포착됐습니다.", "식은땀이 감지됐습니다. 수상하네요."] },
+    { word: "중립", icon: "🟡", lines: ["애매합니다. 반은 맞고 반은 틀린 듯해요.", "탐지기도 판단을 보류했습니다.", "진실과 거짓 사이 어딘가에 있습니다."] }
+];
+
+/** /탐지 명령이면 답장 문구, 아니면 null */
+function handleDetect(raw) {
+    if (raw.indexOf("/탐지") !== 0) return null;
+    var rest = raw.substring(3);
+    if (rest && !/^\s/.test(rest)) return null;   // "/탐지기" 같은 다른 말은 건드리지 않는다
+    var claim = rest.trim();
+    if (!claim) return "형식: /탐지 할말\n예) /탐지 나는 어제 일찍 잤다";
+    var r = DETECT_RESULTS[Math.floor(Math.random() * DETECT_RESULTS.length)];
+    var line = r.lines[Math.floor(Math.random() * r.lines.length)];
+    if (claim.length > 60) claim = claim.substring(0, 60) + "…";
+    return "🔍 거짓말 탐지기\n「" + claim + "」\n\n" + r.icon + " 결과: " + r.word + "\n" + line;
+}
+
 // ═══════════════ 메시지 처리 ═══════════════
 
 function response(room, msg, sender, isGroupChat, replier) {
@@ -274,6 +303,10 @@ function response(room, msg, sender, isGroupChat, replier) {
         // ── 명령어 등록·삭제·목록 (누구나) ──
         var regReply = handleRegister(room, raw);
         if (regReply !== null) return replier.reply(regReply);
+
+        // ── 거짓말 탐지기 (누구나) ──
+        var detectReply = handleDetect(raw);
+        if (detectReply !== null) return replier.reply(detectReply);
 
         // ── 재련 시도 ──
         if (msg === "제련가즈아" || msg === "재련가즈아") {
