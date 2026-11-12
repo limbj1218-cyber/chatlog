@@ -12,7 +12,7 @@
  *  ◆ 사건봇(bot/사건봇.js)을 복사해 루나 방용으로 따로 만든 봇이다 (2026-11-12).
  *    - 방(루나)·데이터 파일(luna_Database.json)·관리자가 사건봇과 따로다.
  *    - 사건봇과 달리 파괴/수리가 있다 (제련봇 방식, 확률표도 제련봇과 같다).
- *      파괴되면 재련이 막히고, 그때 재련가즈아를 치면 수리 문구(REPAIR_KEYWORDS 중 하나)를 알려준다.
+ *      파괴되면 재련이 막히고, 그때 재련가즈아를 치면 수리 문구(REPAIR_KEYWORDS — 지금은 "진상님 죄송해요")를 알려준다.
  *      파괴·수리 문구는 파일에 저장하므로 봇을 다시 켜도 유지된다. 수리는 재련 횟수를 쓰지 않는다.
  *    - 사건봇과 같은 폰에서 함께 돌려도 기록이 섞이지 않는다.
  *    - 제련봇·사건봇과 명령어(/랭킹 등)가 같으므로, 그 봇들 방 목록에 "루나"를 넣지 말 것.
@@ -26,7 +26,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-3";
+var BOT_VER = "1112-4";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -182,11 +182,21 @@ var chances = {
 };
 var RESULTS = ["성공", "유지", "하락", "파괴"];
 
-// 파괴되면 이 중 하나를 골라 "이렇게 외쳐주세요" 라고 알려준다 (제련봇과 같은 문구)
-var REPAIR_KEYWORDS = [
-    "그라비티개객끼", "그라비티 개객끼", "후파님 사랑해요",
-    "존경하는 후파님", "비경보상 400개내놔", "앗살라무 알레이꿈"
-];
+// 파괴되면 이 중 하나를 골라 "이렇게 외쳐주세요" 라고 알려준다 (2026-11-12 루나 전용 문구로 교체)
+var REPAIR_KEYWORDS = ["진상님 죄송해요"];
+
+// 문구를 바꾸기 전에 안내받은 사람은 옛 문구가 저장돼 있다 → 지금 목록의 문구로 바꿔 준다
+(function refreshOldPrompts() {
+    var changed = false;
+    for (var who in repairPrompt) {
+        if (!repairPrompt.hasOwnProperty(who)) continue;
+        if (REPAIR_KEYWORDS.indexOf(repairPrompt[who]) === -1) {
+            repairPrompt[who] = REPAIR_KEYWORDS[Math.floor(Math.random() * REPAIR_KEYWORDS.length)];
+            changed = true;
+        }
+    }
+    if (changed) saveData();
+})();
 
 function refine(level) {
     var row = chances[level] || [0, 0, 0, 0];
