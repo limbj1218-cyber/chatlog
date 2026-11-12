@@ -11,7 +11,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var LOADER_VER = "1112-2";   // 로더를 다시 붙여넣었는지 /루나로더 에서 확인용 (1112-1: /내정보 추가, 1112-2: hash 값 숨김)
+var LOADER_VER = "1112-3";   // 로더를 다시 붙여넣었는지 /루나로더 에서 확인용 (1112-1: /내정보, 1112-2: hash 숨김, 1112-3: API2 우선)
 var GLOBAL_SCOPE = this;
 
 // ── 폰에만 두는 설정 (비워두면 본체 기본값 사용) ────────────
@@ -28,6 +28,7 @@ var lastError = null;
 var loadMethod = "";
 var apiMode = "(아직 메시지 못 받음)";
 var api2Ready = false;
+var api2Seen = false;   // API2 로 메시지를 한 번이라도 받았으면 API1 은 무시한다 (hash 가 API2 에만 있어서)
 var lastSeen = "";
 var lastSeenAt = 0;
 var lastErrorReportAt = 0;
@@ -328,6 +329,9 @@ function handle(room, msg, sender, isGroupChat, replier, extra) {
 
 // ① 구버전 API (메신저봇R API1 / 다크토네이도 챗봇 등)
 function response(room, msg, sender, isGroupChat, replier, imageDB) {
+    // 같은 메시지가 두 갈래로 오는데 먼저 온 쪽만 처리된다. API1 이 먼저 오면 hash 가 없어
+    // 같은 사람이 새 사람으로 잡혔다 (2026-11-12). API2 가 동작하는 앱이면 API1 은 아예 무시한다.
+    if (api2Seen) return;
     apiMode = "API1 (response)";
     handle(room, msg, sender, isGroupChat, replier, { imageDB: imageDB });
 }
@@ -345,6 +349,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB) {
 
         var ev = (typeof Event !== "undefined" && Event && Event.MESSAGE) ? Event.MESSAGE : "message";
         b.addListener(ev, function (m) {
+            api2Seen = true;
             apiMode = "API2 (addListener)";
             handle(
                 String(m.room),

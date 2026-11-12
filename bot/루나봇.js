@@ -38,7 +38,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1112-22";
+var BOT_VER = "1112-23";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -279,18 +279,39 @@ function displayName(key) {
     return p && p.name ? p.name : String(key);
 }
 
-function moveKey(obj, from, to) {
-    if (obj && obj.hasOwnProperty(from)) {
-        if (!obj.hasOwnProperty(to)) obj[to] = obj[from];
-        delete obj[from];
+// ※ 같은 메시지가 로더에 두 갈래(API1·API2)로 들어오고 로더는 먼저 온 것만 처리한다 (2026-11-12 실제로 겪음).
+//   API1 로 먼저 오면 hash 가 없다 → 그 대화명을 최근에 쓴 hash 사람이 있으면 그 사람으로 본다 (keyByLastName).
+//   그래도 대화명 기록이 따로 생겼으면, 그 사람이 hash 와 함께 나타날 때마다 hash 기록으로 합친다 (mergeNameInto).
+
+function hasNameRecord(name) {
+    if (userData.hasOwnProperty(name) || dailyLimit.hasOwnProperty(name)) return true;
+    if (typeof broken !== "undefined" && broken.hasOwnProperty(name)) return true;
+    for (var r in roomUsers) {
+        if (roomUsers.hasOwnProperty(r) && roomUsers[r] && roomUsers[r][name]) return true;
     }
+    return false;
 }
 
-function migrateNameKey(name, key) {
-    moveKey(userData, name, key);
-    moveKey(dailyLimit, name, key);
-    if (typeof broken !== "undefined") moveKey(broken, name, key);
-    if (typeof repairPrompt !== "undefined") moveKey(repairPrompt, name, key);
+/** 대화명 기록을 hash 기록으로 합친다 — 재련값은 높은 쪽, 오늘 횟수는 오늘 것 중 많이 쓴 쪽 */
+function mergeNameInto(name, key) {
+    if (userData.hasOwnProperty(name)) {
+        if (!userData.hasOwnProperty(key) || Number(userData[name]) > Number(userData[key])) userData[key] = userData[name];
+        delete userData[name];
+    }
+    if (dailyLimit.hasOwnProperty(name)) {
+        var a = dailyLimit[name], b = dailyLimit[key], today = new Date().toDateString();
+        if (!b) dailyLimit[key] = a;
+        else if (a && a.date === today && (b.date !== today || Number(a.count) > Number(b.count))) dailyLimit[key] = a;
+        delete dailyLimit[name];
+    }
+    if (typeof broken !== "undefined" && broken.hasOwnProperty(name)) {
+        if (broken[name]) broken[key] = true;
+        delete broken[name];
+    }
+    if (typeof repairPrompt !== "undefined" && repairPrompt.hasOwnProperty(name)) {
+        if (!repairPrompt[key]) repairPrompt[key] = repairPrompt[name];
+        delete repairPrompt[name];
+    }
     for (var r in roomUsers) {
         if (roomUsers.hasOwnProperty(r) && roomUsers[r] && roomUsers[r][name]) {
             delete roomUsers[r][name];
@@ -299,22 +320,35 @@ function migrateNameKey(name, key) {
     }
 }
 
+/** hash 없이 온 메시지 — 이 대화명을 가장 최근에 쓴 hash 사람의 키 (없으면 null) */
+function keyByLastName(name) {
+    var best = null, bestAt = -1;
+    for (var k in people) {
+        if (!people.hasOwnProperty(k) || people[k].last !== name) continue;
+        var at = Number(people[k].at || 0);
+        if (at > bestAt) { best = k; bestAt = at; }
+    }
+    return best;
+}
+
 /** 이 메시지를 보낸 사람의 기록 키 (처음 보는 hash 면 지금 대화명을 최초 대화명으로 등록) */
 function userKeyOf(sender, who) {
     var name = String(sender);
     var h = "";
     try { h = who && who.hash ? String(who.hash) : ""; } catch (e) { h = ""; }
-    if (!h || h === "null" || h === "undefined") return name;
+    if (!h || h === "null" || h === "undefined") return keyByLastName(name) || name;
     var key = HASH_PREFIX + h;
-    var p = people[key];
+    var p = people[key], changed = false;
     if (!p) {
-        people[key] = { name: name, last: name };
-        migrateNameKey(name, key);
-        saveData();
+        p = people[key] = { name: name, last: name };
+        changed = true;
     } else if (p.last !== name) {
         p.last = name;
-        saveData();
+        changed = true;
     }
+    if (changed) p.at = new Date().getTime();
+    if (hasNameRecord(name)) { mergeNameInto(name, key); changed = true; }
+    if (changed) saveData();
     return key;
 }
 
