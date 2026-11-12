@@ -32,7 +32,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "사건봇";
-var BOT_VER = "1112-15";
+var BOT_VER = "1112-16";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["사건"];
@@ -143,6 +143,7 @@ function loadData() {
         custom: parsed.custom || {},              // { 방: { 명령어: 할말 } } 등록 명령어
         askOn: parsed.askOn || {},                // { 방: true } 클로드 답변 켜짐
         startLevel: parsed.startLevel || {},      // { 방: 숫자 } 기록 없는 사람의 시작 재련값 (/전부_)
+        people: parsed.people || {},              // { "#h:해시": { name: 최초 대화명, last: 최근 대화명 } } (절대 화면에 안 나감)
         roomUsers: rooms
     };
 }
@@ -154,6 +155,7 @@ var roomUsers = store.roomUsers;
 var custom = store.custom;
 var askOn = store.askOn;
 var startLevel = store.startLevel;
+var people = store.people;
 
 /** 이 방에서 기록 없는 사람이 시작하는 재련값 (/전부_ 로 정한다, 기본 1) */
 function roomStart(room) {
@@ -174,6 +176,7 @@ function saveData() {
     out.custom = custom;
     out.askOn = askOn;
     out.startLevel = startLevel;
+    out.people = people;
     try { __SAGEON_DATA__ = out; } catch (e) {}       // 파일 저장이 막혀도 메모리에는 유지
     fileWrite(DATA_FILE, JSON.stringify(out));
 }
@@ -217,6 +220,73 @@ function isAdmin(sender) {
     return false;
 }
 
+// ═══════════════ 사람 구분 (2026-11-12) ═══════════════
+// 기록은 대화명이 아니라 사람별 hash 로 묶는다 → 대화명을 바꿔 새 사람처럼 재련할 수 없다.
+//   hash 는 로더(1112-1 이상)가 response 의 6번째 인자 who.hash 로 넘긴다 (메신저봇R API2 의 author.hash).
+// ★ hash 는 절대 화면에 보여주지 않는다. 화면에는 그 사람이 처음 등록된 대화명(people[키].name)만 나온다.
+//   대화명을 바꿔도 랭킹·재련 답장은 최초 대화명 그대로다 (사용자 요청).
+// hash 가 없으면(옛 로더·구버전 앱) 예전처럼 대화명으로 묶는다.
+// 기록 키: hash 가 있으면 HASH_PREFIX + hash, 없으면 대화명.
+// 옛 기록(대화명 키)은 그 대화명으로 hash 와 함께 처음 나타날 때 hash 키로 옮긴다 (재련값·오늘 횟수·파괴·방 기록).
+//   ※ 이미 다른 대화명으로 바꾼 뒤에 나타나면 옛 기록과 이어지지 않는다 (알 방법이 없다) → 관리자가 /초기화_옛이름 으로 정리.
+var HASH_PREFIX = "#h:";
+var CUR_USER_KEY = null;     // 지금 처리 중인 메시지를 보낸 사람 (클로드 답변 쿨다운·이름 표시용)
+var CUR_USER_NAME = null;
+
+function displayName(key) {
+    var p = people[key];
+    return p && p.name ? p.name : String(key);
+}
+
+function moveKey(obj, from, to) {
+    if (obj && obj.hasOwnProperty(from)) {
+        if (!obj.hasOwnProperty(to)) obj[to] = obj[from];
+        delete obj[from];
+    }
+}
+
+function migrateNameKey(name, key) {
+    moveKey(userData, name, key);
+    moveKey(dailyLimit, name, key);
+    if (typeof broken !== "undefined") moveKey(broken, name, key);
+    if (typeof repairPrompt !== "undefined") moveKey(repairPrompt, name, key);
+    for (var r in roomUsers) {
+        if (roomUsers.hasOwnProperty(r) && roomUsers[r] && roomUsers[r][name]) {
+            delete roomUsers[r][name];
+            roomUsers[r][key] = true;
+        }
+    }
+}
+
+/** 이 메시지를 보낸 사람의 기록 키 (처음 보는 hash 면 지금 대화명을 최초 대화명으로 등록) */
+function userKeyOf(sender, who) {
+    var name = String(sender);
+    var h = "";
+    try { h = who && who.hash ? String(who.hash) : ""; } catch (e) { h = ""; }
+    if (!h || h === "null" || h === "undefined") return name;
+    var key = HASH_PREFIX + h;
+    var p = people[key];
+    if (!p) {
+        people[key] = { name: name, last: name };
+        migrateNameKey(name, key);
+        saveData();
+    } else if (p.last !== name) {
+        p.last = name;
+        saveData();
+    }
+    return key;
+}
+
+/** 관리자가 친 이름 → 기록 키. 최초 대화명 → 최근 대화명 → 옛 대화명 기록 순서로 찾는다. 없으면 null */
+function findUserKey(room, name) {
+    var k;
+    for (k in people) if (people.hasOwnProperty(k) && people[k].name === name) return k;
+    for (k in people) if (people.hasOwnProperty(k) && people[k].last === name) return k;
+    if (userData.hasOwnProperty(name) || dailyLimit.hasOwnProperty(name) ||
+        (roomUsers[room] && roomUsers[room][name])) return name;
+    return null;
+}
+
 // ═══════════════ 재련값 지정 (관리자, 2026-11-12) ═══════════════
 // /지정_유저명_값 → 그 사람의 재련 단계를 값으로 바꾼다. 값은 1 ~ 확률표의 마지막 단계.
 // 대화명에 "_" 가 들어 있을 수 있어 "마지막 _" 에서 값과 나눈다.
@@ -239,22 +309,23 @@ function handleSetLevel(room, raw, sender) {
     if (!name || !/^\d+$/.test(valStr)) return "형식: /지정_유저명_값\n예) /지정_철수_7";
     var val = parseInt(valStr, 10), max = maxRefineLevel();
     if (val < 1 || val > max) return "값은 1~" + max + " 사이로 넣어 주세요.";
-    var inRoom = roomUsers[room] || {};
-    if (!userData.hasOwnProperty(name) && !inRoom[name]) {
+    var key = findUserKey(room, name);
+    if (key === null) {
         return "\"" + name + "\" 님을 찾을 수 없어요.\n이 방에서 말한 적 있는 대화명을 정확히 써 주세요.";
     }
-    var prev = userData[name] || roomStart(room);
-    userData[name] = val;
-    inRoom[name] = true;
+    var inRoom = roomUsers[room] || {};
+    var prev = userData[key] || roomStart(room);
+    userData[key] = val;
+    inRoom[key] = true;
     roomUsers[room] = inRoom;
     var unbroken = false;
-    if (typeof broken !== "undefined" && broken[name]) {
-        delete broken[name];
-        if (typeof repairPrompt !== "undefined") delete repairPrompt[name];
+    if (typeof broken !== "undefined" && broken[key]) {
+        delete broken[key];
+        if (typeof repairPrompt !== "undefined") delete repairPrompt[key];
         unbroken = true;
     }
     saveData();
-    return "✏️ " + name + "님의 재련값을 " + prev + " → " + val + "(으)로 바꿨습니다." +
+    return "✏️ " + displayName(key) + "님의 재련값을 " + prev + " → " + val + "(으)로 바꿨습니다." +
         (unbroken ? "\n(파괴 상태도 풀었어요)" : "");
 }
 
@@ -268,16 +339,17 @@ function handleResetUser(room, raw, sender) {
     if (!isAdmin(sender)) return "해당 명령어를 사용할 수 있는 권한이 없습니다.";
     var name = raw.substring(5).trim();
     if (!name) return "형식: /초기화_유저명\n예) /초기화_철수";
-    var had = userData.hasOwnProperty(name) || dailyLimit.hasOwnProperty(name) ||
-        (typeof broken !== "undefined" && broken.hasOwnProperty(name));
+    var key = findUserKey(room, name);
+    var had = key !== null && (userData.hasOwnProperty(key) || dailyLimit.hasOwnProperty(key) ||
+        (typeof broken !== "undefined" && broken.hasOwnProperty(key)));
     if (!had) return "\"" + name + "\" 님의 재련 기록이 없어요.\n대화명을 정확히 써 주세요.";
-    var prev = userData[name];
-    delete userData[name];
-    delete dailyLimit[name];
-    if (typeof broken !== "undefined") delete broken[name];
-    if (typeof repairPrompt !== "undefined") delete repairPrompt[name];
+    var prev = userData[key];
+    delete userData[key];
+    delete dailyLimit[key];
+    if (typeof broken !== "undefined") delete broken[key];
+    if (typeof repairPrompt !== "undefined") delete repairPrompt[key];
     saveData();
-    return "🧹 " + name + "님의 재련 기록을 지웠습니다." + (prev ? " (" + prev + "재련)" : "") +
+    return "🧹 " + displayName(key) + "님의 재련 기록을 지웠습니다." + (prev ? " (" + prev + "재련)" : "") +
         "\n다음 재련은 " + roomStart(room) + "부터 시작해요.";
 }
 
@@ -999,7 +1071,7 @@ function handleAsk(room, raw, sender, isGroupChat) {
     if (question.length > ASK.MAX_LEN) return "✂️ 질문이 너무 길어요. " + ASK.MAX_LEN + "자 안으로 줄여 주세요.";
 
     var now = new Date().getTime();
-    var key = room + "|" + sender;
+    var key = room + "|" + (CUR_USER_KEY || sender);
     if (askLastAt[key] && now - askLastAt[key] < ASK.COOL_SEC * 1000) {
         return "⏳ " + Math.ceil((ASK.COOL_SEC * 1000 - (now - askLastAt[key])) / 1000) + "초 뒤에 다시 물어봐 주세요.";
     }
@@ -1013,7 +1085,7 @@ function handleAsk(room, raw, sender, isGroupChat) {
     var job = {
         id: d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "-" + p2(d.getHours()) + p2(d.getMinutes()) +
             p2(d.getSeconds()) + "-" + Math.floor(Math.random() * 100000),
-        room: room, sender: String(sender), question: question, at: d.toISOString()
+        room: room, sender: String(CUR_USER_NAME || sender), question: question, at: d.toISOString()
     };
     askBusy++;
     if (!askRunAsync(function () { askWork(job); })) {
@@ -1028,9 +1100,15 @@ function handleAsk(room, raw, sender, isGroupChat) {
 
 // ═══════════════ 메시지 처리 ═══════════════
 
-function response(room, msg, sender, isGroupChat, replier) {
+function response(room, msg, sender, isGroupChat, replier, who) {
     try {
         if (ROOMS.indexOf(room) === -1) return;
+
+        // 보낸 사람 — 기록은 uKey(사람), 화면엔 uName(최초 대화명). 관리자 검사(isAdmin)는 지금 대화명 그대로
+        var uKey = userKeyOf(sender, who);
+        var uName = displayName(uKey);
+        CUR_USER_KEY = uKey;
+        CUR_USER_NAME = uName;
 
         var raw = String(msg).trim();         // 원문 (등록 명령어·할말은 이걸로)
         msg = raw.toLowerCase();
@@ -1039,7 +1117,7 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         // 이 방에서 말한 사람 기록 (랭킹 집계용)
         if (!roomUsers[room]) roomUsers[room] = {};
-        roomUsers[room][sender] = true;
+        roomUsers[room][uKey] = true;
 
         // ── 명령어 등록·삭제·목록 (누구나) ──
         var regReply = handleRegister(room, raw);
@@ -1075,20 +1153,20 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         // ── 재련 시도 ──
         if (msg === "제련가즈아" || msg === "재련가즈아") {
-            if (!dailyLimit[sender] || dailyLimit[sender].date !== today) {
-                dailyLimit[sender] = { count: 0, date: today };
+            if (!dailyLimit[uKey] || dailyLimit[uKey].date !== today) {
+                dailyLimit[uKey] = { count: 0, date: today };
             }
 
-            if (dailyLimit[sender].count >= MAX_ATTEMPTS) {
+            if (dailyLimit[uKey].count >= MAX_ATTEMPTS) {
                 return replier.reply("오늘 할 수 있는 재련 기회를 모두 사용하셨습니다.");
             }
 
-            if (!userData[sender]) userData[sender] = roomStart(room);
+            if (!userData[uKey]) userData[uKey] = roomStart(room);
 
-            var level = userData[sender];
+            var level = userData[uKey];
             var prevLevel = level;
             var result = refine(level);
-            var message = sender + "님, ";
+            var message = uName + "님, ";
 
             if (result === "성공") {
                 level++;
@@ -1100,8 +1178,8 @@ function response(room, msg, sender, isGroupChat, replier) {
                 message += "재련에 실패하여 " + prevLevel + " → " + level + "로 하락되었습니다ㅠㅠ";
             }
 
-            userData[sender] = level;
-            dailyLimit[sender].count++;
+            userData[uKey] = level;
+            dailyLimit[uKey].count++;
 
             saveData();
             return replier.reply(message);
@@ -1118,7 +1196,7 @@ function response(room, msg, sender, isGroupChat, replier) {
 
             var lines = [];
             for (var i = 0; i < arr.length; i++) {
-                lines.push((i + 1) + ". " + arr[i][0] + ": " + arr[i][1] + "재련");
+                lines.push((i + 1) + ". " + displayName(arr[i][0]) + ": " + arr[i][1] + "재련");
             }
             return replier.reply(lines.length
                 ? "[재련 랭킹]\n" + lines.join("\n")

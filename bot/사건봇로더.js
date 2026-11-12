@@ -11,7 +11,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "사건봇";
-var LOADER_VER = "1112-1";   // 로더를 다시 붙여넣었는지 /사건로더 에서 확인용 (1112-1: /내정보 추가)
+var LOADER_VER = "1112-2";   // 로더를 다시 붙여넣었는지 /사건로더 에서 확인용 (1112-1: /내정보 추가, 1112-2: hash 값 숨김)
 var GLOBAL_SCOPE = this;
 
 // ── 폰에만 두는 설정 (비워두면 본체 기본값 사용) ────────────
@@ -256,11 +256,11 @@ function makeWho(sender, extra) {
 /** /내정보 — 이 폰의 앱이 사람을 구분할 값을 주는지 확인 */
 function myInfoText(sender, extra) {
     var lines = ["🪪 내 정보 (사건봇 로더 " + LOADER_VER + ")", "대화명: " + sender, "받은 방식: " + apiMode];
+    // ★ hash·지문은 사람을 구분하는 열쇠라 값은 절대 보여주지 않는다 — 있는지만 알려준다 (2026-11-12)
     var h = authorHash(extra);
-    lines.push("보낸 사람 hash: " + (h ? h : "없음 ❌"));
-    var b64 = profileBase64(extra);
+    lines.push("보낸 사람 hash: " + (h ? "있음 ✅ (값은 비공개)" : "없음 ❌"));
     var pk = profileKey(extra);
-    lines.push("프로필 사진 지문: " + (pk ? pk + " (사진 " + b64.length + "자)" : "없음 ❌"));
+    lines.push("프로필 사진 지문: " + (pk ? "있음 ✅ (값은 비공개)" : "없음 ❌"));
     try {
         var a = extra && extra.m ? extra.m.author : null;
         if (a) {
@@ -269,7 +269,7 @@ function myInfoText(sender, extra) {
             if (keys.length) lines.push("보낸 사람 항목: " + keys.join(", "));
         }
     } catch (e) {}
-    lines.push("", "👉 대화명을 바꾼 뒤 다시 /내정보 를 쳐서 hash·지문이 그대로인지 봐 주세요.");
+    lines.push("", "hash 가 있으면 대화명을 바꿔도 같은 사람으로 기록돼요.");
     return lines.join("\n");
 }
 
