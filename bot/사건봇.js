@@ -5,8 +5,8 @@
  *  ◆ 명령어
  *    제련가즈아 / 재련가즈아 → 재련 시도 (하루 2회)
  *    /랭킹                    → 이 방 참여자들의 재련 랭킹
- *    /등록_명령어_할말        → 명령어 등록 (누구나)
- *    /삭제_명령어             → 등록한 명령어 삭제 (누구나)
+ *    /등록 명령어 할말        → 명령어 등록 (누구나, /등록_명령어_할말 도 된다)
+ *    /삭제 명령어             → 등록한 명령어 삭제 (누구나, /삭제_명령어 도 된다)
  *    /리스트                  → 등록된 명령어 목록
  *    /탐지 할말               → 거짓말 탐지기 (참·거짓·중립 무작위, 누구나)
  *    /경험치 레벨             → ROX 사냥터 추천 (그 레벨~+3 몬스터 중 경험치×마릿수 1등, 누구나)
@@ -33,7 +33,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "사건봇";
-var BOT_VER = "1112-18";
+var BOT_VER = "1112-20";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["사건"];
@@ -488,19 +488,28 @@ function isReserved(trigger) {
 function handleRegister(room, raw) {
     var list = custom[room] || {};
 
-    if (raw.indexOf("/등록_") === 0) {
-        var rest = raw.substring(4);
-        var cut = rest.indexOf("_");
-        var trigger = cut === -1 ? "" : rest.substring(0, cut).trim();
-        var text = cut === -1 ? "" : rest.substring(cut + 1);
+    // 두 가지로 받는다 (2026-11-12): "/등록_명령어_할말" 그리고 밑줄 없이 "/등록 명령어 할말"
+    //   띄어쓰기 쪽은 첫 낱말이 명령어, 나머지 전부가 할말 (명령어에 띄어쓰기가 있으면 밑줄 쪽을 쓴다)
+    if (raw === "/등록" || raw.indexOf("/등록_") === 0 || /^\/등록\s/.test(raw)) {
+        var trigger = "", text = "";
+        if (raw.charAt(3) === "_") {
+            var rest = raw.substring(4);
+            var cut = rest.indexOf("_");
+            trigger = cut === -1 ? "" : rest.substring(0, cut).trim();
+            text = cut === -1 ? "" : rest.substring(cut + 1);
+        } else {
+            var sm = /^(\S+)\s+([\s\S]*)$/.exec(raw.substring(3).replace(/^\s+/, ""));
+            trigger = sm ? sm[1] : "";
+            text = sm ? sm[2] : "";
+        }
         if (!trigger || !text.trim()) {
-            return "형식: /등록_명령어_할말\n예) /등록_공지_오늘 8시에 모여요";
+            return "형식: /등록 명령어 할말\n예) /등록 공지 오늘 8시에 모여요\n(명령어에 띄어쓰기가 있으면 /등록_명령어_할말)";
         }
         if (isReserved(trigger)) {
             return "\"" + trigger + "\" 은(는) 봇이 이미 쓰는 말이라 등록할 수 없습니다.";
         }
         if (list.hasOwnProperty(trigger)) {
-            return "\"" + trigger + "\" 은(는) 이미 등록되어 있습니다.\n바꾸려면 /삭제_" + trigger + " 후 다시 등록해 주세요.";
+            return "\"" + trigger + "\" 은(는) 이미 등록되어 있습니다.\n바꾸려면 /삭제 " + trigger + " 후 다시 등록해 주세요.";
         }
         list[trigger] = text;
         custom[room] = list;
@@ -508,9 +517,10 @@ function handleRegister(room, raw) {
         return "✅ \"" + trigger + "\" 등록 완료! 이제 " + trigger + " 라고 치면 답합니다.";
     }
 
-    if (raw.indexOf("/삭제_") === 0) {
-        var name = raw.substring(4).trim();
-        if (!name) return "형식: /삭제_명령어";
+    // 지우기도 "/삭제_명령어" 와 "/삭제 명령어" 둘 다. 그냥 "/삭제"(관리자 재련값 초기화)와는 겹치지 않는다
+    if (raw.indexOf("/삭제_") === 0 || /^\/삭제\s/.test(raw)) {
+        var name = raw.substring(3).replace(/^_/, "").trim();
+        if (!name) return "형식: /삭제 명령어";
         if (!list.hasOwnProperty(name)) {
             return "\"" + name + "\" 은(는) 등록된 명령어가 아닙니다. /리스트 로 확인해 주세요.";
         }
@@ -522,7 +532,7 @@ function handleRegister(room, raw) {
     if (raw === "/리스트") {
         var names = [];
         for (var k in list) if (list.hasOwnProperty(k)) names.push(k);
-        if (!names.length) return "등록된 명령어가 없습니다.\n/등록_명령어_할말 로 누구나 넣을 수 있어요.";
+        if (!names.length) return "등록된 명령어가 없습니다.\n/등록 명령어 할말 로 누구나 넣을 수 있어요.";
         names.sort();
         return "📋 등록된 명령어 (" + names.length + "개)\n" + names.join("\n");
     }
@@ -888,8 +898,8 @@ var MANUAL_TEXT = [
     "/랭킹 — 이 방 재련 순위",
     "",
     "📝 명령어 등록 (누구나)",
-    "/등록_명령어_할말 — 예) /등록_공지_오늘 8시에 모여요",
-    "/삭제_명령어 — 등록한 명령어 지우기",
+    "/등록 명령어 할말 — 예) /등록 공지 오늘 8시에 모여요",
+    "/삭제 명령어 — 등록한 명령어 지우기",
     "/리스트 — 등록된 명령어 보기",
     "",
     "🎲 놀이 (누구나)",
