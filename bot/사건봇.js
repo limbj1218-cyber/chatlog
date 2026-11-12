@@ -11,6 +11,9 @@
  *    /탐지 할말               → 거짓말 탐지기 (참·거짓·중립 무작위, 누구나)
  *    /경험치 레벨             → ROX 사냥터 추천 (그 레벨~+3 몬스터 중 경험치×마릿수 1등, 누구나)
  *    /메뉴얼 (/매뉴얼)        → 사용법 안내 (누구나)
+ *    .질문                    → 클로드가 답한다 (관리자가 켰을 때, 답은 1~2분 뒤)
+ *    .. / ...                 → 클로드 답변 켜기 / 끄기 (관리자)
+ *    /클로드 /클로드토큰      → 클로드 상태 / 깃헙 토큰 등록 (토큰은 관리자)
  *    /초기화 /삭제            → 관리자 전용
  *
  *  ◆ 제련봇(bot/제련봇.js)과는 완전히 별개다.
@@ -26,7 +29,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "사건봇";
-var BOT_VER = "1112-10";
+var BOT_VER = "1112-11";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["사건"];
@@ -134,7 +137,8 @@ function loadData() {
     return {
         userData: parsed.userData || {},
         dailyLimit: parsed.dailyLimit || {},
-        custom: parsed.custom || {},              // { 방: { 명령어: 할말 } } 등록 명령어
+        custom: parsed.custom || {},
+        askOn: parsed.askOn || {},                // { 방: true } 클로드 답변 켜짐              // { 방: { 명령어: 할말 } } 등록 명령어
         roomUsers: rooms
     };
 }
@@ -144,6 +148,7 @@ var userData = store.userData;
 var dailyLimit = store.dailyLimit;
 var roomUsers = store.roomUsers;
 var custom = store.custom;
+var askOn = store.askOn;
 
 function saveData() {
     var out = { userData: userData, dailyLimit: dailyLimit, roomUsers: {} };
@@ -156,6 +161,7 @@ function saveData() {
         out.roomUsers[room] = arr;                    // 원본과 같은 배열 형태로 저장
     }
     out.custom = custom;
+    out.askOn = askOn;
     try { __SAGEON_DATA__ = out; } catch (e) {}       // 파일 저장이 막혀도 메모리에는 유지
     fileWrite(DATA_FILE, JSON.stringify(out));
 }
@@ -210,7 +216,8 @@ var RESERVED = ["재련가즈아", "제련가즈아", "/랭킹", "/확률", "/�
 function isReserved(trigger) {
     var t = trigger.toLowerCase();
     if (RESERVED.indexOf(t) !== -1) return true;
-    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼") return true;
+    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
+        || t.charAt(0) === "." || t.indexOf("/클로드") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
         for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
             if (REPAIR_KEYWORDS[i].toLowerCase() === t) return true;
@@ -629,8 +636,289 @@ var MANUAL_TEXT = [
     "",
     "🎲 놀이 (누구나)",
     "/탐지 할말 — 거짓말 탐지기 (참·거짓·중립)",
-    "/경험치 레벨 — ROX 추천 몬스터 (예: /경험치 110)"
+    "/경험치 레벨 — ROX 추천 몬스터 (예: /경험치 110)",
+    "",
+    "🤖 클로드 (관리자가 켰을 때만)",
+    ".질문 — 점 하나 붙여서 물어보면 클로드가 답해요 (1~2분 걸려요)"
 ].join("\n");
+
+// ═══════════════ 클로드 답변 (2026-11-12) ═══════════════
+// ".질문" → 클로드가 답한다. 관리자가 ".." 치면 켜고 "..." 치면 끈다 (방별, 처음엔 꺼져 있다).
+// API 키(종량제)를 쓰지 않는다 — 벽타기처럼 깃헙 Actions 가 클로드 구독 토큰으로 돌린다:
+//   ① 봇이 질문을 비공개 저장소(ASK.REPO)의 ask/q-번호.json 으로 올리고
+//   ② chatlog 의 ask-claude.yml 워크플로우를 깨우면
+//   ③ 워크플로우가 클로드에게 물어 ask/a-번호.json 에 답을 적고
+//   ④ 봇이 그 파일을 읽어 방에 보낸다 (먼저 말 걸기 = BotManager.getCurrentBot().send).
+// ※ 철칙: 메시지 처리 흐름에서는 네트워크·대기를 절대 하지 않는다. ①~④는 전부 백그라운드 스레드에서 한다.
+//   스레드를 못 만드는 앱이면 질문을 받지 않는다 (그 자리에서 돌리면 봇이 몇 분씩 멈춘다).
+// ※ chatlog 는 공개 저장소라 질문·답을 거기 두지 않는다. 워크플로우 로그에도 내용은 찍지 않는다.
+// ※ 깃헙 토큰은 폰에만 둔다 (관리자가 /클로드토큰 으로 넣는다). 필요한 권한:
+//   ASK.REPO 의 Contents 읽기/쓰기 + ASK.WF_REPO 의 Actions 읽기/쓰기.
+var ASK = {
+    REPO: "limbj1218-cyber/cafe-watch",   // 질문·답을 두는 비공개 저장소
+    DIR: "ask",
+    WF_REPO: "limbj1218-cyber/chatlog",   // 워크플로우가 있는 저장소
+    WF_FILE: "ask-claude.yml",
+    WF_REF: "main",
+    MAX_LEN: 500,          // 질문 최대 글자 수
+    COOL_SEC: 60,          // 한 사람이 다시 물을 수 있기까지 (초)
+    MAX_BUSY: 3,           // 동시에 기다리는 질문 수 (방 전체 합)
+    DAILY_MAX: 50,         // 방마다 하루 질문 수
+    FIRST_WAIT_MS: 40000,  // 워크플로우가 켜지는 데 걸리는 시간 — 그 전엔 읽어 봐야 없다
+    POLL_MS: 10000,
+    GIVE_UP_MS: 300000     // 5분 넘으면 포기
+};
+var ASK_TOKEN_FILE = BASE_DIR + "/claude_token.txt";
+var askToken = "";
+var askBusy = 0;
+var askLastAt = {};        // "방|이름" → 마지막으로 물은 시각(ms)
+var askDaily = {};         // 방 → { date, count }
+var askLastErr = "";
+var askAnswered = 0;
+var askReplier = {};       // 방 → 마지막 replier (먼저 말 걸기가 안 되는 앱에서 대신 쓴다)
+
+(function loadAskToken() {
+    try {
+        var t = fileRead(ASK_TOKEN_FILE);
+        if (t) askToken = String(t).replace(/[\r\n\s]+/g, "");
+    } catch (e) {}
+})();
+
+function askSleep(ms) {
+    try { java.lang.Thread.sleep(ms); } catch (e) {}
+}
+
+/** 백그라운드 실행. 스레드를 못 만들면 false (그 자리에서 실행하지 않는다) */
+function askRunAsync(fn) {
+    var body = function () { try { fn(); } catch (e) { askLastErr = "스레드 오류: " + e; } };
+    try {
+        var t = new java.lang.Thread(body);
+        t.setDaemon(true); t.start();
+        return true;
+    } catch (e) {}
+    try {
+        var t2 = new java.lang.Thread(new JavaAdapter(java.lang.Runnable, { run: body }));
+        t2.setDaemon(true); t2.start();
+        return true;
+    } catch (e) {}
+    return false;
+}
+
+/** 깃헙 API → { code, body } */
+function askHttp(method, url, bodyStr, accept) {
+    var conn = new java.net.URL(url).openConnection();
+    conn.setRequestMethod(method);
+    conn.setRequestProperty("Authorization", "Bearer " + askToken);
+    conn.setRequestProperty("Accept", accept || "application/vnd.github+json");
+    conn.setRequestProperty("X-GitHub-Api-Version", "2022-11-28");
+    conn.setRequestProperty("User-Agent", "chatbot-ask");
+    conn.setConnectTimeout(15000);
+    conn.setReadTimeout(20000);
+    if (bodyStr) {
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        var os = conn.getOutputStream();
+        os.write(new java.lang.String(bodyStr).getBytes("UTF-8"));
+        os.close();
+    }
+    var code = Number(conn.getResponseCode());
+    var is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+    var body = "";
+    if (is) {
+        var br = new java.io.BufferedReader(new java.io.InputStreamReader(is, "UTF-8"));
+        var line, first = true;
+        while ((line = br.readLine()) !== null) { body += (first ? "" : "\n") + line; first = false; }
+        br.close();
+    }
+    try { conn.disconnect(); } catch (e) {}
+    return { code: code, body: body };
+}
+
+var ASK_B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/** UTF-8 → Base64 (깃헙 Contents API 는 내용을 Base64 로 받는다) */
+function askBase64(str) {
+    var bytes = new java.lang.String(str).getBytes("UTF-8");
+    try {
+        if (typeof android !== "undefined" && android.util && android.util.Base64) {
+            return String(android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP));
+        }
+    } catch (e) {}
+    try { return String(java.util.Base64.getEncoder().encodeToString(bytes)); } catch (e) {}
+    var out = "", i = 0, n = bytes.length;
+    while (i < n) {
+        var b0 = bytes[i++] & 0xff;
+        var b1 = i < n ? bytes[i++] & 0xff : -1;
+        var b2 = i < n ? bytes[i++] & 0xff : -1;
+        out += ASK_B64.charAt(b0 >> 2);
+        out += ASK_B64.charAt(((b0 & 3) << 4) | (b1 < 0 ? 0 : b1 >> 4));
+        out += b1 < 0 ? "=" : ASK_B64.charAt(((b1 & 15) << 2) | (b2 < 0 ? 0 : b2 >> 6));
+        out += b2 < 0 ? "=" : ASK_B64.charAt(b2 & 63);
+    }
+    return out;
+}
+
+/** 방에 먼저 말 걸기 — 이 앱에서는 BotManager.getCurrentBot().send 만 된다 (카페봇에서 확인) */
+function askSend(room, text) {
+    try {
+        if (typeof BotManager !== "undefined" && BotManager && BotManager.getCurrentBot) {
+            var b = BotManager.getCurrentBot();
+            if (b && typeof b.send === "function") { b.send(room, text); return true; }
+        }
+    } catch (e) {}
+    try {
+        if (typeof Api !== "undefined" && Api && Api.replyRoom) { Api.replyRoom(room, text); return true; }
+    } catch (e) {}
+    try {
+        var r = askReplier[room];
+        if (r && typeof r.reply === "function") { r.reply(text); return true; }
+    } catch (e) {}
+    askLastErr = "방에 보내지 못함 (먼저 말 걸기 불가)";
+    return false;
+}
+
+function askContentsUrl(name) {
+    return "https://api.github.com/repos/" + ASK.REPO + "/contents/" + ASK.DIR + "/" + name;
+}
+
+/** 백그라운드: 질문 올리기 → 워크플로우 깨우기 → 답 기다렸다 보내기 */
+function askWork(job) {
+    try {
+        var put = askHttp("PUT", askContentsUrl("q-" + job.id + ".json"), JSON.stringify({
+            message: "ask " + job.id,
+            content: askBase64(JSON.stringify({
+                id: job.id, room: job.room, sender: job.sender, question: job.question, at: job.at
+            }))
+        }));
+        if (put.code !== 201 && put.code !== 200) {
+            askLastErr = "질문 올리기 실패 (HTTP " + put.code + ")";
+            askSend(job.room, "⚠️ 질문을 보내지 못했어요 (깃헙 " + put.code + ")\n관리자는 /클로드 로 상태를 확인해 주세요.");
+            return;
+        }
+        var wf = askHttp("POST", "https://api.github.com/repos/" + ASK.WF_REPO +
+            "/actions/workflows/" + ASK.WF_FILE + "/dispatches", JSON.stringify({ ref: ASK.WF_REF }));
+        if (wf.code !== 204) {
+            askLastErr = "워크플로우 깨우기 실패 (HTTP " + wf.code + ")";
+            askSend(job.room, "⚠️ 클로드를 깨우지 못했어요 (깃헙 " + wf.code + ")\n관리자는 /클로드 로 상태를 확인해 주세요.");
+            return;
+        }
+
+        askSleep(ASK.FIRST_WAIT_MS);
+        var started = new Date().getTime();
+        while (new Date().getTime() - started < ASK.GIVE_UP_MS) {
+            var got = null;
+            try {
+                got = askHttp("GET", askContentsUrl("a-" + job.id + ".json") + "?t=" + new Date().getTime(),
+                    null, "application/vnd.github.raw");
+            } catch (ne) { got = null; }
+            if (got && got.code === 200) {
+                var a = null;
+                try { a = JSON.parse(got.body); } catch (pe) {}
+                if (a && a.ok && a.answer) {
+                    askAnswered++;
+                    var q = job.question.length > 40 ? job.question.substring(0, 40) + "…" : job.question;
+                    askSend(job.room, "💬 " + job.sender + "님: " + q + "\n\n" + a.answer);
+                } else {
+                    askLastErr = "클로드 실행 실패" + (a && a.error ? " — " + a.error : "");
+                    askSend(job.room, "⚠️ 클로드가 답하지 못했어요. 잠시 뒤에 다시 물어봐 주세요.");
+                }
+                return;
+            }
+            askSleep(ASK.POLL_MS);
+        }
+        askLastErr = "답 기다리다 포기 (" + (ASK.GIVE_UP_MS / 60000) + "분)";
+        askSend(job.room, "⌛ 답이 너무 늦어져서 그만 기다렸어요. 잠시 뒤에 다시 물어봐 주세요.");
+    } catch (e) {
+        askLastErr = "오류: " + e;
+        askSend(job.room, "⚠️ 클로드에게 묻다가 문제가 생겼어요. 잠시 뒤에 다시 물어봐 주세요.");
+    } finally {
+        askBusy = Math.max(0, askBusy - 1);
+    }
+}
+
+function askStatus(room) {
+    return "🤖 클로드 답변\n" +
+        "이 방: " + (askOn[room] ? "켜짐 ✅" : "꺼짐 ⛔") + "\n" +
+        "깃헙 토큰: " + (askToken ? "등록됨 ✅" : "없음 ❌ (/클로드토큰 으로 등록)") + "\n" +
+        "기다리는 질문: " + askBusy + "개 · 답한 질문: " + askAnswered + "개" +
+        (askLastErr ? "\n⚠️ 마지막 문제: " + askLastErr : "");
+}
+
+/** 클로드 관련 메시지면 답장 문구("" 이면 조용히 넘어감), 아니면 null */
+function handleAsk(room, raw, sender, isGroupChat) {
+    // ── 켜고 끄기 (관리자) — 관리자가 아니면 평소 대화로 보고 그냥 넘어간다 ──
+    if (raw === ".." || raw === "...") {
+        if (!isAdmin(sender)) return null;
+        if (raw === "..") {
+            askOn[room] = true;
+            saveData();
+            return "🤖 클로드 답변을 켰어요!\n점 하나 붙여서 물어보세요. 예) .오늘 저녁 뭐 먹지?\n(답은 1~2분 걸려요 · 끄려면 ...)" +
+                (askToken ? "" : "\n⚠️ 아직 깃헙 토큰이 없어요 — /클로드토큰 으로 먼저 넣어 주세요.");
+        }
+        askOn[room] = false;
+        saveData();
+        return "😴 클로드 답변을 껐어요. (다시 켜려면 ..)";
+    }
+
+    // ── 토큰 등록 (관리자) ──
+    if (raw === "/클로드토큰" || raw.indexOf("/클로드토큰 ") === 0) {
+        if (!isAdmin(sender)) return "해당 명령어를 사용할 수 있는 권한이 없습니다.";
+        var v = raw.substring(6).replace(/[\r\n\s]+/g, "");
+        if (!v) return "🔐 깃헙 토큰: " + (askToken ? "등록됨 ✅" : "없음 ❌") +
+            "\n사용법: /클로드토큰 <토큰>\n지우려면: /클로드토큰 삭제";
+        if (v === "삭제") {
+            askToken = "";
+            fileWrite(ASK_TOKEN_FILE, "");
+            return "🗑️ 깃헙 토큰을 지웠어요.";
+        }
+        if (v.indexOf("ghp_") !== 0 && v.indexOf("github_pat_") !== 0) {
+            return "⛔ 토큰은 보통 ghp_ 또는 github_pat_ 로 시작해요.";
+        }
+        askToken = v;
+        var saved = fileWrite(ASK_TOKEN_FILE, v);
+        return "🔐 깃헙 토큰을 등록했어요 (" + v.length + "자)" +
+            (saved ? "" : "\n⚠️ 파일 저장 실패 — 앱을 껐다 켜면 사라집니다") +
+            (isGroupChat ? "\n⚠️ 단톡방이에요 — 방금 보낸 메시지를 꼭 삭제하세요!" : "");
+    }
+
+    if (raw === "/클로드") return askStatus(room);
+
+    // ── 질문 ──
+    if (!askOn[room]) return null;
+    if (raw.charAt(0) !== "." || raw.charAt(1) === ".") return null;
+    var question = raw.substring(1).trim();
+    if (!question) return null;
+
+    if (!askToken) return "⚠️ 깃헙 토큰이 없어서 물어볼 수 없어요. (관리자: /클로드토큰)";
+    if (question.length > ASK.MAX_LEN) return "✂️ 질문이 너무 길어요. " + ASK.MAX_LEN + "자 안으로 줄여 주세요.";
+
+    var now = new Date().getTime();
+    var key = room + "|" + sender;
+    if (askLastAt[key] && now - askLastAt[key] < ASK.COOL_SEC * 1000) {
+        return "⏳ " + Math.ceil((ASK.COOL_SEC * 1000 - (now - askLastAt[key])) / 1000) + "초 뒤에 다시 물어봐 주세요.";
+    }
+    if (askBusy >= ASK.MAX_BUSY) return "🙏 지금 답을 기다리는 질문이 많아요. 조금 뒤에 물어봐 주세요.";
+    var today = new Date().toDateString();
+    if (!askDaily[room] || askDaily[room].date !== today) askDaily[room] = { date: today, count: 0 };
+    if (askDaily[room].count >= ASK.DAILY_MAX) return "🌙 오늘은 질문을 다 썼어요 (방마다 하루 " + ASK.DAILY_MAX + "개). 내일 또 물어봐 주세요.";
+
+    var d = new Date();
+    function p2(n) { return (n < 10 ? "0" : "") + n; }
+    var job = {
+        id: d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "-" + p2(d.getHours()) + p2(d.getMinutes()) +
+            p2(d.getSeconds()) + "-" + Math.floor(Math.random() * 100000),
+        room: room, sender: String(sender), question: question, at: d.toISOString()
+    };
+    askBusy++;
+    if (!askRunAsync(function () { askWork(job); })) {
+        askBusy--;
+        askLastErr = "이 앱에서는 백그라운드 스레드를 만들 수 없음";
+        return "⚠️ 이 앱에서는 클로드 답변을 쓸 수 없어요 (백그라운드 실행 불가).";
+    }
+    askLastAt[key] = now;
+    askDaily[room].count++;
+    return "🤔 클로드가 생각 중이에요… (1~2분 걸려요)";
+}
 
 // ═══════════════ 메시지 처리 ═══════════════
 
@@ -661,6 +949,11 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         // ── 사용법 (누구나) ──
         if (raw === "/메뉴얼" || raw === "/매뉴얼") return replier.reply(MANUAL_TEXT);
+
+        // ── 클로드 답변 (켜기 .. / 끄기 ... / 질문 .할말) ──
+        askReplier[room] = replier;
+        var askReply = handleAsk(room, raw, sender, isGroupChat);
+        if (askReply !== null) return replier.reply(askReply);
 
         // ── 재련 시도 ──
         if (msg === "제련가즈아" || msg === "재련가즈아") {

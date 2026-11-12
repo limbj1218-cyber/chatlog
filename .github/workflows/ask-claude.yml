@@ -1,0 +1,72 @@
+# 클로드 질문 답변 (사건봇·루나봇의 ".질문")
+# 봇이 비공개 저장소 cafe-watch 의 ask/q-번호.json 에 질문을 올리고 이 워크플로우를 깨운다
+# → 클로드(구독 토큰, API 키 아님)가 답을 ask/a-번호.json 에 적는다 → 봇이 읽어 방에 보낸다.
+#
+# ★ 이 저장소는 공개라 실행 로그도 공개다. 질문·답 내용은 로그에 출력하지 않는다 (.github/ask-claude.js 참고).
+# ★ 필요한 시크릿 (둘 다 이미 있는 것을 같이 쓴다)
+#    CLAUDE_CODE_OAUTH_TOKEN — 벽타기와 같은 클로드 구독 토큰
+#    CAFE_REPO_TOKEN         — cafe-watch 저장소 Contents 읽기/쓰기 PAT (카페 감시와 같은 것)
+name: ask-claude
+
+on:
+  workflow_dispatch:
+
+# 질문이 몰려도 하나씩 — 기다리는 실행은 그 사이 쌓인 질문을 전부 처리한다
+concurrency:
+  group: ask-claude
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  QA_REPO: "limbj1218-cyber/cafe-watch"
+
+jobs:
+  answer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+
+      - name: 질문 저장소 받기
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.QA_REPO }}
+          token: ${{ secrets.CAFE_REPO_TOKEN }}
+          path: qa
+
+      - name: 대기 질문 확인
+        id: pending
+        run: |
+          COUNT=$(ls qa/ask/q-*.json 2>/dev/null | wc -l)
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "대기 질문: $COUNT개"
+
+      - name: Claude Code 설치
+        if: steps.pending.outputs.count != '0'
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: 클로드에게 묻기
+        if: steps.pending.outputs.count != '0'
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: node .github/ask-claude.js qa/ask
+
+      - name: 답 올리기
+        if: steps.pending.outputs.count != '0'
+        working-directory: qa
+        run: |
+          git config user.name "ask-claude"
+          git config user.email "ask-claude@users.noreply.github.com"
+          git add -A ask
+          if git diff --cached --quiet; then echo "바뀐 것 없음"; exit 0; fi
+          git commit -q -m "ask: 답변"
+          # 봇이 그 사이 새 질문을 올렸을 수 있으니 받아 합친 뒤 올린다
+          for i in 1 2 3 4 5; do
+            if git pull -q --rebase && git push -q; then echo "올림"; exit 0; fi
+            sleep 3
+          done
+          echo "❌ 올리기 실패"; exit 1
