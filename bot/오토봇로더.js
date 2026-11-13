@@ -41,6 +41,7 @@ var lastError = null;
 var loadMethod = "";
 var codeFrom = "";     // 본체 코드를 어디서 얻었는지 (깃헙 / 폰에 저장된 코드)
 var apiMode = "(아직 메시지 못 받음)";
+var api2Seen = false;   // API2 로 받은 적 있으면 API1 은 무시 (hash 가 API2 에만 있어서)
 var api2Ready = false;
 var lastSeen = "";
 var lastSeenAt = 0;
@@ -328,8 +329,28 @@ function shouldReportError(text) {
     return true;
 }
 
+// ─── 보낸 사람 식별 (대화명을 바꿔도 같은 사람인지 알아보려고, 2026-11-13) ───
+// 카톡 알림에는 회원 ID 가 없다. 메신저봇R API2 의 author.hash 를 쓴다 (앱 버전에 따라 없을 수 있다).
+// ※ 사건봇·루나봇과 같은 방식이고, 본체의 닉변 감지가 이 값을 쓴다.
+//   값은 사람을 구분하는 열쇠라 화면에 절대 보여주지 않는다.
+function authorHash(extra) {
+    try {
+        var a = extra && extra.m ? extra.m.author : null;
+        if (a && a.hash !== undefined && a.hash !== null) {
+            var h = String(a.hash);
+            if (h && h !== "undefined" && h !== "null") return h;
+        }
+    } catch (e) {}
+    return null;
+}
+
+/** 본체에 넘길 보낸 사람 정보 */
+function makeWho(sender, extra) {
+    return { name: String(sender), hash: authorHash(extra) };
+}
+
 /** 실제 처리 (API1/API2 공통 진입점) */
-function handle(room, msg, sender, isGroupChat, replier) {
+function handle(room, msg, sender, isGroupChat, replier, extra) {
     var text = "";
     try {
         text = String(msg).trim();
@@ -378,7 +399,7 @@ function handle(room, msg, sender, isGroupChat, replier) {
             }
         }
 
-        remoteResponse(room, msg, sender, isGroupChat, replier);
+        remoteResponse(room, msg, sender, isGroupChat, replier, makeWho(sender, extra));
     } catch (e) {
         lastError = String(e);
         if (shouldReportError(text)) {
@@ -388,9 +409,12 @@ function handle(room, msg, sender, isGroupChat, replier) {
 }
 
 // ① 구버전 API (메신저봇R API1 / 다크토네이도 챗봇 등)
-function response(room, msg, sender, isGroupChat, replier) {
+// ※ API2 로 한 번이라도 받았으면 API1 은 무시한다 — 같은 메시지가 두 갈래로 오는데
+//   API1 이 먼저 오면 hash 가 없어 같은 사람이 따로 잡힌다 (사건봇·루나봇에서 실제로 겪음).
+function response(room, msg, sender, isGroupChat, replier, imageDB) {
+    if (api2Seen) return;
     apiMode = "API1 (response)";
-    handle(room, msg, sender, isGroupChat, replier);
+    handle(room, msg, sender, isGroupChat, replier, { imageDB: imageDB });
 }
 
 // ② 신버전 API (메신저봇R API2)
@@ -406,13 +430,15 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         var ev = (typeof Event !== "undefined" && Event && Event.MESSAGE) ? Event.MESSAGE : "message";
         b.addListener(ev, function (m) {
+            api2Seen = true;
             apiMode = "API2 (addListener)";
             handle(
                 String(m.room),
                 String(m.content),
                 String(m.author ? m.author.name : ""),
                 !!m.isGroupChat,
-                { reply: function (t) { m.reply(t); } }
+                { reply: function (t) { m.reply(t); } },
+                { m: m }
             );
         });
         api2Ready = true;

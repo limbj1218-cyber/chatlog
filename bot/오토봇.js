@@ -7,6 +7,7 @@
  *               LIST_SPLIT 에 있는 방에서는 방별로 갈라서 보여준다
  *    /오토     → 진단 (방 인식·데이터 상태·버전) — 모든 방에서 동작
  *    /삭제내역 /삭제내역1 /삭제내역2 → 보관된 대화 되짚어보기 (지정한 방에서만, 누구나)
+ *    /닉변감지 → 이 방에서 대화명을 바꾼 사람 (처음 이름 → … → 지금 이름, 누구나)
  *
  *    [공백기 근무표]  /등록_명령어_할말 → 오토2·오토2프프·공백기 근무표에서 반응
  *                    /프반_명령어_할말 → 오토2프프에서만 반응
@@ -34,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "1009-4";
+var BOT_VER = "1113-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -192,6 +193,7 @@ function pickBaseDir() {
 var BASE_DIR = pickBaseDir();
 var CACHE_FILE = BASE_DIR ? (BASE_DIR + "/오토봇캐시.json") : null;
 var LOG_FILE = BASE_DIR ? (BASE_DIR + "/대화기록.json") : null;
+var PEOPLE_FILE = BASE_DIR ? (BASE_DIR + "/사람.json") : null;
 // 갈래마다 저장 경로를 붙여 둔다 (BASE_DIR 이 없으면 저장은 못 하고 메모리로만 동작)
 for (var ki = 0; ki < REG_KINDS.length; ki++) {
     REG_KINDS[ki].path = BASE_DIR ? (BASE_DIR + "/" + REG_KINDS[ki].file) : null;
@@ -513,6 +515,128 @@ function findContain(table, text) {
     return null;
 }
 
+// ═══════════════ 사람 구분 · 닉변 감지 (2026-11-13) ═══════════════
+// 사건봇·루나봇에 있던 것을 그대로 옮겼다. 카톡 알림에는 회원 ID 가 없어서,
+// 메신저봇R API2 가 주는 author.hash 로 사람을 구분한다 (로더가 who.hash 로 넘긴다).
+// ★ hash 는 절대 화면에 보여주지 않는다. 보이는 건 그 사람이 처음 쓰던 대화명뿐이다.
+// hash 가 없는 앱·옛 로더에서는 아무것도 기록하지 않는다 (닉변 감지가 동작하지 않을 뿐, 나머지는 그대로).
+
+var HASH_PREFIX = "#h:";
+var NICK_HIST_MAX = 10;    // 한 사람당 남겨 둘 대화명 개수 (첫 이름은 늘 남긴다)
+var NICK_LIST_MAX = 30;    // /닉변감지 에 한 번에 보여줄 사람 수
+
+var PEOPLE = null;         // { "#h:해시": { name: 최초 대화명, last: 최근 대화명, at: 바뀐 시각, hist: [이름…] } }
+var ROOM_PEOPLE = null;    // { 방이름: { "#h:해시": true } } — 그 방에서 말한 적 있는 사람
+var lastPeopleErr = null;
+var peopleDirty = false;
+var peopleSaving = false;
+
+function loadPeople() {
+    if (PEOPLE !== null) return;
+    PEOPLE = {};
+    ROOM_PEOPLE = {};
+    if (!PEOPLE_FILE) return;
+    try {
+        var t = fileRead(PEOPLE_FILE);
+        if (t) {
+            var o = JSON.parse(String(t));
+            if (o && typeof o === "object") {
+                PEOPLE = o.people || {};
+                ROOM_PEOPLE = o.rooms || {};
+            }
+        }
+    } catch (e) { lastPeopleErr = String(e); }
+}
+
+// 저장은 백그라운드로 — 메시지 흐름에서 파일을 붙들지 않는다 (철칙)
+function savePeople() {
+    if (!PEOPLE_FILE || peopleSaving) return;
+    peopleSaving = true;
+    try {
+        fileWrite(PEOPLE_FILE, JSON.stringify({ people: PEOPLE, rooms: ROOM_PEOPLE }));
+        peopleDirty = false;
+        lastPeopleErr = null;
+    } catch (e) { lastPeopleErr = String(e); }
+    peopleSaving = false;
+}
+
+function addNickHistory(p, newName) {
+    if (!p.hist || !p.hist.length) {
+        p.hist = [p.name];
+        if (p.last && p.last !== p.name) p.hist.push(p.last);
+    }
+    if (p.hist[p.hist.length - 1] !== newName) p.hist.push(newName);
+    // 첫 이름은 남기고 오래된 중간 이름부터 버린다
+    while (p.hist.length > NICK_HIST_MAX) p.hist.splice(1, 1);
+}
+
+/** 이 메시지를 보낸 사람을 적어 둔다. hash 가 없으면 아무것도 하지 않는다. */
+function seePerson(room, sender, who) {
+    var h = "";
+    try { h = who && who.hash ? String(who.hash) : ""; } catch (e) { h = ""; }
+    if (!h || h === "null" || h === "undefined") return;
+
+    loadPeople();
+    var name = String(sender);
+    var key = HASH_PREFIX + h;
+    var p = PEOPLE[key], changed = false;
+
+    if (!p) {
+        PEOPLE[key] = { name: name, last: name, at: new Date().getTime() };
+        changed = true;
+    } else if (p.last !== name) {
+        addNickHistory(p, name);
+        p.last = name;
+        p.at = new Date().getTime();
+        changed = true;
+    }
+
+    if (!ROOM_PEOPLE[room]) ROOM_PEOPLE[room] = {};
+    if (!ROOM_PEOPLE[room][key]) { ROOM_PEOPLE[room][key] = true; changed = true; }
+
+    if (changed) {
+        peopleDirty = true;
+        if (!peopleSaving) runAsync(savePeople);
+    }
+}
+
+/** 처음 이름 → … → 지금 이름 */
+function nickChain(p) {
+    var chain = (p.hist && p.hist.length) ? p.hist.slice(0) : [p.name, p.last];
+    if (chain[0] !== p.name) chain.unshift(p.name);
+    if (p.last && chain[chain.length - 1] !== p.last) chain.push(p.last);
+    var out = [];
+    for (var i = 0; i < chain.length; i++) {
+        if (chain[i] && (!out.length || out[out.length - 1] !== chain[i])) out.push(String(chain[i]));
+    }
+    return out;
+}
+
+function nickWatchText(room) {
+    loadPeople();
+    var inRoom = ROOM_PEOPLE[room] || {};
+    var rows = [], k;
+    for (k in PEOPLE) {
+        if (!PEOPLE.hasOwnProperty(k) || !inRoom[k]) continue;
+        var chain = nickChain(PEOPLE[k]);
+        if (chain.length >= 2) {
+            rows.push({ at: Number(PEOPLE[k].at || 0), text: "• " + chain.join(" → ") });
+        }
+    }
+    if (!rows.length) {
+        var seen = 0;
+        for (k in inRoom) if (inRoom.hasOwnProperty(k)) seen++;
+        return "🕵️ 닉변 감지\n아직 대화명을 바꾼 사람이 없어요." +
+            (seen ? "\n(이 방에서 지켜보는 사람 " + seen + "명)"
+                  : "\n(아직 아무도 말하지 않았거나, 이 앱이 사람 구분 값을 주지 않습니다)");
+    }
+    rows.sort(function (a, b) { return b.at - a.at; });
+    var lines = [];
+    for (var i = 0; i < rows.length && i < NICK_LIST_MAX; i++) lines.push(rows[i].text);
+    return "🕵️ 닉변 감지 (" + rows.length + "명)\n" + lines.join("\n") +
+        (rows.length > NICK_LIST_MAX ? "\n… 외 " + (rows.length - NICK_LIST_MAX) + "명" : "");
+}
+
 // ═══════════════ 대화 기록 ═══════════════
 
 var LOGS = null;        // { 방이름: [ {t,s,m}, ... ] }
@@ -804,6 +928,7 @@ function diagText(room, sender) {
     if (lastLoadErr) out += "\n⚠️ 데이터: " + lastLoadErr;
     if (lastLogErr) out += "\n⚠️ 기록 저장: " + lastLogErr;
     if (lastRegErr) out += "\n⚠️ 등록 저장: " + lastRegErr;
+    if (lastPeopleErr) out += "\n⚠️ 사람 기록: " + lastPeopleErr;
     return out;
 }
 
@@ -820,7 +945,7 @@ function shouldReportError(text) {
 }
 
 /** 봇 앱이 메시지를 받을 때마다 호출 */
-function response(room, msg, sender, isGroupChat, replier) {
+function response(room, msg, sender, isGroupChat, replier, who) {
     var text = "";
     try {
         text = String(msg).trim();
@@ -834,6 +959,9 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         // ① 목록에 없는 방은 완전히 무시
         if (!inRooms(room)) return;
+
+        // ①-2 누가 말했는지 적어 둔다 (닉변 감지용). hash 가 없으면 조용히 넘어간다.
+        try { seePerson(room, sender, who); } catch (e) {}
 
         // ② 대화 기록 (삭제된 메시지 되짚어보기용)
         try { logMessage(room, sender, msg); } catch (e) {}
@@ -860,6 +988,12 @@ function response(room, msg, sender, isGroupChat, replier) {
             if (DATA === null) { runAsync(function () { loadData(); }); return; }
         } else {
             refreshIfStale();
+        }
+
+        // ⑤-0 닉변 감지 — 이 방에서 대화명을 바꾼 사람 (누구나)
+        if (text === PREFIX + "닉변감지") {
+            replier.reply(nickWatchText(room));
+            return;
         }
 
         // ⑤ /리스트
