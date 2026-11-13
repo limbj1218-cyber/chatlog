@@ -17,6 +17,7 @@
  *    (몬스터 이름)            → 그 몬스터 카드의 부위·옵션 (띄어쓰기 무시, 영문 이름도 됨, 누구나)
  *    /카드 옵션               → 그 옵션이 붙은 카드 찾기 (예: /카드 풍속증가, 누구나)
  *    닉네임 (/닉네임)         → 한글 두 글자 닉네임 추천 (누구나)
+ *    전생 [이름] (/전생)      → 이름 초성으로 전생 풀이 (이름 없으면 내 이름, 누구나)
  *    .질문                    → 클로드가 답한다 (관리자가 켰을 때, 답은 1~2분 뒤)
  *    .. / ...                 → 클로드 답변 켜기 / 끄기 (관리자)
  *    /클로드 /클로드토큰      → 클로드 상태 / 깃헙 토큰 등록 (토큰은 관리자)
@@ -42,7 +43,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "루나봇";
-var BOT_VER = "1113-4";
+var BOT_VER = "1113-6";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -531,7 +532,7 @@ function isReserved(trigger) {
     if (typeof FIXED_REPLIES !== "undefined" && FIXED_REPLIES.hasOwnProperty(trigger)) return true;
     if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/지정") === 0 || t.indexOf("/초기화") === 0 || t.indexOf("/전부") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
         || t.charAt(0) === "." || t.indexOf("/클로드") === 0 || t === "/닉변감지" || t.indexOf("/카드") === 0
-        || t === "닉네임" || t === "/닉네임") return true;
+        || t === "닉네임" || t === "/닉네임" || t.indexOf("전생") === 0 || t.indexOf("/전생") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
         for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
             if (REPAIR_KEYWORDS[i].toLowerCase() === t) return true;
@@ -971,6 +972,7 @@ var MANUAL_TEXT = [
     "몬스터 이름 — 그 몬스터 카드 옵션 (예: 포링, 띄어쓰기 상관없음)",
     "/카드 옵션 — 그 옵션 카드 찾기 (예: /카드 풍속증가)",
     "/닉네임 — 두 글자 닉네임 추천",
+    "/전생 이름 — 이름으로 보는 전생 (이름 빼면 내 이름)",
     "",
     "🤖 클로드 (관리자가 켰을 때만)",
     ".질문 — 점 하나 붙여서 물어보면 클로드가 답해요 (1~2분 걸려요)"
@@ -1826,6 +1828,90 @@ function nickSuggestText(name) {
     return name + "님은 " + nick + josa + " 이름이 잘 어울리시네요";
 }
 
+// ═══════════════ 전생 풀이 (2026-11-13, 누구나) ═══════════════
+// "전생" · "/전생" → 내 이름(최초 대화명), "전생 홍길동" · "/전생 홍길동" → 그 이름의 초성으로 전생 문구를 만든다.
+// 사용자가 준 예전 코드(초성 → first/second/third 표)를 옮긴 것. 예전 코드의 버그는 고쳤다:
+//   · if (3|2 == nameLength) 가 늘 참이라 길이별 분기가 안 됐다 → 의도대로 2~3글자 / 4글자 / 5글자 이상으로 나눈다
+//   · second 표의 "E"(ㄸ 오타), first 의 ㅆ·third 의 ㅃ 빠짐 → 채웠다 (같은 계열 자음과 같은 문구)
+//   · 혹시 표에 없는 초성이 나오면 예사소리(ㄲ→ㄱ 등)로 대신 찾는다
+// 대화명에 한글이 있으면 한글만 쓴다 (예: "송곳/세이지" → 송곳세이지, "Maverick/쉐체(단합)" → 쉐체단합).
+// 한글이 하나도 없고 영어만 있으면 영어를 소리 마디로 끊어 첫 자음을 초성으로 본다 (2026-11-13 사용자 질문):
+//   Maverick → ma·ve·ri → ㅁ·ㅂ·ㄹ,  Kwave → kwa·ve → ㅋ·ㅂ. 모음으로 시작하는 마디는 ㅇ. 끝에 남는 자음은 버린다.
+// 한글도 영어도 없으면 안내만 한다.
+var PAST_FIRST = {
+    "ㄱ": "덥수룩한 수염에", "ㄲ": "덥수룩한 수염에", "ㄴ": "어렵고", "ㄷ": "외계에서와", "ㄸ": "외계에서와",
+    "ㄹ": "돈이 넘치고", "ㅁ": "생각할수록", "ㅂ": "단호박이고", "ㅃ": "매일 술 마시며", "ㅅ": "매일 술 마시며",
+    "ㅆ": "매일 술 마시며", "ㅇ": "절세 미모로", "ㅈ": "매일 싸우며", "ㅉ": "매일 싸우며", "ㅊ": "얼짱이고",
+    "ㅋ": "친절하게", "ㅌ": "충동적이고", "ㅍ": "더럽고", "ㅎ": "태어날 때부터"
+};
+var PAST_SECOND = {
+    "ㄱ": "똘끼 넘치는", "ㄲ": "똘끼 넘치는", "ㄴ": "고기만 먹던", "ㄷ": "열정적인", "ㄸ": "열정적인",
+    "ㄹ": "변태같은", "ㅁ": "드래곤을 처치한", "ㅂ": "예의범절이 바른", "ㅃ": "예의범절이 바른",
+    "ㅅ": "이성을 유혹하던", "ㅆ": "이성을 유혹하던", "ㅇ": "사대부 집안의", "ㅈ": "사기치던", "ㅉ": "매일싸우던",
+    "ㅊ": "신의 은총이 충만한", "ㅋ": "잘 빌 붙는", "ㅌ": "물건을 훔치던", "ㅍ": "야동 좋아하는", "ㅎ": "바람둥이였던"
+};
+var PAST_THIRD = {
+    "ㄱ": "사냥꾼", "ㄲ": "주모", "ㄴ": "궁중 음악사", "ㄷ": "귀여운 강아지", "ㄸ": "친일파", "ㄹ": "금메달리스트",
+    "ㅁ": "가녀린 여인", "ㅂ": "조선제일검", "ㅃ": "조선제일검", "ㅅ": "나무꾼", "ㅆ": "나무꾼", "ㅇ": "변강쇠",
+    "ㅈ": "노비", "ㅉ": "추노", "ㅊ": "천재 과학자", "ㅋ": "왕", "ㅌ": "망나니", "ㅍ": "과거시험 급제자", "ㅎ": "탐관오리"
+};
+var PAST_CHO = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+var PAST_PLAIN = { "ㄲ": "ㄱ", "ㄸ": "ㄷ", "ㅃ": "ㅂ", "ㅆ": "ㅅ", "ㅉ": "ㅈ" };
+
+/** 한글 글자들의 초성 (완성형 글자만, 그 밖은 버린다) */
+function pastInitials(name) {
+    var out = [];
+    for (var i = 0; i < name.length; i++) {
+        var code = name.charCodeAt(i) - 0xAC00;
+        if (code >= 0 && code < 11172) out.push(PAST_CHO[Math.floor(code / 588)]);
+    }
+    return out;
+}
+
+var PAST_EN = { b: "ㅂ", c: "ㅋ", d: "ㄷ", f: "ㅍ", g: "ㄱ", h: "ㅎ", j: "ㅈ", k: "ㅋ", l: "ㄹ", m: "ㅁ", n: "ㄴ",
+    p: "ㅍ", q: "ㅋ", r: "ㄹ", s: "ㅅ", t: "ㅌ", v: "ㅂ", w: "ㅇ", x: "ㅅ", z: "ㅈ" };
+
+/** 영어 이름 → 소리 마디마다 첫 자음의 초성 */
+function pastInitialsEn(name) {
+    var word = String(name).toLowerCase().replace(/[^a-z]/g, "");
+    var out = [], re = /([^aeiouy]*)([aeiouy]+)/g, m;
+    while ((m = re.exec(word)) !== null) {
+        var onset = m[1];
+        if (!onset) { out.push("ㅇ"); continue; }
+        var two = onset.substring(0, 2);
+        if (two === "ch") out.push("ㅊ");
+        else if (two === "ph") out.push("ㅍ");
+        else if (two === "sh") out.push("ㅅ");
+        else if (two === "th") out.push("ㄷ");
+        else out.push(PAST_EN[onset.charAt(0)] || "ㅇ");
+    }
+    if (!out.length && word) out.push(PAST_EN[word.charAt(0)] || "ㅇ");   // 모음 없는 영어 (예: "xx")
+    return out;
+}
+
+function pastWord(table, cho) {
+    return table[cho] || table[PAST_PLAIN[cho]] || "";
+}
+
+/** 전생 명령이면 답장 문구, 아니면 null */
+function handlePastLife(raw, myName) {
+    var m = /^\/?전생(?:\s+([\s\S]+))?$/.exec(raw);
+    if (!m) return null;
+    var name = m[1] ? m[1].replace(/^\s+|\s+$/g, "") : String(myName);
+    var c = pastInitials(name);
+    if (!c.length) c = pastInitialsEn(name);
+    if (!c.length) return "한글이나 영어 이름으로 해 주세요. 예) 전생 홍길동";
+    var parts;
+    if (c.length <= 3) {
+        parts = [pastWord(PAST_SECOND, c[0]), pastWord(PAST_THIRD, c[c.length > 1 ? 1 : 0])];
+    } else if (c.length === 4) {
+        parts = [pastWord(PAST_FIRST, c[0]), pastWord(PAST_SECOND, c[1]), pastWord(PAST_THIRD, c[2])];
+    } else {
+        parts = [pastWord(PAST_FIRST, c[0]), pastWord(PAST_SECOND, c[3]), pastWord(PAST_THIRD, c[4])];
+    }
+    return "🔮 " + name + "님의 전생\n" + parts.join(" ");
+}
+
 // ═══════════════ 메시지 처리 ═══════════════
 
 function response(room, msg, sender, isGroupChat, replier, who) {
@@ -1883,6 +1969,10 @@ function response(room, msg, sender, isGroupChat, replier, who) {
 
         // ── 닉네임 추천 (누구나) ──
         if (raw === "닉네임" || raw === "/닉네임") return replier.reply(nickSuggestText(uName));
+
+        // ── 전생 풀이 (누구나) ──
+        var pastReply = handlePastLife(raw, uName);
+        if (pastReply !== null) return replier.reply(pastReply);
 
         // ── 옵션으로 카드 찾기 (누구나) ──
         var cardSearchReply = handleCardSearch(raw);
