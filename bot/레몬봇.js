@@ -11,6 +11,7 @@
  *    /삭제 명령어             → 등록한 명령어 삭제 (누구나, /삭제_명령어 도 된다)
  *    /리스트                  → 등록된 명령어 목록
  *    /탐지 할말               → 거짓말 탐지기 (참·거짓·중립 무작위, 누구나)
+ *    /알림 22시50분 할말      → 그 시각부터 N분마다 알림 (/알림목록, /알림삭제 번호, 누구나)
  *    /경험치 레벨             → ROX 사냥터 추천 (그 레벨~+3 몬스터 중 경험치×마릿수 1등, 누구나)
  *    /메뉴얼 (/매뉴얼)        → 사용법 안내 (누구나)
  *    /닉변감지                → 대화명을 바꾼 사람 (처음 이름 → … → 지금 이름, 누구나)
@@ -45,7 +46,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "레몬봇";
-var BOT_VER = "1113-2";
+var BOT_VER = "1114-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["레몬"];
@@ -155,7 +156,8 @@ function loadData() {
         custom: parsed.custom || {},              // { 방: { 명령어: 할말 } } 등록 명령어
         askOn: parsed.askOn || {},                // { 방: true } 클로드 답변 켜짐
         startLevel: parsed.startLevel || {},      // { 방: 숫자 } 기록 없는 사람의 시작 재련값 (/전부_)
-        appliedFixes: parsed.appliedFixes || [],  // 한 번만 하는 데이터 손질 중 이미 한 것 (ONE_TIME_FIXES)
+        appliedFixes: parsed.appliedFixes || [],
+        alarms: parsed.alarms || {},              // { 방: [ { h, m, text, every(분, 0=한 번), next(ms) } ] } 알림  // 한 번만 하는 데이터 손질 중 이미 한 것 (ONE_TIME_FIXES)
         people: parsed.people || {},              // { "#h:해시": { name: 최초 대화명, last: 최근 대화명 } } (절대 화면에 안 나감)
         roomUsers: rooms
     };
@@ -172,6 +174,7 @@ var askOn = store.askOn;
 var startLevel = store.startLevel;
 var people = store.people;
 var appliedFixes = store.appliedFixes;
+var alarms = store.alarms;
 
 /** 이 방에서 기록 없는 사람이 시작하는 재련값 (/전부_ 로 정한다, 기본 1) */
 function roomStart(room) {
@@ -195,6 +198,7 @@ function saveData() {
     out.startLevel = startLevel;
     out.people = people;
     out.appliedFixes = appliedFixes;
+    out.alarms = alarms;
     try { __LEMON_DATA__ = out; } catch (e) {}       // 파일 저장이 막혀도 메모리에는 유지
     fileWrite(DATA_FILE, JSON.stringify(out));
 }
@@ -535,7 +539,7 @@ function isReserved(trigger) {
     if (typeof FIXED_REPLIES !== "undefined" && FIXED_REPLIES.hasOwnProperty(trigger)) return true;
     if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/지정") === 0 || t.indexOf("/초기화") === 0 || t.indexOf("/전부") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
         || t.charAt(0) === "." || t.indexOf("/클로드") === 0 || t === "/닉변감지" || t.indexOf("/카드") === 0
-        || t === "닉네임" || t === "/닉네임" || t.indexOf("전생") === 0 || t.indexOf("/전생") === 0) return true;
+        || t.indexOf("/알림") === 0 || t === "닉네임" || t === "/닉네임" || t.indexOf("전생") === 0 || t.indexOf("/전생") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
         for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
             if (REPAIR_KEYWORDS[i].toLowerCase() === t) return true;
@@ -968,6 +972,11 @@ var MANUAL_TEXT = [
     "/등록 명령어 할말 — 예) /등록 공지 오늘 8시에 모여요",
     "/삭제 명령어 — 등록한 명령어 지우기",
     "/리스트 — 등록된 명령어 보기",
+    "",
+    "⏰ 알림 (누구나)",
+    "/알림 22시50분 할말 — 그 시각에 알려줘요 (몇 분마다 반복할지 물어봐요)",
+    "/알림목록 — 이 방 알림 보기",
+    "/알림삭제 번호 — 알림 지우기 (/알림삭제 전부)",
     "",
     "🎲 놀이 (누구나)",
     "/탐지 할말 — 거짓말 탐지기 (참·거짓·중립)",
@@ -1893,6 +1902,239 @@ function handlePastLife(raw, myName) {
     return "🔮 " + name + "님의 전생\n" + parts.join(" ");
 }
 
+// ═══════════════ 알림 (2026-11-14, 누구나) ═══════════════
+// /알림_22시50분_공성시작 (또는 /알림 22시50분 공성시작) → 그 시각에 "⏰ 공성시작" 을 보낸다.
+// 등록하면 "몇 분마다 알려줄까요?" 를 묻고, 등록한 사람이 숫자로 답하면 그 시각부터 그 간격으로 계속 알린다
+// (0 이면 한 번만, 답하지 않으면 한 번만). /알림목록 으로 보고 /알림삭제 번호 (또는 전부) 로 끈다.
+// 시각 형식: 22시50분 · 22시 · 22:50 · 오후 10시50분. 이미 지난 시각이면 다음 날 그 시각부터.
+// ※ 시계는 백그라운드 타이머다(카페봇과 같은 방식: setInterval → java Timer → Thread). 메시지 흐름에서는 대기하지 않는다.
+// ※ /○○업데이트 로 본체를 다시 불러와도 옛 타이머가 남아 두 번 알리지 않게 세대(ALARM_GEN)를 둔다.
+// ※ 폰이 잠들었거나 봇이 꺼져 있다가 10분 넘게 늦어진 알림은 보내지 않고 건너뛴다 (뒤늦은 "공성시작" 방지).
+var ALARM = {
+    MAX_PER_ROOM: 10,      // 방마다 알림 개수
+    MAX_TEXT: 200,         // 알릴 말 최대 글자 수
+    MIN_EVERY: 5,          // 반복 간격 최소 (분)
+    MAX_EVERY: 1440,       // 반복 간격 최대 (분, 하루)
+    ASK_SEC: 300,          // "몇 분마다?" 답을 기다리는 시간 (초)
+    LATE_MS: 10 * 60 * 1000,
+    TICK_MS: 20000
+};
+var ALARM_GEN_KEY = "chatbot.alarm.gen." + scriptName;
+var ALARM_GEN = String(new Date().getTime()) + "-" + Math.floor(Math.random() * 1000000);
+var ALARM_TIMER = "";          // 타이머 종류 (비어 있으면 알림 불가)
+var alarmLastTick = 0;
+var alarmLastErr = "";
+var alarmPending = {};         // { 방|사람키: { a: 알림, at: 시각 } } "몇 분마다?" 답 기다리는 중
+
+function alarmUpdateCmd() {
+    return "/" + String(scriptName).replace(/봇$/, "") + "업데이트";
+}
+
+function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+function alarmTimeText(h, m) { return h + "시" + (m ? " " + m + "분" : ""); }
+
+function alarmNextAt(h, m, now) {
+    var d = new Date(now);
+    d.setHours(h, m, 0, 0);
+    if (d.getTime() <= now) d.setDate(d.getDate() + 1);
+    return d.getTime();
+}
+
+function alarmShortWhen(t, now) {
+    var d = new Date(t), n = new Date(now);
+    var day = (d.toDateString() === n.toDateString()) ? "" :
+        (d.toDateString() === new Date(now + 86400000).toDateString() ? "내일 " : (d.getMonth() + 1) + "/" + d.getDate() + " ");
+    return day + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
+
+/** "22시50분 공성시작" → { h, m, text } / 형식이 틀리면 null */
+function alarmParse(rest) {
+    var s = rest.replace(/^[\s_]+/, ""), pm = null, mt;
+    mt = /^(오전|오후)\s*/.exec(s);
+    if (mt) { pm = mt[1]; s = s.substring(mt[0].length); }
+    var h, m = 0, text;
+    if ((mt = /^(\d{1,2}):(\d{2})[\s_]+([\s\S]+)$/.exec(s))) {
+        h = Number(mt[1]); m = Number(mt[2]); text = mt[3];
+    } else if ((mt = /^(\d{1,2})\s*시(?:[\s_]*(\d{1,2})\s*분)?[\s_]*([\s\S]+)$/.exec(s))) {
+        h = Number(mt[1]); m = mt[2] ? Number(mt[2]) : 0; text = mt[3];
+    } else return null;
+    if (pm === "오후" && h < 12) h += 12;
+    if (pm === "오전" && h === 12) h = 0;
+    if (h === 24) h = 0;
+    text = String(text).trim();
+    if (h > 23 || m > 59 || !text) return null;
+    return { h: h, m: m, text: text };
+}
+
+function alarmListText(room, now) {
+    var list = alarms[room] || [];
+    var warn = alarmClockWarn(now);
+    if (!list.length) return "등록된 알림이 없어요.\n/알림 22시50분 할말 — 로 등록해요" + (warn ? "\n" + warn : "");
+    var lines = ["⏰ 이 방 알림 " + list.length + "개"];
+    for (var i = 0; i < list.length; i++) {
+        var a = list[i];
+        lines.push((i + 1) + ". " + pad2(a.h) + ":" + pad2(a.m) + " " + a.text +
+            "\n   " + (a.every ? a.every + "분마다" : "한 번만") + " · 다음 " + alarmShortWhen(a.next, now));
+    }
+    lines.push("지우기: /알림삭제 번호 (모두 지우기: /알림삭제 전부)");
+    if (warn) lines.push(warn);
+    return lines.join("\n");
+}
+
+function alarmClockWarn(now) {
+    if (!ALARM_TIMER) return "⚠️ 이 앱에서는 알림을 보낼 수 없어요 (타이머를 못 만들었어요)";
+    if (alarmLastTick && now - alarmLastTick > 3 * 60 * 1000) return "⚠️ 알림 시계가 멈춘 것 같아요 — " + alarmUpdateCmd() + " 로 다시 켜 주세요";
+    return "";
+}
+
+/** 알림 명령이면 답장 문구, 아니면 null. 등록한 사람의 "몇 분마다?" 숫자 답도 여기서 받는다 */
+function handleAlarm(room, raw, uKey) {
+    var now = new Date().getTime();
+    var pk = room + "|" + uKey;
+
+    // ── "몇 분마다?" 답 (등록한 사람이 5분 안에 숫자로) ──
+    var p = alarmPending[pk];
+    if (p && now - p.at > ALARM.ASK_SEC * 1000) { delete alarmPending[pk]; p = null; }
+    var mn = /^(\d{1,4})\s*분?(?:마다)?$/.exec(raw);
+    if (p && mn) {
+        var list0 = alarms[room] || [];
+        if (list0.indexOf(p.a) === -1) { delete alarmPending[pk]; return null; }   // 그새 지워진 알림
+        var ev = Number(mn[1]);
+        if (ev !== 0 && (ev < ALARM.MIN_EVERY || ev > ALARM.MAX_EVERY)) {
+            return ALARM.MIN_EVERY + "~" + ALARM.MAX_EVERY + "분 사이 숫자로 알려 주세요 (한 번만 알리려면 0)";
+        }
+        delete alarmPending[pk];
+        p.a.every = ev;
+        saveData();
+        var at = alarmTimeText(p.a.h, p.a.m);
+        return ev
+            ? "✅ " + at + "부터 " + ev + "분마다 \"" + p.a.text + "\" 알려 드릴게요\n끄려면 /알림목록 에서 번호를 보고 /알림삭제 번호"
+            : "✅ " + at + "에 \"" + p.a.text + "\" 한 번만 알려 드릴게요";
+    }
+
+    if (raw.indexOf("/알림") !== 0) return null;
+    var rest = raw.substring(3);
+    if (rest && !/^[\s_\d오]/.test(rest) && !/^(목록|삭제)/.test(rest)) return null;   // "/알림이…" 같은 말은 건드리지 않는다
+    var r2 = rest.replace(/^[\s_]+/, "");
+
+    // ── 목록 ──
+    if (r2 === "목록" || r2 === "리스트") return alarmListText(room, now);
+
+    // ── 삭제 ──
+    var dm = /^삭제[\s_]*([\s\S]*)$/.exec(r2);
+    if (dm) {
+        var list = alarms[room] || [], arg = dm[1].trim();
+        if (!list.length) return "등록된 알림이 없어요.";
+        if (arg === "전부" || arg === "모두" || arg === "전체") {
+            var n = list.length;
+            alarms[room] = [];
+            saveData();
+            return "🗑️ 이 방 알림 " + n + "개를 모두 지웠어요.";
+        }
+        if (!/^\d+$/.test(arg)) return "지울 번호를 적어 주세요. 예) /알림삭제 1\n" + alarmListText(room, now);
+        var idx = Number(arg) - 1;
+        if (idx < 0 || idx >= list.length) return arg + "번 알림이 없어요.\n" + alarmListText(room, now);
+        var gone = list.splice(idx, 1)[0];
+        saveData();
+        return "🗑️ " + pad2(gone.h) + ":" + pad2(gone.m) + " \"" + gone.text + "\" 알림을 지웠어요.";
+    }
+
+    var usage = "형식: /알림 22시50분 할말\n예) /알림 22시50분 공성시작 (/알림_22시50분_공성시작 도 돼요)\n" +
+        "목록: /알림목록 · 지우기: /알림삭제 번호";
+    if (!r2) return usage;
+
+    // ── 등록 ──
+    var a = alarmParse(rest);
+    if (!a) return "시각을 못 알아봤어요.\n" + usage;
+    if (a.text.length > ALARM.MAX_TEXT) return "알릴 말은 " + ALARM.MAX_TEXT + "자까지 돼요.";
+    if (!ALARM_TIMER) return "⚠️ 이 앱에서는 알림을 보낼 수 없어요 (타이머를 못 만들었어요)";
+    if (!alarms[room]) alarms[room] = [];
+    var lst = alarms[room];
+    for (var i = 0; i < lst.length; i++) {
+        if (lst[i].h === a.h && lst[i].m === a.m && lst[i].text === a.text) return "이미 같은 알림이 있어요.\n" + alarmListText(room, now);
+    }
+    if (lst.length >= ALARM.MAX_PER_ROOM) return "알림은 방마다 " + ALARM.MAX_PER_ROOM + "개까지예요. /알림삭제 번호 로 지운 뒤 넣어 주세요.";
+    a.every = 0;
+    a.next = alarmNextAt(a.h, a.m, now);
+    lst.push(a);
+    lst.sort(function (x, y) { return (x.h * 60 + x.m) - (y.h * 60 + y.m); });
+    saveData();
+    alarmPending[pk] = { a: a, at: now };
+    return "⏰ " + alarmTimeText(a.h, a.m) + " \"" + a.text + "\" 알림을 등록했어요 (" + alarmShortWhen(a.next, now) + ")\n" +
+        "몇 분마다 알려 줄까요? 숫자만 보내 주세요 (예: 30)\n한 번만 알리려면 0";
+}
+
+/** 시계 한 번 — 때가 된 알림을 보낸다. 시험에서도 직접 부른다 */
+function alarmTick(now) {
+    alarmLastTick = now;
+    var changed = false;
+    for (var room in alarms) {
+        if (!alarms.hasOwnProperty(room)) continue;
+        var list = alarms[room];
+        if (!list || !list.length) continue;
+        for (var i = list.length - 1; i >= 0; i--) {
+            var a = list[i];
+            if (!(a.next <= now)) continue;
+            // 반복 알림이 여러 번 밀렸으면(폰이 잠들었다 깨는 등) 가장 최근 차례만 본다
+            if (a.every > 0) while (a.next + a.every * 60000 <= now) a.next += a.every * 60000;
+            if (now - a.next <= ALARM.LATE_MS) {
+                if (!askSend(room, "⏰ " + a.text)) alarmLastErr = "보내기 실패 " + new Date(now).toLocaleString();
+            }
+            if (a.every > 0) {
+                while (a.next <= now) a.next += a.every * 60000;
+            } else {
+                list.splice(i, 1);
+            }
+            changed = true;
+        }
+    }
+    if (changed) saveData();
+}
+
+function alarmBeat() {
+    try {
+        var v = java.lang.System.getProperty(ALARM_GEN_KEY);
+        if (v !== null && String(v) !== ALARM_GEN) return false;   // 새로 불러온 본체가 맡았다 — 이 타이머는 끝
+    } catch (e) {}
+    try { alarmTick(new Date().getTime()); } catch (e) { alarmLastErr = "시계 오류: " + e; }
+    return true;
+}
+
+function alarmStart() {
+    try { java.lang.System.setProperty(ALARM_GEN_KEY, ALARM_GEN); } catch (e) {}
+    try {
+        if (typeof setInterval === "function") {
+            var h = setInterval(function () {
+                if (!alarmBeat() && typeof clearInterval === "function") clearInterval(h);
+            }, ALARM.TICK_MS);
+            ALARM_TIMER = "setInterval";
+            return;
+        }
+    } catch (e) {}
+    try {
+        if (typeof JavaAdapter !== "undefined") {
+            var timer = new java.util.Timer("alarm-" + scriptName, true);
+            timer.schedule(new JavaAdapter(java.util.TimerTask, {
+                run: function () { if (!alarmBeat()) { try { this.cancel(); } catch (e2) {} } }
+            }), ALARM.TICK_MS, ALARM.TICK_MS);
+            ALARM_TIMER = "JavaAdapter";
+            return;
+        }
+    } catch (e) {}
+    try {
+        var th = new java.lang.Thread(function () {
+            while (true) {
+                java.lang.Thread.sleep(ALARM.TICK_MS);
+                if (!alarmBeat()) return;
+            }
+        });
+        th.setDaemon(true);
+        th.start();
+        ALARM_TIMER = "Thread";
+    } catch (e) {}
+}
+
 // ═══════════════ 메시지 처리 ═══════════════
 
 function response(room, msg, sender, isGroupChat, replier, who) {
@@ -1921,6 +2163,11 @@ function response(room, msg, sender, isGroupChat, replier, who) {
         // ── 명령어 등록·삭제·목록 (누구나) ──
         var regReply = handleRegister(room, raw);
         if (regReply !== null) return replier.reply(regReply);
+
+        // ── 알림 (누구나) — 등록한 사람의 "몇 분마다?" 숫자 답도 여기서 ──
+        askReplier[room] = replier;
+        var alarmReply = handleAlarm(room, raw, uKey);
+        if (alarmReply !== null) return replier.reply(alarmReply);
 
         // ── 재련값 지정 (관리자) ──
         var setReply = handleSetLevel(room, raw, sender);
@@ -2136,3 +2383,6 @@ function response(room, msg, sender, isGroupChat, replier, who) {
         });
     } catch (e) {}
 })();
+
+// 알림 시계 켜기 (모든 정의가 끝난 뒤)
+alarmStart();
