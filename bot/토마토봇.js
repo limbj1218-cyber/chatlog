@@ -46,7 +46,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "토마토봇";
-var BOT_VER = "1114-3";
+var BOT_VER = "1114-4";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["토마토"];
@@ -1951,6 +1951,8 @@ var ALARM_GEN = String(new Date().getTime()) + "-" + Math.floor(Math.random() * 
 var ALARM_TIMER = "";          // 타이머 종류 (비어 있으면 알림 불가)
 var alarmLastTick = 0;
 var alarmLastErr = "";
+var ALARM_STARTED_AT = new Date().getTime();
+var alarmFallbackOn = false;   // 예비 시계를 켰는지 (원래 시계가 안 돌 때 한 번만)
 var alarmPending = {};         // { 방|사람키: { a: 알림, at: 시각 } } "몇 분마다?" 답 기다리는 중
 
 function alarmUpdateCmd() {
@@ -1961,18 +1963,23 @@ function pad2(n) { return (n < 10 ? "0" : "") + n; }
 
 function alarmTimeText(h, m) { return h + "시" + (m ? " " + m + "분" : ""); }
 
+// ※ 시각은 한국 시간(UTC+9)으로 직접 계산한다 — 폰 스크립트 엔진의 시간대가 어긋나 있으면(2026-11-14 실제로 겪음:
+//   11:26 에 11시27분을 넣었더니 "내일 11:27" 로 잡혔다) new Date().getHours() 를 믿을 수 없어서다. 한국은 서머타임이 없다.
+var KST_MS = 9 * 3600000, DAY_MS = 86400000;
+function kstDayStart(t) { return Math.floor((t + KST_MS) / DAY_MS) * DAY_MS - KST_MS; }
+function kstHM(t) { var d = new Date(t + KST_MS); return pad2(d.getUTCHours()) + ":" + pad2(d.getUTCMinutes()); }
+
 function alarmNextAt(h, m, now) {
-    var d = new Date(now);
-    d.setHours(h, m, 0, 0);
-    if (d.getTime() <= now) d.setDate(d.getDate() + 1);
-    return d.getTime();
+    var t = kstDayStart(now) + (h * 60 + m) * 60000;
+    if (t <= now) t += DAY_MS;
+    return t;
 }
 
 function alarmShortWhen(t, now) {
-    var d = new Date(t), n = new Date(now);
-    var day = (d.toDateString() === n.toDateString()) ? "" :
-        (d.toDateString() === new Date(now + 86400000).toDateString() ? "내일 " : (d.getMonth() + 1) + "/" + d.getDate() + " ");
-    return day + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+    var dd = Math.round((kstDayStart(t) - kstDayStart(now)) / DAY_MS);
+    var k = new Date(t + KST_MS);
+    var day = dd === 0 ? "" : (dd === 1 ? "내일 " : (k.getUTCMonth() + 1) + "/" + k.getUTCDate() + " ");
+    return day + kstHM(t);
 }
 
 /** "22시50분 공성시작" → { h, m, text } / 형식이 틀리면 null */
@@ -2013,16 +2020,15 @@ function alarmParseClock(s) {
 
 /** 첫 알림(start) 뒤로 처음 오는 h:m — 끝 시각 (같은 시각이면 그 한 번까지) */
 function alarmUntilAt(h, m, start) {
-    var d = new Date(start);
-    d.setHours(h, m, 0, 0);
-    if (d.getTime() < start) d.setDate(d.getDate() + 1);
-    return d.getTime();
+    var t = kstDayStart(start) + (h * 60 + m) * 60000;
+    if (t < start) t += DAY_MS;
+    return t;
 }
 
 function alarmListText(room, now) {
     var list = alarms[room] || [];
     var warn = alarmClockWarn(now);
-    if (!list.length) return "등록된 알림이 없어요.\n/알림 22시50분 할말 — 로 등록해요" + (warn ? "\n" + warn : "");
+    if (!list.length) return "등록된 알림이 없어요.\n/알림 22시50분 할말 — 로 등록해요" + (warn ? "\n" + warn : "") + "\n" + alarmClockLine(now);
     var lines = ["⏰ 이 방 알림 " + list.length + "개"];
     for (var i = 0; i < list.length; i++) {
         var a = list[i];
@@ -2032,18 +2038,46 @@ function alarmListText(room, now) {
     }
     lines.push("지우기: /알림삭제 번호 (모두 지우기: /알림삭제 전부)");
     if (warn) lines.push(warn);
+    lines.push(alarmClockLine(now));
     return lines.join("\n");
 }
 
 function alarmClockWarn(now) {
     if (!ALARM_TIMER) return "⚠️ 이 앱에서는 알림을 보낼 수 없어요 (타이머를 못 만들었어요)";
-    if (alarmLastTick && now - alarmLastTick > 3 * 60 * 1000) return "⚠️ 알림 시계가 멈춘 것 같아요 — " + alarmUpdateCmd() + " 로 다시 켜 주세요";
+    if (now - (alarmLastTick || ALARM_STARTED_AT) > 3 * 60 * 1000) return "⚠️ 알림 시계가 멈춘 것 같아요 — " + alarmUpdateCmd() + " 로 다시 켜 주세요";
+    if (alarmLastErr) return "⚠️ " + alarmLastErr;
     return "";
+}
+
+/** 목록 맨 아래 한 줄 — 봇이 아는 지금 시각과 시계 상태 (알림이 안 올 때 원인 찾기용) */
+function alarmClockLine(now) {
+    return "🕒 봇 시각 " + kstHM(now) + " · 시계 " + (ALARM_TIMER || "없음") +
+        (alarmLastTick ? " (" + Math.round((now - alarmLastTick) / 1000) + "초 전 확인)" : " (아직 안 돎)");
+}
+
+/** 메시지가 올 때 시계가 1분 넘게 안 돌았으면: 밀린 알림을 여기서 보내고, 예비 시계(Thread)를 한 번 켠다 */
+function alarmWatchdog(now) {
+    if (now - (alarmLastTick || ALARM_STARTED_AT) <= 60000) return;
+    try { alarmTick(now); } catch (e) { alarmLastErr = "시계 오류: " + e; }
+    if (alarmFallbackOn || ALARM_TIMER === "Thread") return;
+    alarmFallbackOn = true;
+    try {
+        var th = new java.lang.Thread(function () {
+            while (true) {
+                java.lang.Thread.sleep(ALARM.TICK_MS);
+                if (!alarmBeat()) return;
+            }
+        });
+        th.setDaemon(true);
+        th.start();
+        ALARM_TIMER += "+Thread";
+    } catch (e) {}
 }
 
 /** 알림 명령이면 답장 문구, 아니면 null. 등록한 사람의 "몇 분마다?" 숫자 답도 여기서 받는다 */
 function handleAlarm(room, raw, uKey) {
     var now = new Date().getTime();
+    alarmWatchdog(now);
     var pk = room + "|" + uKey;
 
     // ── "몇 분마다?" 답 (등록한 사람이 5분 안에 숫자로) ──
@@ -2151,7 +2185,8 @@ function alarmTick(now) {
             // 반복 알림이 여러 번 밀렸으면(폰이 잠들었다 깨는 등) 가장 최근 차례만 본다
             if (a.every > 0) while (a.next + a.every * 60000 <= now && !(a.until && a.next + a.every * 60000 > a.until)) a.next += a.every * 60000;
             if (now - a.next <= ALARM.LATE_MS) {
-                if (!askSend(room, "⏰ " + a.text)) alarmLastErr = "보내기 실패 " + new Date(now).toLocaleString();
+                if (!askSend(room, "⏰ " + a.text)) alarmLastErr = "알림 보내기 실패 " + alarmShortWhen(now, now);
+                else alarmLastErr = "";
             }
             if (a.every > 0) {
                 while (a.next <= now) a.next += a.every * 60000;
