@@ -46,7 +46,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "레몬봇";
-var BOT_VER = "1114-6";
+var BOT_VER = "1114-7";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["레몬"];
@@ -974,7 +974,7 @@ var MANUAL_TEXT = [
     "/리스트 — 등록된 명령어 보기",
     "",
     "⏰ 알림 (누구나)",
-    "/알림 22시50분 할말 — 그 시각에 알려줘요 (몇 분마다 · 몇 시까지 물어봐요)",
+    "/알림 22시50분 할말 — 그 시각에 알려줘요 (몇 분마다 · 몇 시까지 · 요일 물어봐요)",
     "/고정알림 22시50분 할말 — 요일마다 알려줘요 (월수금·매일 등, 지울 때까지 남아요)",
     "/알림목록 — 이 방 알림 보기",
     "/알림삭제 번호 — 알림 지우기 (/알림삭제 전부)",
@@ -1913,6 +1913,8 @@ function handlePastLife(raw, myName) {
 //   이어서 몇 분마다 · 몇 시까지를 똑같이 묻는다. 그 요일마다 반복하고, 끝 시각이 지나도 **지우지 않는다** (/알림삭제 로만 지움).
 //   요일에 5분 안에 답하지 않으면 등록되지 않는다. 간격·끝 시각이 0 이거나 답이 없으면 그 요일 그 시각에 한 번씩.
 //   알림 객체: days(0=일~6=토, 한국 시간) · dur(그날 첫 알림부터 끝 시각까지 ms, 0 = 한 번) · occEnd(이번 차례 끝)
+//   그냥 /알림 도 마지막에 "요일마다 반복할까요?" 를 묻는다 (2026-11-14 사용자 요청) — 요일을 답하면 고정 알림으로 바뀌고,
+//   0 이거나 5분 안에 답이 없으면 그대로 일회성(끝나면 지워짐)이다.
 // ※ 시계는 백그라운드 타이머다(카페봇과 같은 방식: setInterval → java Timer → Thread). 메시지 흐름에서는 대기하지 않는다.
 // ※ /○○업데이트 로 본체를 다시 불러와도 옛 타이머가 남아 두 번 알리지 않게 세대(ALARM_GEN)를 둔다.
 // ※ 폰이 잠들었거나 봇이 꺼져 있다가 10분 넘게 늦어진 알림은 보내지 않고 건너뛴다 (뒤늦은 "공성시작" 방지).
@@ -1999,6 +2001,35 @@ function alarmNextOcc(a, after) {
         if (a.days.indexOf(new Date(t + KST_MS).getUTCDay()) !== -1) return t;
     }
     return after + 7 * DAY_MS;   // 오지 않는다 (days 가 비어 있을 때)
+}
+
+/** "요일마다 반복할까요?" 에 반복 없이 이번만이라는 답 */
+function alarmOnceWord(raw) {
+    return /^(0|오늘만|이번만|한\s*번만|반복\s*안\s*함|아니요?|ㄴㄴ)$/.test(raw);
+}
+
+var ALARM_FIX_ASK = "\n\n📌 요일마다 반복할까요? 요일을 알려 주세요 (예: 월수금, 매일, 평일, 주말)\n반복 없이 이번만이면 \"오늘만\" — 답이 없어도 이번만 알리고 지워져요";
+
+/** 일회성 알림 설정을 마친 답장 + "요일마다 반복할까요?" 질문 */
+function alarmAskFix(pk, a, now, msg) {
+    alarmPending[pk] = { a: a, at: now, stage: "fix" };
+    return msg + ALARM_FIX_ASK;
+}
+
+/** 일회성 알림을 고정 알림으로 바꾼다 (끝 시각은 그날 첫 알림부터 얼마 동안으로) */
+function alarmMakeFixed(a, days, now) {
+    var start = a.h * 60 + a.m;
+    var dur = 0;
+    if (a.every > 0 && a.until) {
+        var u = new Date(a.until + KST_MS);
+        dur = (((u.getUTCHours() * 60 + u.getUTCMinutes()) - start) % 1440 + 1440) % 1440 * 60000;
+    }
+    a.days = days;
+    a.dur = dur;
+    if (!dur) a.every = 0;
+    a.until = 0;
+    a.next = alarmNextOcc(a, now);
+    a.occEnd = a.next + dur;
 }
 
 /** 고정 알림 설정이 끝났을 때 답장 */
@@ -2123,8 +2154,25 @@ function handleAlarm(room, raw, uKey) {
     // ── "몇 분마다?" 답 (등록한 사람이 5분 안에 숫자로) ──
     var p = alarmPending[pk];
     if (p && now - p.at > ALARM.ASK_SEC * 1000) { delete alarmPending[pk]; p = null; }
+    // ── 일회성 알림 마지막: "요일마다 반복할까요?" 답 ──
+    if (p && p.stage === "fix" && (alarmOnceWord(raw) || alarmParseDays(raw))) {
+        if (alarmOnceWord(raw)) { delete alarmPending[pk]; return "👌 오늘만 알리고 지울게요 (반복 없음)"; }
+        var fdays = alarmParseDays(raw);
+        if (!fdays) return null;   // 요일이 아닌 말은 평소 대화로 둔다
+        delete alarmPending[pk];
+        if (!alarms[room]) alarms[room] = [];
+        var lstF = alarms[room];
+        if (lstF.indexOf(p.a) === -1) {   // 그새 한 번 울리고 지워졌으면 다시 넣는다
+            if (lstF.length >= ALARM.MAX_PER_ROOM) return "알림은 방마다 " + ALARM.MAX_PER_ROOM + "개까지예요. /알림삭제 번호 로 지운 뒤 넣어 주세요.";
+            lstF.push(p.a);
+            lstF.sort(function (x, y) { return (x.h * 60 + x.m) - (y.h * 60 + y.m); });
+        }
+        alarmMakeFixed(p.a, fdays, now);
+        saveData();
+        return alarmFixedDone(p.a, now);
+    }
     // ── 고정 알림 0단계: "어느 요일마다?" 답 → 이때 등록 ──
-    if (p && p.stage === "days") {
+    if (p && p.stage === "days" && alarmParseDays(raw)) {
         var days = alarmParseDays(raw);
         if (!days) return null;   // 요일이 아닌 말은 평소 대화로 둔다
         if (!alarms[room]) alarms[room] = [];
@@ -2142,13 +2190,13 @@ function handleAlarm(room, raw, uKey) {
             alarmShortWhen(fa.next, now) + ")\n몇 분마다 알려 줄까요? 숫자만 보내 주세요 (예: 30)\n그 시각에 한 번씩만 알리려면 0";
     }
     // ── 2단계: "몇 시까지?" 답 ──
-    if (p && p.stage === "until") {
+    if (p && p.stage === "until" && (raw === "0" || alarmParseClock(raw))) {
         var uc = raw === "0" ? "once" : alarmParseClock(raw);
         if (!uc) return null;   // 시각이 아닌 말은 평소 대화로 둔다
         if ((alarms[room] || []).indexOf(p.a) === -1) { delete alarmPending[pk]; return null; }
         delete alarmPending[pk];
         var st = alarmTimeText(p.a.h, p.a.m);
-        if (uc === "once") return p.a.days ? alarmFixedDone(p.a, now) : "✅ " + st + "에 \"" + p.a.text + "\" 한 번만 알려 드릴게요";
+        if (uc === "once") return p.a.days ? alarmFixedDone(p.a, now) : alarmAskFix(pk, p.a, now, "✅ " + st + "에 \"" + p.a.text + "\" 알려 드릴게요");
         if (p.a.days) {
             // 고정 알림: 끝 시각은 "그날 첫 알림부터 얼마 동안" 으로 둔다 (요일마다 다시 쓴다)
             p.a.every = p.every;
@@ -2161,11 +2209,10 @@ function handleAlarm(room, raw, uKey) {
         p.a.every = p.every;
         p.a.until = alarmUntilAt(uc.h, uc.m, p.a.next);
         saveData();
-        return "✅ " + st + "부터 " + alarmTimeText(uc.h, uc.m) + "까지 " + p.a.every + "분마다 \"" + p.a.text + "\" 알려 드릴게요\n" +
-            "(" + alarmShortWhen(p.a.until, now) + "이 지나면 알림이 저절로 지워져요)";
+        return alarmAskFix(pk, p.a, now, "✅ " + st + "부터 " + alarmTimeText(uc.h, uc.m) + "까지 " + p.a.every + "분마다 \"" + p.a.text + "\" 알려 드릴게요");
     }
     var mn = /^(\d{1,4})\s*분?(?:마다)?$/.exec(raw);
-    if (p && mn) {
+    if (p && !p.stage && mn) {
         var list0 = alarms[room] || [];
         if (list0.indexOf(p.a) === -1) { delete alarmPending[pk]; return null; }   // 그새 지워진 알림
         var ev = Number(mn[1]);
@@ -2175,7 +2222,7 @@ function handleAlarm(room, raw, uKey) {
         var at = alarmTimeText(p.a.h, p.a.m);
         if (!ev) {
             delete alarmPending[pk];
-            return p.a.days ? alarmFixedDone(p.a, now) : "✅ " + at + "에 \"" + p.a.text + "\" 한 번만 알려 드릴게요";
+            return p.a.days ? alarmFixedDone(p.a, now) : alarmAskFix(pk, p.a, now, "✅ " + at + "에 \"" + p.a.text + "\" 알려 드릴게요");
         }
         alarmPending[pk] = { a: p.a, at: now, stage: "until", every: ev };
         return "👌 " + ev + "분마다요.\n몇 시까지 알려 줄까요? (예: 24시, 23시30분)\n0 이거나 답이 없으면 " +
