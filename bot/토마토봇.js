@@ -46,7 +46,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "토마토봇";
-var BOT_VER = "1114-2";
+var BOT_VER = "1114-3";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["토마토"];
@@ -974,7 +974,7 @@ var MANUAL_TEXT = [
     "/리스트 — 등록된 명령어 보기",
     "",
     "⏰ 알림 (누구나)",
-    "/알림 22시50분 할말 — 그 시각에 알려줘요 (몇 분마다 반복할지 물어봐요)",
+    "/알림 22시50분 할말 — 그 시각에 알려줘요 (몇 분마다 · 몇 시까지 물어봐요)",
     "/알림목록 — 이 방 알림 보기",
     "/알림삭제 번호 — 알림 지우기 (/알림삭제 전부)",
     "",
@@ -1930,8 +1930,9 @@ function handlePastLife(raw, myName) {
 
 // ═══════════════ 알림 (2026-11-14, 누구나) ═══════════════
 // /알림_22시50분_공성시작 (또는 /알림 22시50분 공성시작) → 그 시각에 "⏰ 공성시작" 을 보낸다.
-// 등록하면 "몇 분마다 알려줄까요?" 를 묻고, 등록한 사람이 숫자로 답하면 그 시각부터 그 간격으로 계속 알린다
-// (0 이면 한 번만, 답하지 않으면 한 번만). /알림목록 으로 보고 /알림삭제 번호 (또는 전부) 로 끈다.
+// 등록하면 "몇 분마다 알려줄까요?" 를 묻고, 등록한 사람이 숫자로 답하면 이어서 "몇 시까지?" 를 묻는다 (2026-11-14 사용자 요청).
+// 그 시각부터 그 간격으로 끝 시각까지 알리고, 끝 시각이 지나면 알림이 저절로 지워진다 (끝 시각에 0 이면 지울 때까지 계속).
+// (간격이 0 이거나 답하지 않으면 한 번만 알리고 지워진다). /알림목록 으로 보고 /알림삭제 번호 (또는 전부) 로 끈다.
 // 시각 형식: 22시50분 · 22시 · 22:50 · 오후 10시50분. 이미 지난 시각이면 다음 날 그 시각부터.
 // ※ 시계는 백그라운드 타이머다(카페봇과 같은 방식: setInterval → java Timer → Thread). 메시지 흐름에서는 대기하지 않는다.
 // ※ /○○업데이트 로 본체를 다시 불러와도 옛 타이머가 남아 두 번 알리지 않게 세대(ALARM_GEN)를 둔다.
@@ -1993,6 +1994,31 @@ function alarmParse(rest) {
     return { h: h, m: m, text: text };
 }
 
+/** "24시" · "23시30분" · "23:30" · "오후 11시" · "24" → { h, m } / 아니면 null */
+function alarmParseClock(s) {
+    s = String(s).trim();
+    var pm = null, mt = /^(오전|오후)\s*/.exec(s);
+    if (mt) { pm = mt[1]; s = s.substring(mt[0].length); }
+    var h, m = 0;
+    if ((mt = /^(\d{1,2}):(\d{2})(?:\s*까지)?$/.exec(s))) { h = Number(mt[1]); m = Number(mt[2]); }
+    else if ((mt = /^(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?(?:\s*까지)?$/.exec(s))) { h = Number(mt[1]); m = mt[2] ? Number(mt[2]) : 0; }
+    else if ((mt = /^(\d{1,2})(?:\s*까지)?$/.exec(s))) { h = Number(mt[1]); }
+    else return null;
+    if (pm === "오후" && h < 12) h += 12;
+    if (pm === "오전" && h === 12) h = 0;
+    if (h === 24) h = 0;
+    if (h > 23 || m > 59) return null;
+    return { h: h, m: m };
+}
+
+/** 첫 알림(start) 뒤로 처음 오는 h:m — 끝 시각 (같은 시각이면 그 한 번까지) */
+function alarmUntilAt(h, m, start) {
+    var d = new Date(start);
+    d.setHours(h, m, 0, 0);
+    if (d.getTime() < start) d.setDate(d.getDate() + 1);
+    return d.getTime();
+}
+
 function alarmListText(room, now) {
     var list = alarms[room] || [];
     var warn = alarmClockWarn(now);
@@ -2001,7 +2027,8 @@ function alarmListText(room, now) {
     for (var i = 0; i < list.length; i++) {
         var a = list[i];
         lines.push((i + 1) + ". " + pad2(a.h) + ":" + pad2(a.m) + " " + a.text +
-            "\n   " + (a.every ? a.every + "분마다" : "한 번만") + " · 다음 " + alarmShortWhen(a.next, now));
+            "\n   " + (a.every ? a.every + "분마다" + (a.until ? " · " + alarmShortWhen(a.until, now) + "까지" : " · 계속") : "한 번만") +
+            " · 다음 " + alarmShortWhen(a.next, now));
     }
     lines.push("지우기: /알림삭제 번호 (모두 지우기: /알림삭제 전부)");
     if (warn) lines.push(warn);
@@ -2022,6 +2049,23 @@ function handleAlarm(room, raw, uKey) {
     // ── "몇 분마다?" 답 (등록한 사람이 5분 안에 숫자로) ──
     var p = alarmPending[pk];
     if (p && now - p.at > ALARM.ASK_SEC * 1000) { delete alarmPending[pk]; p = null; }
+    // ── 2단계: "몇 시까지?" 답 ──
+    if (p && p.stage === "until") {
+        var uc = (raw === "0" || raw === "계속") ? "keep" : alarmParseClock(raw);
+        if (!uc) return null;   // 시각이 아닌 말은 평소 대화로 둔다
+        if ((alarms[room] || []).indexOf(p.a) === -1) { delete alarmPending[pk]; return null; }
+        delete alarmPending[pk];
+        var st = alarmTimeText(p.a.h, p.a.m);
+        if (uc === "keep") {
+            p.a.until = 0;
+            saveData();
+            return "✅ " + st + "부터 " + p.a.every + "분마다 \"" + p.a.text + "\" 계속 알려 드릴게요\n끄려면 /알림목록 에서 번호를 보고 /알림삭제 번호";
+        }
+        p.a.until = alarmUntilAt(uc.h, uc.m, p.a.next);
+        saveData();
+        return "✅ " + st + "부터 " + alarmTimeText(uc.h, uc.m) + "까지 " + p.a.every + "분마다 \"" + p.a.text + "\" 알려 드릴게요\n" +
+            "(" + alarmShortWhen(p.a.until, now) + "이 지나면 알림이 저절로 지워져요)";
+    }
     var mn = /^(\d{1,4})\s*분?(?:마다)?$/.exec(raw);
     if (p && mn) {
         var list0 = alarms[room] || [];
@@ -2030,13 +2074,15 @@ function handleAlarm(room, raw, uKey) {
         if (ev !== 0 && (ev < ALARM.MIN_EVERY || ev > ALARM.MAX_EVERY)) {
             return ALARM.MIN_EVERY + "~" + ALARM.MAX_EVERY + "분 사이 숫자로 알려 주세요 (한 번만 알리려면 0)";
         }
-        delete alarmPending[pk];
         p.a.every = ev;
         saveData();
         var at = alarmTimeText(p.a.h, p.a.m);
-        return ev
-            ? "✅ " + at + "부터 " + ev + "분마다 \"" + p.a.text + "\" 알려 드릴게요\n끄려면 /알림목록 에서 번호를 보고 /알림삭제 번호"
-            : "✅ " + at + "에 \"" + p.a.text + "\" 한 번만 알려 드릴게요";
+        if (!ev) {
+            delete alarmPending[pk];
+            return "✅ " + at + "에 \"" + p.a.text + "\" 한 번만 알려 드릴게요";
+        }
+        alarmPending[pk] = { a: p.a, at: now, stage: "until" };
+        return "👌 " + ev + "분마다 알려 드릴게요.\n몇 시까지 알려 줄까요? (예: 24시, 23시30분)\n지울 때까지 계속하려면 0";
     }
 
     if (raw.indexOf("/알림") !== 0) return null;
@@ -2103,12 +2149,13 @@ function alarmTick(now) {
             var a = list[i];
             if (!(a.next <= now)) continue;
             // 반복 알림이 여러 번 밀렸으면(폰이 잠들었다 깨는 등) 가장 최근 차례만 본다
-            if (a.every > 0) while (a.next + a.every * 60000 <= now) a.next += a.every * 60000;
+            if (a.every > 0) while (a.next + a.every * 60000 <= now && !(a.until && a.next + a.every * 60000 > a.until)) a.next += a.every * 60000;
             if (now - a.next <= ALARM.LATE_MS) {
                 if (!askSend(room, "⏰ " + a.text)) alarmLastErr = "보내기 실패 " + new Date(now).toLocaleString();
             }
             if (a.every > 0) {
                 while (a.next <= now) a.next += a.every * 60000;
+                if (a.until && a.next > a.until) list.splice(i, 1);   // 끝 시각까지 다 알렸다 → 저절로 지움
             } else {
                 list.splice(i, 1);
             }
