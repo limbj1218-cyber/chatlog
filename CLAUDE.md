@@ -187,6 +187,22 @@
     알림 시계는 `setInterval` 하나(다시 컴파일하면 옛 타이머가 저절로 꺼져 세대 장치가 없다). hash 는 `event.sender.id`(카톡 알림 Person.key) —
     **메신저봇R 의 author.hash 와 같은 값인지 폰에서 확인 전**
   - PC 시험: `node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬]`(가짜 StarLight 로 설치·업데이트·가져오기·클로드까지 26개),
+  - **오토봇·카페봇도 옮겼다 (2026-11-16)** — 게임봇과 달리 변환기가 봇마다 따로다:
+    `python bot/starlight/make_neon_auto.py`(bot/오토봇.js → bot/starlight/오토봇.js),
+    `python bot/starlight/make_neon_cafe.py`(카페봇). 메신저봇R 판을 고치면 **다시 돌릴 것**.
+    로더는 `bot/starlight/오토봇로더.js`·`카페봇로더.js` 이고 **프로젝트를 따로** 만든다
+    (한 프로젝트에 같이 두면 카페 쪽 네트워크·시계가 자동응답을 끌고 내려간다 — 2026-09-07 에 나눠 둔 이유).
+    오토봇: 본체 `(__ROOMS__, __PLAT__)`, `/오토업데이트` 는 본체 버전이 같으면 **자동응답 데이터만** 다시 받고
+    `/오토` 진단을 붙여 답한다(다시 컴파일 안 함). `loadData()` 가 async 가 됐고 부르는 쪽은 전부 fire-and-forget.
+    카페봇: 본체 `(__ROOMS__, __TOKEN__, __ADMINS__, __PLAT__)`, 네트워크가 async 라 `kickWorkflow`·`fetchCafeFeed`·
+    `cafeCheck`·`cafeCycle`·`setTokenCmd`·`cafeDebugCmd`·`cafeTestCmd`·`myPublicIp` 가 전부 async 다.
+    메시지 흐름에서 기다리는 명령은 `later(replier, promise)` 로 **답이 나오면 그때** 보낸다.
+    메신저봇R 판의 `safeToWait`·`MSG_THREAD_ID`·타이머 세대 장치는 NeonJS 에선 필요 없어 뺐다.
+    **주의**: 메신저봇R 판은 JVM 공유값으로 스크립트가 중복 설치돼도 같은 글이 두 번 안 나가게 막았는데
+    StarLight 엔 그런 값이 없다 — `sentUpTo` 로 그 프로젝트 안에서만 막으므로 **같은 카페를 보는 프로젝트를 둘 만들지 말 것**.
+    깃헙 토큰은 로더에 적지 말고 방에서 `/깃토큰` 으로 넣는다(data 폴더에 저장).
+    PC 시험: `node bot/starlight/test/오토봇.test.mjs`(24) ·`오토봇로더.test.mjs`(31) ·
+    `카페봇.test.mjs`(24) ·`카페봇로더.test.mjs`(22)
     옛 메신저봇R 판 시험은 `node -r bot/starlight/test/neon_shim.js 시험.js …` 로 NeonJS 본체에 그대로 돌린다(본체를 strict 로 실행)
 - `bot/오토봇.js` + `bot/오토봇로더.js` + `bot/오토봇데이터.json` — "오토2프프"·"오토2"·"[오차율 계산봇]"·"공백기 근무표"·"멱살반2" 방 자동응답 봇.
   방을 늘리려면 본체의 `EXTRA_ROOMS` 에 적는다 (로더의 `MY_ROOMS` 가 `ROOMS` 를 덮어쓰므로, 로더를 다시 붙여넣지 않아도 되는 쪽).
