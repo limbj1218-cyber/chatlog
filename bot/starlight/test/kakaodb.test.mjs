@@ -68,6 +68,24 @@ r = ev("message", { message: M(4, "지수2", "안녕") });
 t("닉변 알림", r === "🔄 대화명 변경: 지수 → 지수2", r);
 t("봇 메시지 무시", ev("message", { message: M(99, "봇2", "x", { isMine: true }) }) === "");
 t("모르던 사람이 말하면 조용히 적음", ev("message", { message: M(50, "새얼굴", "ㅎㅇ") }) === "");
+ev("message", { message: M(5, "현우", "a") });
+ev("message", { message: M(5, "현우2", "b") });
+r = ev("message", { message: M(5, "현우3", "c") });
+t("닉변 알림 — 쓴 이름 누적", r === "🔄 대화명 변경: 현우 → 현우2 → 현우3", r);
+t("이름 그대로면 다시 안 알림", ev("message", { message: M(5, "현우3", "d") }) === "");
+
+// ── 오픈채팅: 친구 이름이 섞여 와도 닉변으로 안 친다 (2026-11-16 "[조교]후파 → 횡횡 → [조교]후파") ──
+{
+    const OR = Object.assign(kroom("오픈방"), { isOpenChat: true });
+    body = mod.default([KIND, "오픈방"], ["후파"], PLAT);
+    const om = (id, name, kind, text) => ({ senderId: String(id), sender: U(id, name, { kind }), text, type: "TEXT", isMine: false });
+    const oev = (m) => { sent = []; body.kakao.message({ room: OR, message: m }); return sent.join("\n"); };
+    oev(om(60, "[조교]후파", "open_member", "안녕"));
+    t("오픈채팅 — 친구 이름은 무시", oev(om(60, "횡횡", "friend", "/닉변감지")) === "");
+    t("오픈채팅 — 다시 프로필 이름이어도 조용", oev(om(60, "[조교]후파", "open_member", "x")) === "");
+    t("오픈채팅 — 진짜 닉변은 알림", oev(om(60, "후파짱", "open_member", "y")) === "🔄 대화명 변경: [조교]후파 → 후파짱");
+    body = mod.default([KIND], ["후파"], PLAT);
+}
 r = say("아무개", "/닉변감지");
 t("/닉변감지 — 카톡 DB 기록", r.indexOf("지수 → 지수2") !== -1 && r.indexOf("영희 → 영희짱") !== -1 && r.indexOf("50") === -1, r);
 
@@ -124,5 +142,16 @@ t("ID 는 문자열로 저장", Object.keys(saved.rooms[KIND].users).indexOf("4"
 let threw = false;
 try { body.kakao.joined({ room: { name: KIND, getMembers: () => { throw new Error("db"); }, send: () => { throw new Error("x"); } }, members: jlist([U(90, "x")]) }); } catch (e) { threw = true; }
 t("멤버 목록·보내기 실패해도 안 터짐", !threw);
+
+// ── 옛 기록(v 없음)의 가짜 닉변은 한 번 지우고, 다음에 보이는 이름으로 조용히 맞춘다 ──
+files[KEY + "_kakao.json"] = JSON.stringify({ rooms: { [KIND]: { seeded: true, users: {
+    "77": { name: "[조교]후파", last: "횡횡", hist: ["[조교]후파", "횡횡", "[조교]후파", "횡횡"] } } } }, off: {} });
+body = mod.default([KIND], ["후파"], PLAT);
+r = say("아무개", "/닉변감지");
+t("정리: 가짜 닉변 기록이 사라짐", r.indexOf("횡횡") === -1, r);
+t("정리: 첫 말은 조용히 맞춤", ev("message", { message: M(77, "[조교]후파", "x") }) === "");
+r = ev("message", { message: M(77, "후파2", "y") });
+t("정리 뒤 진짜 닉변은 알림", r === "🔄 대화명 변경: [조교]후파 → 후파2", r);
+t("정리 표시(v2) 저장", JSON.parse(files[KEY + "_kakao.json"]).v === 2);
 
 console.log(ok + " 통과, " + bad + " 실패");

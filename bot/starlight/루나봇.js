@@ -45,7 +45,7 @@
  */
 export default function lunaBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "루나봇";
-var BOT_VER = "1114-8s5";
+var BOT_VER = "1114-8s6";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -2543,7 +2543,8 @@ function response(room, msg, sender, isGroupChat, replier, who) {
 //  - 입장: 처음 보는 사람 → "OO님 어서오세요"
 //          전에 있던 사람 → "OO님 돌아오신걸 환영해요", 대화명이 바뀌었으면 "OO님(구 XX님) 돌아오신걸 환영해요"
 //  - 퇴장: "OO님이 나가셨어요" / 내보내졌으면 "OO님이 내보내졌어요"
-//  - 닉변: 말할 때 대화명이 바뀌어 있으면 "🔄 대화명 변경: XX → OO". /닉변감지 는 이 기록으로 보여준다
+//  - 닉변: 말할 때 대화명이 바뀌어 있으면 "🔄 대화명 변경: 처음 → … → 지금" (쓴 이름 누적). /닉변감지 는 이 기록으로 보여준다
+//          오픈채팅에서는 오픈채팅 프로필 이름(kind "open_member")만 본다 — 친구 이름이 섞여 오면 가짜 닉변이 된다
 //  - 삭제: "🗑️ OO님이 메시지를 지웠어요" + 지운 내용
 //  - 기록은 data 폴더의 ○○_kakao.json (방마다 사람 ID → 처음 이름·지금 이름·바뀐 이름들)
 //  - 처음 쓰는 방은 첫 이벤트 때 카톡 DB 의 멤버 목록으로 지금 있는 사람을 미리 적어 둔다
@@ -2571,7 +2572,34 @@ function kwLoad() {
     if (!kwStore || typeof kwStore !== "object") kwStore = {};
     if (!kwStore.rooms) kwStore.rooms = {};
     if (!kwStore.off) kwStore.off = {};
+    // v2 (2026-11-16): 오픈채팅에서 친구 이름이 섞여 생긴 가짜 닉변 기록을 한 번 지운다.
+    // 지금 이름을 확실히 모르므로 다음에 말할 때 보이는 이름으로 조용히 맞춘다(quiet — 알림·기록 없이)
+    if (kwStore.v !== 2) {
+        for (var r in kwStore.rooms) {
+            if (!kwStore.rooms.hasOwnProperty(r)) continue;
+            var us = kwStore.rooms[r].users || {};
+            for (var id in us) {
+                if (!us.hasOwnProperty(id)) continue;
+                delete us[id].hist;
+                us[id].last = us[id].name;
+                us[id].quiet = true;
+            }
+        }
+        kwStore.v = 2;
+        try { kwSave(); } catch (e) {}
+    }
     return kwStore;
+}
+
+/** 오픈채팅방이면 오픈채팅 프로필 이름만 믿는다 — 카톡 DB 플러그인이 오픈 프로필을 못 찾으면 친구 이름을 대신 줘서
+ *  같은 사람이 "[조교]후파 → 횡횡 → [조교]후파" 처럼 말할 때마다 바뀌어 보였다 (2026-11-16 겪음) */
+function kwNameOk(kroom, user) {
+    var open = false;
+    try { open = !!kroom.isOpenChat; } catch (e) { open = false; }
+    if (!open || !user) return true;
+    var kind = "";
+    try { kind = kwStr(user.kind); } catch (e) { kind = ""; }
+    return !kind || kind === "open_member";
 }
 
 /** 이 봇이 맡은 방인지 — 오토봇은 EXTRA_ROOMS 까지 보는 inRooms() 가 있다 */
@@ -2648,7 +2676,7 @@ function kwSeed(kroom, room, skipIds) {
         for (var i = 0; i < members.length; i++) {
             var m = members[i];
             var id = kwStr(m.id), name = kwStr(m.name);
-            if (!id || !name || m.isMe || (skipIds && skipIds[id]) || rd.users[id]) continue;
+            if (!id || !name || m.isMe || (skipIds && skipIds[id]) || rd.users[id] || !kwNameOk(kroom, m)) continue;
             rd.users[id] = { name: name, last: name, at: now, seed: true };
         }
     } catch (e) { kwLastErr = "멤버 목록: " + e; }
@@ -2664,6 +2692,11 @@ function kwAddHist(rec, name) {
 function kwSeeName(rd, id, name, now) {
     var rec = rd.users[id];
     if (!rec) { rd.users[id] = { name: name, last: name, at: now }; return null; }
+    if (rec.quiet) {   // 정리한 기록 — 처음 보는 이름을 지금 이름으로 조용히 맞춘다
+        delete rec.quiet;
+        if (rec.last !== name) { rec.name = name; rec.last = name; rec.at = now; }
+        return null;
+    }
     if (rec.last === name) return null;
     var old = rec.last;
     kwAddHist(rec, name);
@@ -2691,7 +2724,8 @@ function kwJoined(event) {
             rd.users[id] = { name: name, last: name, at: now, joins: 1 };
             lines.push(name + "님 어서오세요");
         } else {
-            var old = rec.last && rec.last !== name ? rec.last : null;
+            var old = rec.last && rec.last !== name && !rec.quiet ? rec.last : null;
+            if (rec.quiet) { delete rec.quiet; rec.name = name; }
             if (old) kwAddHist(rec, name);
             rec.last = name;
             rec.at = now;
@@ -2735,12 +2769,19 @@ function kwMessage(event) {
     var s = msg.sender;
     var id = kwStr(msg.senderId || (s && s.id)), name = kwStr(s && s.name);
     if (!id || !name || (s && s.isMe)) return;
+    if (!kwNameOk(event.room, s)) return;      // 오픈채팅인데 친구 이름이 온 것 — 대화명으로 치지 않는다
     var rd = kwRoomData(room);
     if (!rd.seeded) kwSeed(event.room, room, null);
+    var wasQuiet = rd.users[id] && rd.users[id].quiet;
     var old = kwSeeName(rd, id, name, new Date().getTime());
-    if (rd.users[id].left) rd.users[id].left = false;
-    if (old !== null || !rd.users[id].seenMsg) { rd.users[id].seenMsg = true; kwSave(); }
-    if (old !== null && kwOn(room, "nick")) kwSend(event.room, room, "🔄 대화명 변경: " + old + " → " + name);
+    var rec = rd.users[id];
+    if (rec.left) rec.left = false;
+    if (old !== null || wasQuiet || !rec.seenMsg) { rec.seenMsg = true; kwSave(); }
+    // 바로 앞 이름만이 아니라 지금까지 쓴 이름을 다 보여준다 (처음 → … → 지금, 최대 10개)
+    if (old !== null && kwOn(room, "nick")) {
+        var chain = rec.hist && rec.hist.length >= 2 ? rec.hist.join(" → ") : old + " → " + name;
+        kwSend(event.room, room, "🔄 대화명 변경: " + chain);
+    }
 }
 
 var KW_TYPE_LABEL = { PHOTO: "사진", MULTIPHOTO: "사진 여러 장", VIDEO: "동영상", AUDIO: "음성", FILE: "파일",
