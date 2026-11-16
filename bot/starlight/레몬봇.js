@@ -47,7 +47,7 @@
  */
 export default function lemonBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "레몬봇";
-var BOT_VER = "1114-7s6";
+var BOT_VER = "1114-7s7";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["레몬"];
@@ -2628,10 +2628,13 @@ function kwRoomName(kroom) {
     try { names.push(kwStr(kroom.customName)); } catch (e) {}
     try { names.push(kwStr(kroom.name)); } catch (e) {}
     for (var i = 0; i < names.length; i++) {
-        if (names[i] && kwInRoom(names[i])) return names[i];
+        if (names[i] && kwInRoom(names[i])) { kwRooms[names[i]] = kroom; return names[i]; }
     }
     return null;
 }
+
+// 방 이름 → 마지막으로 이벤트가 온 KakaoDB 방 (명령에서 멤버 목록을 읽을 때 쓴다)
+var kwRooms = {};
 
 function kwSend(kroom, room, text) {
     var ok = false;
@@ -2713,6 +2716,12 @@ function kwJoined(event) {
     }
     kwSave();
     if (lines.length && kwOn(room, "join")) kwSend(event.room, room, lines.join("\n"));
+    // 봇마다 덧붙인 입장 처리 (오토봇: 오픈프로필로 들어온 사람에게 안내)
+    if (typeof kwAfterJoin === "function") {
+        var joined = [];
+        for (var q = 0; q < members.length; q++) if (members[q] && !members[q].isMe && kwStr(members[q].id)) joined.push(members[q]);
+        try { if (joined.length) kwAfterJoin(event, room, joined); } catch (e) { kwLastErr = "입장 뒤 처리: " + e; }
+    }
 }
 
 function kwLeft(event) {
@@ -2816,6 +2825,9 @@ function kwStatusText(room) {
             "② 프로젝트 받을 이벤트에 kakaodb.member.join · leave · message.create · delete",
             "③ 방에서 아무 말이나 하고 몇 초 뒤 /감지 다시");
     }
+    if (typeof kwStatusExtra === "function") {
+        try { var ex = kwStatusExtra(room); if (ex) lines.push(ex); } catch (e) {}
+    }
     if (kwLastErr) lines.push("최근 문제: " + kwLastErr);
     return lines.join("\n");
 }
@@ -2825,12 +2837,16 @@ function kwCommand(room, msg, sender, replier) {
     if (!kwInRoom(room)) return false;
     var t = kwStr(msg).trim();
     if (t === "/감지") { replier.reply(kwStatusText(room)); return true; }
-    var m = /^\/감지\s+(입장|퇴장|닉변|삭제|전부)\s+(켜기|끄기)$/.exec(t);
-    if (m) {
+    // 봇마다 덧붙인 명령 (오토봇의 /내프로필·/프로필사진 등)
+    if (typeof kwExtraCommand === "function" && kwExtraCommand(room, t, sender, replier)) return true;
+    var m = /^\/감지\s+(\S+)\s+(켜기|끄기)$/.exec(t);
+    if (m && (m[1] === "전부" || KW_KINDS.hasOwnProperty(m[1]))) {
         if (!isAdmin(sender)) return true;
         var s = kwLoad();
         if (!s.off[room]) s.off[room] = {};
-        var kinds = m[1] === "전부" ? ["join", "leave", "nick", "del"] : [KW_KINDS[m[1]]];
+        var kinds = [];
+        if (m[1] === "전부") { for (var kk in KW_KINDS) if (KW_KINDS.hasOwnProperty(kk)) kinds.push(KW_KINDS[kk]); }
+        else kinds.push(KW_KINDS[m[1]]);
         for (var i = 0; i < kinds.length; i++) s.off[room][kinds[i]] = m[2] === "끄기";
         kwSave();
         replier.reply("👀 " + m[1] + " 감지를 " + (m[2] === "끄기" ? "껐어요" : "켰어요") + "\n" + kwStatusText(room));

@@ -134,6 +134,8 @@ return {
 # 알림은 일어난 그 방에 바로 보낸다 (사용자가 정함). 방은 inRooms() = ROOMS + EXTRA_ROOMS.
 KW = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kakaodb_watch.js'), encoding='utf-8').read()
 KW = KW.replace('__KW_FILE__', 'auto_kakao.json')
+# 오토봇만: 오픈프로필로 들어온 사람에게 기본 프로필로 바꿔 달라는 안내 + 폰에 저장된 사진
+KW += '\n' + io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kakaodb_auto_profile.js'), encoding='utf-8').read()
 assert 'function isAdmin(' not in s
 KW = r'''// /감지 켜고 끄기를 할 수 있는 사람 — 오토봇엔 관리자 목록이 따로 없어서 여기서 정한다 (대화명에 들어 있으면)
 var KW_ADMIN_PARTS = ["후파", "임병진", "[조교]"];
@@ -159,7 +161,7 @@ rep('''return {
     version: BOT_VER,
     rooms: function () { return ROOMS.concat(EXTRA_ROOMS); },''')
 # 본체 버전 뒤에 StarLight 판 고친 횟수 — /오토업데이트 는 버전이 같으면 본체를 바꾸지 않으므로 고칠 때마다 올린다
-SL_REV = 4
+SL_REV = 5
 m = re.search(r'var BOT_VER = "([^"]*)";', s)
 rep(m.group(0), 'var BOT_VER = "%ss%d";' % (m.group(1), SL_REV))
 

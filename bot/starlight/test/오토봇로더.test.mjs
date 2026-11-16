@@ -116,6 +116,45 @@ say("[조교] 아는아이", "/감지 입장 켜기", "HA");
 t("로더 상태에 카톡 DB 줄", say("x", "/오토로더").indexOf("카톡 DB 감지: 연결됨 ✅") !== -1);
 t("감지 기록 파일", fs.existsSync(path.join(PROJ, "data", "auto_kakao.json")));
 
+// ── 4-2. 오픈프로필로 들어온 사람 안내 + 폰 사진 (오토봇만) ──
+{
+    let media = [];
+    let members = [{ id: "1", name: "원래있던분", isMe: false }];
+    const PU = (id, name, pt) => ({ id: String(id), name, isMe: false, kind: "open_member", toJson: () => JSON.stringify({ id: String(id), name, profileType: pt }) });
+    const proom = (name) => ({ name, customName: null, isOpenChat: true,
+        send: (m) => { sent.push(name + "|" + m); return true; },
+        sendMedia: (p) => { media.push(name + "|" + p); return Promise.resolve({ error: null }); },
+        getMembers: () => jl(members) });
+    const pj = (m, rname) => { sent = []; media = []; main.onKakaoMemberJoined({ room: proom(rname || "오토2프프"), members: jl([m]) }); return sent.join("\n"); };
+    let r = pj(PU(40, "오픈님", 16));
+    t("오픈프로필 → 안내 글", r.indexOf("오토2프프|오픈님님, 오픈프로필로 들어오셨어요. 사진을 참고 하셔서 카카오톡 기본 프로필로 바꿔 주세요 🙏") !== -1, r);
+    t("오픈프로필 → 폰 사진", media.join() === "오토2프프|/sdcard/Download/오픈프로필안내.jpg", media);
+    r = pj(PU(41, "기본님", 1));
+    t("기본 프로필 → 안내 없음", r === "오토2프프|기본님님 어서오세요" && media.length === 0, r);
+    r = pj(PU(42, "닉네임님", 2));
+    t("닉네임 프로필 → 안내", r.indexOf("닉네임님님, 오픈프로필로") !== -1 && media.length === 1, r);
+    // 들어온 직후 종류를 모르면 몇 초 뒤 멤버 목록에서 다시 본다
+    members = [{ id: "43", name: "늦은님", isMe: false, kind: "open_member", toJson: () => JSON.stringify({ profileType: 16 }) }];
+    pj({ id: "43", name: "늦은님", isMe: false, toJson: () => "{}" });
+    await flush();
+    t("종류를 늦게 알아도 안내", sent.join().indexOf("늦은님님, 오픈프로필로") !== -1 && media.length === 1, sent);
+    t("/감지 프로필 끄기 (관리자)", say("[조교] 아는아이", "/감지 프로필 끄기", "HA", "오토2프프").indexOf("프로필 감지를 껐어요") !== -1);
+    r = pj(PU(44, "꺼짐님", 16));
+    t("꺼진 방에선 안내 없음", r.indexOf("오픈프로필로") === -1 && media.length === 0, r);
+    t("다른 방은 그대로", pj(PU(45, "멱살님", 16), "멱살반2").indexOf("멱살님님, 오픈프로필로") !== -1);
+    say("[조교] 아는아이", "/감지 프로필 켜기", "HA", "오토2프프");
+    r = say("철수", "/프로필사진 /sdcard/x.jpg", "H1", "오토2프프");
+    t("/프로필사진 은 관리자만", r === "", r);
+    r = say("후파", "/프로필사진 /sdcard/Pictures/안내2.png", "H1", "오토2프프");
+    t("/프로필사진 바꾸기", r.indexOf("/sdcard/Pictures/안내2.png 으로 바꿨어요") !== -1, r);
+    pj(PU(46, "새오픈", 16));
+    t("바꾼 사진으로 보냄", media.join() === "오토2프프|/sdcard/Pictures/안내2.png", media);
+    members = [{ id: "50", name: "확인님", isMe: false, kind: "open_member", toJson: () => JSON.stringify({ profileType: 2 }) }];
+    r = say("확인님", "/내프로필", "H5", "오토2프프");
+    t("/내프로필", r.indexOf("종류 값: 2 (닉네임 프로필)") !== -1 && r.indexOf("안내를 받는 종류") !== -1, r);
+    t("/감지 에 사진 경로", say("x", "/감지", "HX", "오토2프프").indexOf("프로필 안내 사진: /sdcard/Pictures/안내2.png") !== -1);
+}
+
 // ── 5. /내정보 ──
 let r = say("영희", "/내정보", "SECRET-HASH-123");
 t("내정보: 값은 비공개", r.indexOf("받음 (값은 비공개) — 쓰지 않음") !== -1 && r.indexOf("SECRET") === -1, r);
