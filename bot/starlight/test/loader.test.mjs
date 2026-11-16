@@ -1,5 +1,5 @@
 // StarLight(NeonJS) 로더 시험 — Projects·FileStream·BotManager·Chat·fetch 를 흉내 내고 로더를 진짜 ES 모듈로 불러온다.
-// 사용 (저장소 맨 위에서): node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬]
+// 사용 (저장소 맨 위에서): node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬|사건]
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -7,7 +7,8 @@ import { pathToFileURL } from "url";
 
 const SRC = process.argv[2];
 const KIND = process.argv[3] || "루나";
-const KEY = { "루나": "luna", "토마토": "tomato", "레몬": "lemon" }[KIND];
+const KEY = { "루나": "luna", "토마토": "tomato", "레몬": "lemon", "사건": "sageon" }[KIND];
+const DBFILE = KIND === "사건" ? "Database.json" : KEY + "_Database.json";   // 사건봇은 메신저봇R 때부터 이 이름
 const HERE = fs.mkdtempSync(path.join(os.tmpdir(), "starlight-" + KEY + "-"));
 const PROJ = path.join(HERE, "proj");
 fs.rmSync(PROJ, { recursive: true, force: true });
@@ -69,7 +70,7 @@ t("로더 상태: 본체 있음", /본체: \d{4}-\d+\S* ✅ \(깃헙에서 처�
 Math.random = () => 0;   // 재련은 늘 성공
 let r = say("철수", "재련가즈아", "H1");
 t("재련", r.indexOf("철수님, 1 → 2") !== -1, r);
-const db = JSON.parse(fs.readFileSync(path.join(PROJ, "data", KEY + "_Database.json"), "utf8"));
+const db = JSON.parse(fs.readFileSync(path.join(PROJ, "data", DBFILE + ""), "utf8"));
 t("data 폴더에 저장 + 대화명 키 (StarLight id 는 안 씀)", db.userData["철수"] === 2 && !db.userData["#h:H1"], db.userData);
 // 2026-11-16 토마토 방에서 겪은 것: StarLight 는 id 를 앞사람 메시지에서 읽는다 → 이름으로만 사람을 찾는다
 r = say("영희", "재련가즈아", "H1");   // 앞사람(철수)의 id 가 섞여 와도
@@ -107,13 +108,13 @@ t("깃헙 안 됨: 실패 안내", sent.join().indexOf("깃헙 응답 404") !== 
 // ── 5. 옛 데이터 가져오기 ──
 const OLD = path.join(HERE, "old").replace(/\\/g, "/");
 fs.rmSync(OLD, { recursive: true, force: true }); fs.mkdirSync(OLD);
-fs.writeFileSync(OLD + "/" + KEY + "_Database.json", JSON.stringify({ userData: { "#h:H9": 7, "#h:H8": 3, "#h:H7": 4 }, roomUsers: { [KIND]: ["#h:H9"] }, people: { "#h:H9": { name: "옛사람", last: "옛사람" }, "#h:H8": { name: "엑시아", last: "후파", at: 2 }, "#h:H7": { name: "후파", last: "착한생각", at: 1 } } }));
+fs.writeFileSync(OLD + "/" + DBFILE + "", JSON.stringify({ userData: { "#h:H9": 7, "#h:H8": 3, "#h:H7": 4 }, roomUsers: { [KIND]: ["#h:H9"] }, people: { "#h:H9": { name: "옛사람", last: "옛사람" }, "#h:H8": { name: "엑시아", last: "후파", at: 2 }, "#h:H7": { name: "후파", last: "착한생각", at: 1 } } }));
 fs.writeFileSync(OLD + "/claude_token.txt", "ghp_test");
 t("가져오기: 관리자만", say("철수", "/" + KIND + "가져오기 " + OLD, "H1") === "");
 r = say("멱살잡힌스쳐(후파)", "/" + KIND + "가져오기 " + OLD, "HA");
 await flush();
-t("가져오기: 두 파일", r.indexOf(KEY + "_Database.json: 가져옴 ✅") !== -1 && r.indexOf("claude_token.txt: 가져옴 ✅") !== -1, r);
-t("가져오기: 지금 것 .bak", fs.existsSync(path.join(PROJ, "data", KEY + "_Database.json.bak")));
+t("가져오기: 두 파일", r.indexOf(DBFILE + ": 가져옴 ✅") !== -1 && r.indexOf("claude_token.txt: 가져옴 ✅") !== -1, r);
+t("가져오기: 지금 것 .bak", fs.existsSync(path.join(PROJ, "data", DBFILE + ".bak")));
 t("가져오기: 다시 컴파일", compiled === 2);
 // 다시 컴파일된 것처럼 새로 불러오면 옛 기록이 보인다
 main = await import(pathToFileURL(path.join(PROJ, "main.js")).href + "?v=2");

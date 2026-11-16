@@ -25,6 +25,11 @@ def rep(a, b):
     assert s.count(a) == 1, (a[:80], s.count(a))
     s = s.replace(a, b)
 
+# 봇마다 다른 점: 데이터 파일 이름 (사건봇은 메신저봇R 때부터 Database.json), 알림 기능 유무 (사건봇엔 없다)
+DATA_NAME = {'sageon': 'Database.json'}.get(key, key + '_Database.json')
+HAS_LEGACY = 'var LEGACY_FILE = ' in s
+HAS_ALARM = 'function alarmBeat() {' in s
+
 # ── 0. 머리 주석의 호환성 안내 ──
 cut(' *  ◆ 호환성', ' * ═══════════════════════════════════════════════════════════\n */',
 r''' *  ◆ StarLight(NeonJS) 판 (2026-11-16) — bot/%s.js(메신저봇R 판)를 그대로 두고 따로 만든 것
@@ -42,6 +47,7 @@ r'''// ═══════════════ 앱 호환 계층 (StarLigh
 var PLAT = __PLAT__ || {};
 
 function fileRead(name) {
+    if (!name) return null;
     try {
         var r = PLAT.read ? PLAT.read(name) : null;
         if (r === null || r === undefined || String(r) === "") return null;
@@ -55,9 +61,9 @@ function fileWrite(name, text) {
 
 var BASE_DIR = "";
 // ※ 메신저봇R 판과 같은 파일 이름 — 옛 폰의 파일을 프로젝트 data 폴더에 그대로 넣으면 기록이 이어진다
-var DATA_FILE = "%s_Database.json";
-
-''' % key)
+var DATA_FILE = "%s";
+%s
+''' % (DATA_NAME, 'var LEGACY_FILE = null;   // 메신저봇R 판의 옛 경로 이어받기는 StarLight 판에선 없다\n' if HAS_LEGACY else ''))
 rep('if (typeof %s === "undefined") %s = null;' % (DATA_VAR, DATA_VAR), 'var %s = null;   // 파일 저장이 막혔을 때 메모리 사본' % DATA_VAR)
 
 # ── 2. 클로드 답변: 스레드·java.net → fetch·setTimeout ──
@@ -197,12 +203,13 @@ async function askWork(job) {
 rep('    if (!askRunAsync(function () { askWork(job); })) {', '    if (!askRunAsync(function () { return askWork(job); })) {')
 
 # ── 3. 알림 시계: 세대 장치·예비 스레드 없이 setInterval 하나 ──
-cut('    if (alarmFallbackOn || ALARM_TIMER === "Thread") return;', '/** 알림 명령이면 답장 문구',
+if HAS_ALARM:
+  cut('    if (alarmFallbackOn || ALARM_TIMER === "Thread") return;', '/** 알림 명령이면 답장 문구',
 r'''    // NeonJS 판은 예비 시계가 없다 — 다시 컴파일하면 시계도 새로 켜진다
 }
 
 ''')
-cut('function alarmBeat() {', '// ═══════════════ 메시지 처리 ═══════════════',
+  cut('function alarmBeat() {', '// ═══════════════ 메시지 처리 ═══════════════',
 r'''function alarmBeat() {
     try { alarmTick(new Date().getTime()); } catch (e) { alarmLastErr = "시계 오류: " + e; }
     return true;
@@ -220,29 +227,34 @@ function alarmStart() {
 }
 
 ''')
-rep('// ※ 시계는 백그라운드 타이머다(카페봇과 같은 방식: setInterval → java Timer → Thread). 메시지 흐름에서는 대기하지 않는다.',
+  rep('// ※ 시계는 백그라운드 타이머다(카페봇과 같은 방식: setInterval → java Timer → Thread). 메시지 흐름에서는 대기하지 않는다.',
     '// ※ 시계는 NeonJS 의 setInterval 이다 (StarLight 판). 메시지 흐름에서는 대기하지 않는다.')
 
 # ── 4. 앱 직접 등록 부분 빼고, 내보낸 함수로 감싸기 ──
-cut('// ═══════════════ 앱 API 연결 (직접 붙여넣기용) ═══════════════', '// 알림 시계 켜기 (모든 정의가 끝난 뒤)', '')
-rep('// 알림 시계 켜기 (모든 정의가 끝난 뒤)\nalarmStart();',
-r'''// 로더가 준 방·관리자 (비어 있으면 본체 기본값)
+RETURN_BLOCK = r'''// 로더가 준 방·관리자 (비어 있으면 본체 기본값)
 if (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;
 if (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;
-
-// 알림 시계 켜기 (모든 정의가 끝난 뒤)
-alarmStart();
-
+%s
 return {
     response: __RESPONSE__,
     version: BOT_VER,
     rooms: function () { return ROOMS.slice(); },
-    alarmTick: alarmTick,
+    alarmTick: typeof alarmTick === "function" ? alarmTick : function () {},
     status: function () {
-        return { dataFile: DATA_FILE, timer: ALARM_TIMER, alarmErr: alarmLastErr, askErr: askLastErr };
+        return { dataFile: DATA_FILE, timer: typeof ALARM_TIMER !== "undefined" ? ALARM_TIMER : "없음 (이 봇엔 알림이 없다)",
+            alarmErr: typeof alarmLastErr !== "undefined" ? alarmLastErr : "", askErr: askLastErr };
     }
 };
-}''')
+}'''
+KW_SLOT = '// 감지 끼울 자리\n'
+if HAS_ALARM:
+    cut('// ═══════════════ 앱 API 연결 (직접 붙여넣기용) ═══════════════', '// 알림 시계 켜기 (모든 정의가 끝난 뒤)', '')
+    rep('// 알림 시계 켜기 (모든 정의가 끝난 뒤)\nalarmStart();',
+        KW_SLOT + RETURN_BLOCK % '\n// 알림 시계 켜기 (모든 정의가 끝난 뒤)\nalarmStart();\n')
+else:
+    # 알림이 없는 봇(사건봇): 앱 직접 등록 부분부터 끝까지를 바꾼다
+    a4 = s.index('// ═══════════════ 앱 API 연결 (직접 붙여넣기용) ═══════════════')
+    s = s[:a4] + KW_SLOT + RETURN_BLOCK % '' + '\n'
 
 # ── 사람 구분: StarLight 의 sender.id 는 쓰지 않는다 (2026-11-16 토마토 방에서 겪음) ──
 # StarLight 는 대화명·내용은 이번 메시지에서 읽지만 id 는 알림에 쌓인 메시지 중 **첫 번째(messages[0])** 에서 읽는다
@@ -263,10 +275,11 @@ rep('''function keyByLastName(name) {
     for (var k in people) {''')
 # ── 입퇴장·닉변·삭제 감지 (KakaoDB 플러그인, 2026-11-16 — 루나봇부터) ──
 # bot/starlight/kakaodb_watch.js 를 본체 끝(return 앞)에 넣고, response 앞에서 /감지 명령을 먼저 본다.
-KAKAODB_BOTS = ['luna']
+KAKAODB_BOTS = ['luna', 'tomato', 'lemon', 'sageon']
 HAS_KW = key in KAKAODB_BOTS
 if HAS_KW:
     KW = io.open(os.path.join(ROOT, 'bot', 'starlight', 'kakaodb_watch.js'), encoding='utf-8').read()
+    KW = KW.replace('__KW_FILE__', key + '_kakao.json')
     rep('''    "/닉변감지 — 대화명을 바꾼 사람 보기 (처음 이름 → 지금 이름)",
     "",''', '''    "/닉변감지 — 대화명을 바꾼 사람 보기 (처음 이름 → 지금 이름)",
     "",
@@ -281,7 +294,7 @@ m = re.search(r'var BOT_VER = "([^"]*)";', s)
 rep(m.group(0), 'var BOT_VER = "%ss%d";' % (m.group(1), SL_REV))
 
 if HAS_KW:
-    rep('// 알림 시계 켜기 (모든 정의가 끝난 뒤)\nalarmStart();\n', KW + '\n// 알림 시계 켜기 (모든 정의가 끝난 뒤)\nalarmStart();\n')
+    rep(KW_SLOT, KW + '\n')
     rep('    response: __RESPONSE__,',
         '''    response: function (room, msg, sender, isGroupChat, replier, who) {
         try { if (kwCommand(room, msg, sender, replier)) return; } catch (e) { kwLastErr = String(e); }
@@ -290,6 +303,7 @@ if HAS_KW:
     kakao: { joined: kwJoined, left: kwLeft, message: kwMessage, deleted: kwDeleted, status: kwStatusText },''')
 else:
     rep('    response: __RESPONSE__,', '    response: response,')
+    rep(KW_SLOT, '')
 
 # 머리 주석이 끝난 바로 뒤에서 함수를 연다
 head_end = s.index(' */\n') + 4

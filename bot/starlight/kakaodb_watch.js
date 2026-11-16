@@ -16,7 +16,7 @@
 //    (그래야 원래 있던 사람이 나갔다 오면 "돌아오신걸" 로 맞이한다)
 //  - 관리자(후파)가 /감지 입장 끄기 처럼 하나씩 끄고 켠다. /감지 로 상태를 본다
 
-var KW_FILE = DATA_FILE.replace("_Database.json", "_kakao.json");
+var KW_FILE = "__KW_FILE__";   // make_neon.py 가 봇마다 넣는다 (예: luna_kakao.json)
 var KW_KINDS = { "입장": "join", "퇴장": "leave", "닉변": "nick", "삭제": "del" };
 var KW_HIST_MAX = 10;
 var KW_DEL_MAX = 200;      // 지운 내용은 이만큼만 보여준다

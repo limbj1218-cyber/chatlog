@@ -58,6 +58,7 @@ var MAX_ATTEMPTS = 2;                                    // 하루 재련 횟수
 var PLAT = __PLAT__ || {};
 
 function fileRead(name) {
+    if (!name) return null;
     try {
         var r = PLAT.read ? PLAT.read(name) : null;
         if (r === null || r === undefined || String(r) === "") return null;
@@ -2531,10 +2532,6 @@ function response(room, msg, sender, isGroupChat, replier, who) {
     }
 }
 
-// 로더가 준 방·관리자 (비어 있으면 본체 기본값)
-if (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;
-if (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;
-
 // ═══════════════ 입퇴장·닉변·삭제 감지 (StarLight + KakaoDB 플러그인, 2026-11-16) ═══════════════
 // 이 조각은 make_neon.py 가 StarLight 판 본체(bot/starlight/○○봇.js) 안에 넣는다. 메신저봇R 판에는 없다
 // (메신저봇R 는 카톡 알림만 받아서 입퇴장·삭제를 알 수 없다).
@@ -2553,7 +2550,7 @@ if (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;
 //    (그래야 원래 있던 사람이 나갔다 오면 "돌아오신걸" 로 맞이한다)
 //  - 관리자(후파)가 /감지 입장 끄기 처럼 하나씩 끄고 켠다. /감지 로 상태를 본다
 
-var KW_FILE = DATA_FILE.replace("_Database.json", "_kakao.json");
+var KW_FILE = "luna_kakao.json";   // make_neon.py 가 봇마다 넣는다 (예: luna_kakao.json)
 var KW_KINDS = { "입장": "join", "퇴장": "leave", "닉변": "nick", "삭제": "del" };
 var KW_HIST_MAX = 10;
 var KW_DEL_MAX = 200;      // 지운 내용은 이만큼만 보여준다
@@ -2829,6 +2826,10 @@ function kwCommand(room, msg, sender, replier) {
     return false;
 }
 
+// 로더가 준 방·관리자 (비어 있으면 본체 기본값)
+if (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;
+if (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;
+
 // 알림 시계 켜기 (모든 정의가 끝난 뒤)
 alarmStart();
 
@@ -2840,9 +2841,10 @@ return {
     kakao: { joined: kwJoined, left: kwLeft, message: kwMessage, deleted: kwDeleted, status: kwStatusText },
     version: BOT_VER,
     rooms: function () { return ROOMS.slice(); },
-    alarmTick: alarmTick,
+    alarmTick: typeof alarmTick === "function" ? alarmTick : function () {},
     status: function () {
-        return { dataFile: DATA_FILE, timer: ALARM_TIMER, alarmErr: alarmLastErr, askErr: askLastErr };
+        return { dataFile: DATA_FILE, timer: typeof ALARM_TIMER !== "undefined" ? ALARM_TIMER : "없음 (이 봇엔 알림이 없다)",
+            alarmErr: typeof alarmLastErr !== "undefined" ? alarmLastErr : "", askErr: askLastErr };
     }
 };
 }

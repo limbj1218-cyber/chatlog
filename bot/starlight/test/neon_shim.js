@@ -14,8 +14,8 @@ vm.runInContext = function (code, ctx) {
     });
     var src = code
         .replace(/export default function (\w+)\(([^)]*)\) \{/, '__BODY__ = function $1($2) { "use strict";')
-        .replace('return {\n    response: response,',
-            'return {\n    __get: function (n) { return eval(n); },\n    __set: function (n, v) { eval(n + " = v"); },\n    response: response,');
+        .replace('return {\n    response: ',
+            'return {\n    __get: function (n) { return eval(n); },\n    __set: function (n, v) { eval(n + " = v"); },\n    response: ');
     orig.call(vm, src, ctx);
     var fsx = ctx.FileStream;
     var plat = {

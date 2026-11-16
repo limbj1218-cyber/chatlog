@@ -1,11 +1,13 @@
 // 입퇴장·닉변·삭제 감지 시험 (KakaoDB 플러그인 이벤트를 흉내 낸다)
-// 사용 (저장소 맨 위에서): node bot/starlight/test/kakaodb.test.mjs
+// 사용 (저장소 맨 위에서): node bot/starlight/test/kakaodb.test.mjs [루나|토마토|레몬|사건]
 import fs from "fs";
 import os from "os";
 import path from "path";
 import { pathToFileURL } from "url";
 
-const SRC = path.resolve("bot/starlight/루나봇.js");
+const KIND = process.argv[2] || "루나";
+const KEY = { "루나": "luna", "토마토": "tomato", "레몬": "lemon", "사건": "sageon" }[KIND];
+const SRC = path.resolve("bot/starlight/" + KIND + "봇.js");
 let ok = 0, bad = 0;
 function t(n, c, i) { if (c) ok++; else { bad++; console.log("FAIL", n, i === undefined ? "" : JSON.stringify(i)); } }
 
@@ -20,7 +22,7 @@ const PLAT = {
 globalThis.KakaoDB = { isConnected: true };
 let sent = [];
 const mod = await import(pathToFileURL(SRC).href);
-let body = mod.default(["루나"], ["후파"], PLAT);
+let body = mod.default([KIND], ["후파"], PLAT);
 t("감지가 본체에 있음", body.kakao && typeof body.kakao.joined === "function");
 
 // 가짜 자바 리스트 (size/get 만 있음)
@@ -30,11 +32,11 @@ let members = [U(1, "철수"), U(2, "영희"), U(99, "봇", { isMe: true })];
 function kroom(name, custom) {
     return { name, customName: custom || null, send: (m) => { sent.push(m); return true; }, getMembers: () => jlist(members) };
 }
-const R = kroom("루나");
+const R = kroom(KIND);
 function ev(fn, e) { sent = []; body.kakao[fn](Object.assign({ room: R }, e)); return sent.join("\n"); }
 function say(sender, msg) {
     sent = [];
-    body.response("루나", msg, sender, true, { reply: (m) => sent.push(m) }, { name: sender, hash: null });
+    body.response(KIND, msg, sender, true, { reply: (m) => sent.push(m) }, { name: sender, hash: null });
     return sent.join("\n");
 }
 
@@ -82,7 +84,7 @@ sent = [];
 body.kakao.joined({ room: kroom("다른방"), members: jlist([U(70, "남")]) });
 t("다른 방 무시", sent.length === 0);
 sent = [];
-body.kakao.joined({ room: kroom("ROX 루나 수다방", "루나"), members: jlist([U(71, "손님")]) });
+body.kakao.joined({ room: kroom("ROX " + KIND + " 수다방", KIND), members: jlist([U(71, "손님")]) });
 t("폰에서 바꾼 방 이름(customName)으로 찾음", sent.join() === "손님님 어서오세요", sent);
 
 // ── /감지 켜고 끄기 ──
@@ -110,17 +112,17 @@ r = say("철수", "/메뉴얼");
 t("메뉴얼에 감지 안내", r.indexOf("/감지") !== -1, r);
 
 // ── 다시 불러와도 기억 ──
-body = mod.default(["루나"], ["후파"], PLAT);
+body = mod.default([KIND], ["후파"], PLAT);
 ev("left", { member: U(4, "지수2") });
 r = ev("joined", { members: jlist([U(4, "지수3")]) });
 t("다시 불러와도 기억", r === "지수3님(구 지수2님) 돌아오신걸 환영해요", r);
-t("파일 이름", "luna_kakao.json" in files);
-const saved = JSON.parse(files["luna_kakao.json"]);
-t("ID 는 문자열로 저장", Object.keys(saved.rooms["루나"].users).indexOf("4") !== -1);
+t("파일 이름", KEY + "_kakao.json" in files);
+const saved = JSON.parse(files[KEY + "_kakao.json"]);
+t("ID 는 문자열로 저장", Object.keys(saved.rooms[KIND].users).indexOf("4") !== -1);
 
 // ── 오류가 나도 밖으로 안 나감 (로더가 잡지만 본체도 터지지 않는지) ──
 let threw = false;
-try { body.kakao.joined({ room: { name: "루나", getMembers: () => { throw new Error("db"); }, send: () => { throw new Error("x"); } }, members: jlist([U(90, "x")]) }); } catch (e) { threw = true; }
+try { body.kakao.joined({ room: { name: KIND, getMembers: () => { throw new Error("db"); }, send: () => { throw new Error("x"); } }, members: jlist([U(90, "x")]) }); } catch (e) { threw = true; }
 t("멤버 목록·보내기 실패해도 안 터짐", !threw);
 
 console.log(ok + " 통과, " + bad + " 실패");

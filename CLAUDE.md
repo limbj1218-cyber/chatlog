@@ -173,13 +173,15 @@
   데이터 `lemon_Database.json`, 관리자 "후파"(포함), 로더 명령 `/레몬업데이트`(후파만)·`/레몬로더`·`/내정보`, `LOADER_VER` 1113-1,
   `ONE_TIME_FIXES`·`FIXED_REPLIES` 는 비어 있다(루나 전용 고정 응답 퉤·ㅋ 은 넣지 않는다). 토마토봇 항목의 주의(루나봇을 고치면 따라가지 않음, 토큰 파일 공유)가 그대로 해당된다.
   PC 시험은 루나봇 시험을 `루나`→`레몬` 으로 바꿔 돌리고, 네 봇(사건·루나·토마토·레몬)을 같은 저장소에서 함께 돌려 안 섞이는지 본다
-- `bot/starlight/` — **StarLight(NeonJS) 이식판** (2026-11-16 시작 — 루나봇(폰에서 동작 확인)·토마토봇·레몬봇). 메신저봇R 에서 StarLight(github.com/mooner1022/StarLight)로
+- `bot/starlight/` — **StarLight(NeonJS) 이식판** (2026-11-16 시작 — 루나봇(폰에서 동작 확인)·토마토봇·레몬봇·사건봇). 메신저봇R 에서 StarLight(github.com/mooner1022/StarLight)로
   옮기는 중이며, **옮기다 실패할 수 있어 메신저봇R 판 파일은 그대로 둔다**(사용자 요청). 설치는 `bot/starlight/설치가이드.md`.
-  - `bot/starlight/루나봇.js`·`토마토봇.js`·`레몬봇.js` 는 **손으로 고치지 않는다** — `python bot/starlight/make_neon.py 루나봇 luna`
-    (`토마토봇 tomato`·`레몬봇 lemon`) 가 `bot/` 의 메신저봇R 판에서 만든다.
+  - `bot/starlight/루나봇.js`·`토마토봇.js`·`레몬봇.js`·`사건봇.js` 는 **손으로 고치지 않는다** — `python bot/starlight/make_neon.py 루나봇 luna`
+    (`토마토봇 tomato`·`레몬봇 lemon`·`사건봇 sageon`) 가 `bot/` 의 메신저봇R 판에서 만든다.
+    사건봇은 알림 기능이 없어(`HAS_ALARM`) 시계 없이 감싸고, 데이터 파일은 메신저봇R 때와 같은 `Database.json` 이다(`DATA_NAME`).
     게임 로직은 그대로 두고 파일·스레드·java.net·타이머·앱 등록만 `__PLAT__`(로더가 넘김)으로 바꾸고, 전체를 `export default function lunaBody(방, 관리자, PLAT)` 로 감싼다.
     그래서 **메신저봇R 판을 고치면 make_neon.py 를 다시 돌려 이 파일들도 갱신**할 것
-  - `bot/starlight/루나봇로더.js` (토마토·레몬 로더는 이 파일에서 루나→토마토/레몬, luna→tomato/lemon 만 바꾼 것) = StarLight 프로젝트의 메인 스크립트(NeonJS, API 방식 = StarLight 원본 + 메신저봇 API2, 이벤트 onMessage).
+  - `bot/starlight/루나봇로더.js` (토마토·레몬·사건 로더는 `python bot/starlight/make_loaders.py` 가 이 파일에서 만든다 — 로더는 루나 것만 손으로 고칠 것.
+    사건 로더는 관리자가 다르다: 본체 관리자 `MY_ADMINS` = 사업처임병진·가이아✡·가이어트(정확히 일치), 로더 명령은 그 이름이거나 대화명에 "후파") = StarLight 프로젝트의 메인 스크립트(NeonJS, API 방식 = StarLight 원본 + 메신저봇 API2, 이벤트 onMessage).
     본체를 깃헙에서 받아 프로젝트 폴더 `luna_body.js` 로 두고 `import()`. `/루나업데이트` 는 새 본체를 다른 이름으로 저장해 먼저 import 해 보고
     성공할 때만 바꾼 뒤(옛 것은 `luna_body_prev.js`) `BotManager.getCurrentBot().compile()`. 데이터는 프로젝트 `data/` 에 메신저봇R 판과 같은 파일 이름.
     `/루나가져오기 [폴더]` 로 옛 `luna_Database.json`·`claude_token.txt` 를 가져온다(기본 Download 등). 로더 명령 `/루나로더`·`/내정보` 도 있다
@@ -189,17 +191,17 @@
     id 는 알림에 쌓인 메시지 중 **첫 번째(`messages[0]`)** 에서 읽는다(AndroidRParserSpec 등 세 스펙 모두). 그래서 후파의 재련가즈아가
     바로 앞에 말한 엑시아 기록으로 처리됐다. make_neon.py 가 본체의 `userKeyOf` 에서 hash 를 버리고 `keyByLastName` 이 **최초 대화명을 먼저** 찾게 바꾸며,
     로더(sl-1116-2 이상)도 hash 를 넘기지 않는다. 그래서 StarLight 판 게임봇은 대화명으로 사람을 구분한다(대화명을 바꾸면 새 사람). 본체 버전 끝 `s3` = make_neon 고친 횟수
-  - **입퇴장·닉변·삭제 감지** (2026-11-16, 루나봇만 — make_neon.py 의 `KAKAODB_BOTS`): `bot/starlight/kakaodb_watch.js` 를 make_neon.py 가 본체에 넣는다.
+  - **입퇴장·닉변·삭제 감지** (2026-11-16, 루나봇에서 폰 확인 뒤 토마토·레몬·사건에도 — make_neon.py 의 `KAKAODB_BOTS`): `bot/starlight/kakaodb_watch.js` 를 make_neon.py 가 본체에 넣는다.
     **카톡 DB 플러그인**(github.com/mooner1022/starlight-kakaodb — 카톡 DB 를 읽으므로 루트 또는 공유 UID 모드가 필요)이 주는
     `onKakaoMemberJoined`·`onKakaoMemberLeft`·`onKakaoMessage`·`onKakaoMessageDeleted` 를 로더(sl-1116-3)가 `body.kakao.*` 로 넘긴다.
     사람은 **카톡 회원 ID(문자열)** 로 구분한다(정확함). 처음 온 사람 "OO님 어서오세요", 전에 있던 사람 "OO님 돌아오신걸 환영해요",
     대화명이 바뀌었으면 "OO님(구 XX님) 돌아오신걸 환영해요"(사용자가 정한 문구), 퇴장 "OO님이 나가셨어요"·"OO님이 내보내졌어요",
     말할 때 대화명이 바뀌어 있으면 "🔄 대화명 변경: XX → OO", 삭제 "🗑️ OO님이 메시지를 지웠어요" + 내용(200자, 사진 등은 종류만).
     처음 쓰는 방은 첫 이벤트 때 `room.getMembers()` 로 지금 멤버를 미리 적는다(원래 있던 사람이 나갔다 오면 "돌아오신걸").
-    기록은 data 폴더 `luna_kakao.json`. `/감지`(누구나, 상태), `/감지 입장|퇴장|닉변|삭제|전부 켜기|끄기`(관리자), `/닉변감지` 는 이 기록으로 보여준다.
+    기록은 data 폴더 `luna_kakao.json`(봇마다 `<key>_kakao.json` — 사건봇 데이터가 `Database.json` 이라 이름을 make_neon 이 따로 정한다). `/감지`(누구나, 상태), `/감지 입장|퇴장|닉변|삭제|전부 켜기|끄기`(관리자), `/닉변감지` 는 이 기록으로 보여준다.
     프로젝트 받을 이벤트에 kakaodb.member.join·leave·message.create·delete 추가. 플러그인의 "onMessage 호환 이벤트" 는 꺼 둘 것(메시지가 두 번 온다).
-    PC 시험: `node bot/starlight/test/kakaodb.test.mjs`(33개)
-  - PC 시험: `node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬]`(가짜 StarLight 로 설치·업데이트·가져오기·클로드까지 29개),
+    PC 시험: `node bot/starlight/test/kakaodb.test.mjs [루나|토마토|레몬|사건]`(34개)
+  - PC 시험: `node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬|사건]`(가짜 StarLight 로 설치·업데이트·가져오기·클로드까지 29개),
   - **오토봇·카페봇도 옮겼다 (2026-11-16)** — 게임봇과 달리 변환기가 봇마다 따로다:
     `python bot/starlight/make_neon_auto.py`(bot/오토봇.js → bot/starlight/오토봇.js),
     `python bot/starlight/make_neon_cafe.py`(카페봇). 메신저봇R 판을 고치면 **다시 돌릴 것**.
