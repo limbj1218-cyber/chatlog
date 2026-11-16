@@ -45,7 +45,7 @@
  */
 export default function lunaBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "루나봇";
-var BOT_VER = "1114-8";
+var BOT_VER = "1114-8s2";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -291,6 +291,11 @@ function mergeNameInto(name, key) {
 
 /** hash 없이 온 메시지 — 이 대화명을 가장 최근에 쓴 hash 사람의 키 (없으면 null) */
 function keyByLastName(name) {
+    // StarLight 판: 최초 대화명이 같은 사람을 먼저 (먼저 생긴 기록부터).
+    // 잘못된 id 때문에 최근 대화명(last)이 엉뚱하게 바뀐 기록이 있어도 처음 이름은 그대로라서다.
+    for (var k0 in people) {
+        if (people.hasOwnProperty(k0) && people[k0].name === name) return k0;
+    }
     var best = null, bestAt = -1;
     for (var k in people) {
         if (!people.hasOwnProperty(k) || people[k].last !== name) continue;
@@ -304,7 +309,7 @@ function keyByLastName(name) {
 function userKeyOf(sender, who) {
     var name = String(sender);
     var h = "";
-    try { h = who && who.hash ? String(who.hash) : ""; } catch (e) { h = ""; }
+    // StarLight 의 id 는 앞 메시지 사람 것이 섞여 오므로 쓰지 않는다 (make_neon.py 참고)
     if (!h || h === "null" || h === "undefined") return keyByLastName(name) || name;
     var key = HASH_PREFIX + h;
     var p = people[key], changed = false;

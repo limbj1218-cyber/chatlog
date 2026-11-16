@@ -21,7 +21,7 @@
  *  ※ onMessage 밖으로 오류가 나가면 StarLight 가 프로젝트를 꺼 버리므로(오류 발생시 비활성화) 전부 잡는다.
  * ═══════════════════════════════════════════════════════════
  */
-const LOADER_VER = "sl-1116-1";
+const LOADER_VER = "sl-1116-2";
 const KEY = "luna";
 const BOT_NAME = "루나봇";
 
@@ -208,8 +208,9 @@ function loaderInfo(room, sender) {
 function myInfoText(sender, hash) {
     return ["🪪 내 정보 (" + BOT_NAME + " 로더 " + LOADER_VER + ")", "대화명: " + sender, "받은 방식: StarLight onMessage",
         // ★ hash 는 사람을 구분하는 열쇠라 값은 절대 보여주지 않는다
-        "보낸 사람 hash: " + (hash ? "있음 ✅ (값은 비공개)" : "없음 ❌"),
-        "", "hash 가 있으면 대화명을 바꿔도 같은 사람으로 기록돼요."].join("\n");
+        "보낸 사람 hash: " + (hash ? "받음 (값은 비공개) — 쓰지 않음" : "없음"),
+        "", "StarLight 는 이 값을 앞 메시지 사람 것으로 잘못 줄 때가 있어서",
+        "사람은 대화명으로 구분해요. (대화명을 바꾸면 새 사람으로 잡혀요)"].join("\n");
 }
 
 function isGroup(room) {
@@ -247,7 +248,8 @@ export function onMessage(event) {
         if (!body) return;
         body.response(room, event.message, sender, isGroup(event.room),
             { reply: (t) => event.room.send(String(t)) },
-            { name: sender, hash: hash, profileKey: () => null });
+            // ★ hash 는 넘기지 않는다 — StarLight 는 id 를 알림에 쌓인 첫 메시지(앞사람)에서 읽는다 (2026-11-16 겪음)
+            { name: sender, hash: null, profileKey: () => null });
     } catch (e) {
         lastErr = String(e);
         const now = Date.now();

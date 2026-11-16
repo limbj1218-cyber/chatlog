@@ -244,6 +244,28 @@ return {
 };
 }''')
 
+# ── 사람 구분: StarLight 의 sender.id 는 쓰지 않는다 (2026-11-16 토마토 방에서 겪음) ──
+# StarLight 는 대화명·내용은 이번 메시지에서 읽지만 id 는 알림에 쌓인 메시지 중 **첫 번째(messages[0])** 에서 읽는다
+# (AndroidRParserSpec·ConversationShortcutParserSpec·DefaultParserSpec 모두). 그래서 후파의 재련가즈아가
+# 바로 앞에 말한 엑시아의 기록으로 처리됐다. 맞는 id 를 얻을 방법이 없어 대화명으로만 사람을 찾는다.
+rep('    try { h = who && who.hash ? String(who.hash) : ""; } catch (e) { h = ""; }',
+    '    // StarLight 의 id 는 앞 메시지 사람 것이 섞여 오므로 쓰지 않는다 (make_neon.py 참고)')
+rep('''function keyByLastName(name) {
+    var best = null, bestAt = -1;
+    for (var k in people) {''',
+'''function keyByLastName(name) {
+    // StarLight 판: 최초 대화명이 같은 사람을 먼저 (먼저 생긴 기록부터).
+    // 잘못된 id 때문에 최근 대화명(last)이 엉뚱하게 바뀐 기록이 있어도 처음 이름은 그대로라서다.
+    for (var k0 in people) {
+        if (people.hasOwnProperty(k0) && people[k0].name === name) return k0;
+    }
+    var best = null, bestAt = -1;
+    for (var k in people) {''')
+# 본체 버전 뒤에 StarLight 판 고친 횟수를 붙인다 (/○○로더 에서 새 본체인지 보이게)
+SL_REV = 2
+m = re.search(r'var BOT_VER = "([^"]*)";', s)
+rep(m.group(0), 'var BOT_VER = "%ss%d";' % (m.group(1), SL_REV))
+
 # 머리 주석이 끝난 바로 뒤에서 함수를 연다
 head_end = s.index(' */\n') + 4
 s = s[:head_end] + 'export default function %sBody(__ROOMS__, __ADMINS__, __PLAT__) {\n' % key + s[head_end:]

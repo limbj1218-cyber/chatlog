@@ -63,21 +63,24 @@ const flush = () => new Promise((ok) => realSetTimeout(ok, 30));
 let main = await import(pathToFileURL(path.join(PROJ, "main.js")).href);
 t("처음: 깃헙에서 받음", fetchLog.some((x) => x.indexOf("raw.githubusercontent.com") !== -1) && fs.existsSync(path.join(PROJ, KEY + "_body.js")));
 let info = say("x", "/" + KIND + "로더", "HX");
-t("로더 상태: 본체 있음", /본체: \d{4}-\d+ ✅ \(깃헙에서 처음 받음\)/.test(info), info);
+t("로더 상태: 본체 있음", /본체: \d{4}-\d+\S* ✅ \(깃헙에서 처음 받음\)/.test(info), info);
 
 // ── 2. 재련·저장 ──
 Math.random = () => 0;   // 재련은 늘 성공
 let r = say("철수", "재련가즈아", "H1");
 t("재련", r.indexOf("철수님, 1 → 2") !== -1, r);
 const db = JSON.parse(fs.readFileSync(path.join(PROJ, "data", KEY + "_Database.json"), "utf8"));
-t("data 폴더에 저장 + hash 키", db.userData["#h:H1"] === 2, db.userData);
+t("data 폴더에 저장 + 대화명 키 (StarLight id 는 안 씀)", db.userData["철수"] === 2 && !db.userData["#h:H1"], db.userData);
+// 2026-11-16 토마토 방에서 겪은 것: StarLight 는 id 를 앞사람 메시지에서 읽는다 → 이름으로만 사람을 찾는다
+r = say("영희", "재련가즈아", "H1");   // 앞사람(철수)의 id 가 섞여 와도
+t("앞사람 id 가 와도 본인 기록", r.indexOf("영희님, 1 → 2") !== -1, r);
 t("다른 방 무시", say("철수", "재련가즈아", "H1", "다른방") === "");
 t("고정 응답 (루나만)", say("x", "퉤", "HX") === (KIND === "루나" ? "루나|후룹" : ""));
 
 // ── 3. /내정보 — hash 값은 안 보인다 ──
 r = say("영희", "/내정보", "SECRET-HASH-123");
-t("내정보: 있음", r.indexOf("있음 ✅ (값은 비공개)") !== -1 && r.indexOf("SECRET") === -1, r);
-t("내정보: 디버그 방처럼 id 없음", say("영희", "/내정보", null).indexOf("없음 ❌") !== -1);
+t("내정보: 받지만 안 씀", r.indexOf("받음 (값은 비공개) — 쓰지 않음") !== -1 && r.indexOf("SECRET") === -1, r);
+t("내정보: 디버그 방처럼 id 없음", say("영희", "/내정보", null).indexOf("hash: 없음") !== -1);
 
 // ── 4. 업데이트 ──
 t("관리자 아니면 무시", say("철수", "/" + KIND + "업데이트", "H1") === "");
@@ -104,7 +107,7 @@ t("깃헙 안 됨: 실패 안내", sent.join().indexOf("깃헙 응답 404") !== 
 // ── 5. 옛 데이터 가져오기 ──
 const OLD = path.join(HERE, "old").replace(/\\/g, "/");
 fs.rmSync(OLD, { recursive: true, force: true }); fs.mkdirSync(OLD);
-fs.writeFileSync(OLD + "/" + KEY + "_Database.json", JSON.stringify({ userData: { "#h:H9": 7 }, roomUsers: { [KIND]: ["#h:H9"] }, people: { "#h:H9": { name: "옛사람", last: "옛사람" } } }));
+fs.writeFileSync(OLD + "/" + KEY + "_Database.json", JSON.stringify({ userData: { "#h:H9": 7, "#h:H8": 3, "#h:H7": 4 }, roomUsers: { [KIND]: ["#h:H9"] }, people: { "#h:H9": { name: "옛사람", last: "옛사람" }, "#h:H8": { name: "엑시아", last: "후파", at: 2 }, "#h:H7": { name: "후파", last: "착한생각", at: 1 } } }));
 fs.writeFileSync(OLD + "/claude_token.txt", "ghp_test");
 t("가져오기: 관리자만", say("철수", "/" + KIND + "가져오기 " + OLD, "H1") === "");
 r = say("멱살잡힌스쳐(후파)", "/" + KIND + "가져오기 " + OLD, "HA");
@@ -116,6 +119,11 @@ t("가져오기: 다시 컴파일", compiled === 2);
 main = await import(pathToFileURL(path.join(PROJ, "main.js")).href + "?v=2");
 r = say("x", "/랭킹", "HX");
 t("가져온 기록이 랭킹에", r.indexOf("옛사람: 7재련") !== -1, r);
+// 잘못된 id 로 최근 대화명(last)이 엉킨 기록이어도 최초 대화명으로 제 기록을 찾는다
+r = say("후파", "재련가즈아", "H8");
+t("엉킨 기록: 후파는 후파 것", r.indexOf("후파님, 4 → 5") !== -1, r);
+r = say("엑시아", "재련가즈아", "H7");
+t("엉킨 기록: 엑시아는 엑시아 것", r.indexOf("엑시아님, 3 → 4") !== -1, r);
 
 // ── 6. 클로드 답변 (fetch 로 백그라운드) ──
 say("멱살잡힌스쳐(후파)", "..", "HA");
