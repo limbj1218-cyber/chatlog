@@ -71,7 +71,7 @@ t("처음: 자동응답 데이터도 받음", fetchLog.some((u) => u.indexOf(enc
 t("데이터 폴더에 캐시 저장", fs.existsSync(path.join(PROJ, "data", "오토봇캐시.json")));
 
 let info = say("x", "/오토로더");
-t("로더 상태: 본체 있음", /본체: \d{4}-\d+ ✅/.test(info) && info.indexOf("데이터: 깃헙") !== -1, info);
+t("로더 상태: 본체 있음", /본체: \d{4}-\d+\S* ✅/.test(info) && info.indexOf("데이터: 깃헙") !== -1, info);
 
 // ── 2. 자동응답 ──
 t("봇테스트", say("철수", "봇테스트", "H1").indexOf("정상 동작") !== -1);
@@ -88,17 +88,38 @@ t("권한 없으면 조용히", say("철수", "/등록_장난_x", "H1", "멱살�
 await flush();
 t("data 폴더에 등록 저장", fs.existsSync(path.join(PROJ, "data", "멱살응답.json")));
 
-// ── 4. 닉변 감지 ──
+// ── 4. 닉변 감지 — StarLight 의 sender.id 는 앞사람 것이 섞여 와서 안 쓴다. 카톡 DB(KakaoDB) 이벤트로 잡는다 ──
 say("미미르", "안녕", "H9");
 say("미친미르", "바꿈", "H9");
 let nick = say("x", "/닉변감지", "HX");
-t("닉변 잡힘", nick.indexOf("미미르 → 미친미르") !== -1, nick);
+t("sender.id 로는 닉변을 안 잡음", nick.indexOf("미미르 → 미친미르") === -1, nick);
+globalThis.KakaoDB = { isConnected: true };
+const jl = (a) => ({ size: () => a.length, get: (i) => a[i] });
+const kroom = (name) => ({ name, customName: null, send: (m) => { sent.push(name + "|" + m); return true; }, getMembers: () => jl([{ id: "1", name: "원래있던분", isMe: false }]) });
+const kev = (fn, e) => { sent = []; main[fn](Object.assign({ room: kroom("오토2") }, e)); return sent.join("\n"); };
+const KU = (id, name) => ({ id: String(id), name, isMe: false });
+t("입장 환영 (오토2)", kev("onKakaoMemberJoined", { members: jl([KU(7, "새학생")]) }) === "오토2|새학생님 어서오세요");
+t("원래 있던 분 퇴장", kev("onKakaoMemberLeft", { member: KU(1, "원래있던분"), isKicked: false }) === "오토2|원래있던분님이 나가셨어요");
+t("돌아옴", kev("onKakaoMemberJoined", { members: jl([KU(1, "바뀐이름")]) }) === "오토2|바뀐이름님(구 원래있던분님) 돌아오신걸 환영해요");
+const KM = (id, name, text) => ({ senderId: String(id), sender: KU(id, name), text, type: "TEXT", isMine: false });
+kev("onKakaoMessage", { message: KM(9, "미미르", "안녕") });
+t("말할 때 닉변 알림", kev("onKakaoMessage", { message: KM(9, "미친미르", "바꿈") }) === "오토2|🔄 대화명 변경: 미미르 → 미친미르");
+t("삭제 알림", kev("onKakaoMessageDeleted", { message: KM(9, "미친미르", "지운 말") }) === "오토2|🗑️ 미친미르님이 메시지를 지웠어요\n지운 말");
+t("EXTRA_ROOMS 방도 감지", (() => { sent = []; main.onKakaoMemberJoined({ room: kroom("멱살반2"), members: jl([KU(8, "멱살새분")]) }); return sent.join(); })() === "멱살반2|멱살새분님 어서오세요");
+t("목록에 없는 방 무시", (() => { sent = []; main.onKakaoMemberJoined({ room: kroom("아무방"), members: jl([KU(8, "x")]) }); return sent.length; })() === 0);
+nick = say("x", "/닉변감지", "HX");
+t("닉변 잡힘 (카톡 DB 기록)", nick.indexOf("미미르 → 미친미르") !== -1, nick);
 t("hash 안 보임", nick.indexOf("H9") === -1 && nick.indexOf("#h:") === -1);
+t("/감지 끄기는 조교·관리자만", say("철수", "/감지 입장 끄기", "H1") === "" && say("[조교] 아는아이", "/감지 입장 끄기", "HA").indexOf("껐어요") !== -1);
+t("꺼진 방에선 조용", kev("onKakaoMemberJoined", { members: jl([KU(30, "조용")]) }) === "");
+say("[조교] 아는아이", "/감지 입장 켜기", "HA");
+t("로더 상태에 카톡 DB 줄", say("x", "/오토로더").indexOf("카톡 DB 감지: 연결됨 ✅") !== -1);
+t("감지 기록 파일", fs.existsSync(path.join(PROJ, "data", "auto_kakao.json")));
 
 // ── 5. /내정보 ──
 let r = say("영희", "/내정보", "SECRET-HASH-123");
-t("내정보: 값은 비공개", r.indexOf("있음 ✅ (값은 비공개)") !== -1 && r.indexOf("SECRET") === -1, r);
-t("내정보: id 없으면 없음", say("영희", "/내정보", null).indexOf("없음 ❌") !== -1);
+t("내정보: 값은 비공개", r.indexOf("받음 (값은 비공개) — 쓰지 않음") !== -1 && r.indexOf("SECRET") === -1, r);
+t("내정보: id 없으면 없음", say("영희", "/내정보", null).indexOf("hash: 없음") !== -1);
 
 // ── 6. 업데이트 ──
 t("관리자 아니면 무시", say("철수", "/오토업데이트", "H1") === "");

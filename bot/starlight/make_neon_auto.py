@@ -129,6 +129,40 @@ return {
 }
 ''')
 
+# ── 4. 입퇴장·닉변·삭제 감지 (KakaoDB 플러그인, 2026-11-16 — 게임봇과 같은 조각) ──
+# bot/starlight/kakaodb_watch.js 를 넣고, response 앞에서 /감지·/닉변감지 를 먼저 본다.
+# 알림은 일어난 그 방에 바로 보낸다 (사용자가 정함). 방은 inRooms() = ROOMS + EXTRA_ROOMS.
+KW = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kakaodb_watch.js'), encoding='utf-8').read()
+KW = KW.replace('__KW_FILE__', 'auto_kakao.json')
+assert 'function isAdmin(' not in s
+KW = r'''// /감지 켜고 끄기를 할 수 있는 사람 — 오토봇엔 관리자 목록이 따로 없어서 여기서 정한다 (대화명에 들어 있으면)
+var KW_ADMIN_PARTS = ["후파", "임병진", "[조교]"];
+function isAdmin(sender) {
+    for (var i = 0; i < KW_ADMIN_PARTS.length; i++) {
+        if (String(sender).indexOf(KW_ADMIN_PARTS[i]) !== -1) return true;
+    }
+    return false;
+}
+''' + KW
+rep('\n// 로더가 준 방 목록 (비어 있으면 본체 기본값)\nif (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;\n',
+    '\n' + KW + '\n// 로더가 준 방 목록 (비어 있으면 본체 기본값)\nif (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;\n')
+rep('''return {
+    response: response,
+    version: BOT_VER,
+    rooms: function () { return ROOMS.concat(EXTRA_ROOMS); },''',
+'''return {
+    response: function (room, msg, sender, isGroupChat, replier, who) {
+        try { if (kwCommand(room, msg, sender, replier)) return; } catch (e) { kwLastErr = String(e); }
+        return response(room, msg, sender, isGroupChat, replier, who);
+    },
+    kakao: { joined: kwJoined, left: kwLeft, message: kwMessage, deleted: kwDeleted, status: kwStatusText },
+    version: BOT_VER,
+    rooms: function () { return ROOMS.concat(EXTRA_ROOMS); },''')
+# 본체 버전 뒤에 StarLight 판 고친 횟수 — /오토업데이트 는 버전이 같으면 본체를 바꾸지 않으므로 고칠 때마다 올린다
+SL_REV = 2
+m = re.search(r'var BOT_VER = "([^"]*)";', s)
+rep(m.group(0), 'var BOT_VER = "%ss%d";' % (m.group(1), SL_REV))
+
 # 머리 주석이 끝난 바로 뒤에서 함수를 연다
 head_end = s.index(' */\n') + 4
 s = s[:head_end] + 'export default function autoBody(__ROOMS__, __PLAT__) {\n' + s[head_end:]

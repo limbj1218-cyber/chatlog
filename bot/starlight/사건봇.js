@@ -1889,6 +1889,12 @@ function kwLoad() {
     return kwStore;
 }
 
+/** 이 봇이 맡은 방인지 — 오토봇은 EXTRA_ROOMS 까지 보는 inRooms() 가 있다 */
+function kwInRoom(name) {
+    if (typeof inRooms === "function") return !!inRooms(name);
+    return ROOMS.indexOf(name) !== -1;
+}
+
 function kwSave() { fileWrite(KW_FILE, JSON.stringify(kwStore)); }
 
 function kwRoomData(room) {
@@ -1932,7 +1938,7 @@ function kwRoomName(kroom) {
     try { names.push(kwStr(kroom.customName)); } catch (e) {}
     try { names.push(kwStr(kroom.name)); } catch (e) {}
     for (var i = 0; i < names.length; i++) {
-        if (names[i] && ROOMS.indexOf(names[i]) !== -1) return names[i];
+        if (names[i] && kwInRoom(names[i])) return names[i];
     }
     var label = names[0] && names[1] && names[0] !== names[1] ? names[0] + " / " + names[1] : (names[0] || names[1] || "?");
     var at = kwOtherRooms.indexOf(label);
@@ -2119,7 +2125,7 @@ function kwStatusText(room) {
 
 /** 방 명령 — 처리했으면 true. /감지, /감지 입장 끄기, /닉변감지(카톡 DB 기록이 있을 때) */
 function kwCommand(room, msg, sender, replier) {
-    if (ROOMS.indexOf(room) === -1) return false;
+    if (!kwInRoom(room)) return false;
     var t = kwStr(msg).trim();
     if (t === "/감지") { replier.reply(kwStatusText(room)); return true; }
     var m = /^\/감지\s+(입장|퇴장|닉변|삭제|전부)\s+(켜기|끄기)$/.exec(t);

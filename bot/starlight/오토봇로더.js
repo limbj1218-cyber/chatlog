@@ -8,6 +8,9 @@
  *    - 언어: NeonJS
  *    - API 방식: StarLight 원본 + 메신저봇 API2  (원본 = onMessage·Projects·Chat, API2 = FileStream·BotManager)
  *    - 받을 이벤트: starlight.message.create (onMessage)
+ *      + 카톡 DB 플러그인(KakaoDB)이 연결돼 있으면 kakaodb.member.join · kakaodb.member.leave ·
+ *        kakaodb.message.create · kakaodb.message.delete 도 체크 (입퇴장·닉변·삭제 감지).
+ *        플러그인 설정의 "onMessage 호환 이벤트" 는 꺼 둘 것 (메시지가 두 번 온다)
  *
  *  ◆ 동작
  *    - 본체(bot/starlight/오토봇.js)를 깃헙에서 받아 프로젝트 폴더에 auto_body.js 로 두고 import 한다.
@@ -23,7 +26,7 @@
  *  ※ onMessage 밖으로 오류가 나가면 StarLight 가 프로젝트를 꺼 버리므로(오류 발생시 비활성화) 전부 잡는다.
  * ═══════════════════════════════════════════════════════════
  */
-const LOADER_VER = "sl-1116-1";
+const LOADER_VER = "sl-1116-2";
 const KEY = "auto";
 const BOT_NAME = "오토봇";
 
@@ -217,18 +220,28 @@ function loaderInfo(room, sender) {
         "본체: " + (body ? body.version + " ✅ (" + bodyFrom + ")" : "없음 ❌") + "\n" +
         "방 이름: [" + room + "] · 보낸 사람: [" + sender + "]\n" +
         "데이터: " + (st.dataFrom || "없음") + (st.lastOkAt ? " · " + st.lastOkAt : "") + "\n" +
-        "데이터 폴더: " + DATA_DIR +
+        "데이터 폴더: " + DATA_DIR + "\n" +
+        "카톡 DB 감지: " + kakaoDbState() +
         (loadErr ? "\n불러오기 오류: " + loadErr : "") +
         (st.loadErr ? "\n데이터 오류: " + st.loadErr : "") +
         (lastErr ? "\n최근 오류: " + lastErr : "");
+}
+
+function kakaoDbState() {
+    if (!body || !body.kakao) return "이 본체에는 없음 (/오토업데이트)";
+    try {
+        if (typeof KakaoDB === "undefined") return "플러그인 없음";
+        return KakaoDB.isConnected ? "연결됨 ✅ (이벤트 " + kakaoEvents + "개 받음)" : "플러그인 연결 끊김 ❌";
+    } catch (e) { return "확인 실패: " + e; }
 }
 
 function myInfoText(sender, hash) {
     return ["🪪 내 정보 (" + BOT_NAME + " 로더 " + LOADER_VER + ")", "대화명: " + sender,
         "받은 방식: StarLight onMessage",
         // ★ hash 는 사람을 구분하는 열쇠라 값은 절대 보여주지 않는다
-        "보낸 사람 hash: " + (hash ? "있음 ✅ (값은 비공개)" : "없음 ❌"),
-        "", "hash 가 있으면 대화명을 바꿔도 같은 사람으로 기록돼요."].join("\n");
+        "보낸 사람 hash: " + (hash ? "받음 (값은 비공개) — 쓰지 않음" : "없음"),
+        "", "StarLight 는 이 값을 앞 메시지 사람 것으로 잘못 줄 때가 있어서 쓰지 않아요.",
+        "대화명 변경은 카톡 DB 감지(/감지)로 알아내요."].join("\n");
 }
 
 function isGroup(room) {
@@ -262,7 +275,8 @@ export function onMessage(event) {
         if (!body) return;
         body.response(room, event.message, sender, isGroup(event.room),
             { reply: (t) => event.room.send(String(t)) },
-            { name: sender, hash: hash, profileKey: () => null });
+            // ★ hash 는 넘기지 않는다 — StarLight 는 id 를 알림에 쌓인 첫 메시지(앞사람)에서 읽는다 (2026-11-16 겪음)
+            { name: sender, hash: null, profileKey: () => null });
     } catch (e) {
         lastErr = String(e);
         const now = Date.now();
@@ -272,3 +286,18 @@ export function onMessage(event) {
         }
     }
 }
+
+// ─── 카톡 DB 플러그인(KakaoDB) 이벤트 → 본체의 입퇴장·닉변·삭제 감지 ───
+// 플러그인이 없거나 본체에 감지가 없으면 아무것도 안 한다. 오류는 밖으로 내보내지 않는다(프로젝트가 꺼진다).
+let kakaoEvents = 0;
+function kakaoForward(kind, event) {
+    try {
+        if (!body || !body.kakao || typeof body.kakao[kind] !== "function") return;
+        kakaoEvents++;
+        body.kakao[kind](event);
+    } catch (e) { lastErr = "카톡 DB " + kind + ": " + e; }
+}
+export function onKakaoMemberJoined(event) { kakaoForward("joined", event); }
+export function onKakaoMemberLeft(event) { kakaoForward("left", event); }
+export function onKakaoMessage(event) { kakaoForward("message", event); }
+export function onKakaoMessageDeleted(event) { kakaoForward("deleted", event); }

@@ -216,7 +216,11 @@
     **주의**: 메신저봇R 판은 JVM 공유값으로 스크립트가 중복 설치돼도 같은 글이 두 번 안 나가게 막았는데
     StarLight 엔 그런 값이 없다 — `sentUpTo` 로 그 프로젝트 안에서만 막으므로 **같은 카페를 보는 프로젝트를 둘 만들지 말 것**.
     깃헙 토큰은 로더에 적지 말고 방에서 `/깃토큰` 으로 넣는다(data 폴더에 저장).
-    PC 시험: `node bot/starlight/test/오토봇.test.mjs`(24) ·`오토봇로더.test.mjs`(31) ·
+    **오토봇 StarLight 판에도 입퇴장·닉변·삭제 감지**(2026-11-16, 사용자: 그 방에 바로 알림): make_neon_auto.py 가 `kakaodb_watch.js` 를 넣고
+    (`KW_ADMIN_PARTS` 후파·임병진·[조교] 가 `/감지` 켜고 끄기, 기록 `auto_kakao.json`, 방 판단은 `inRooms()`), 오토봇로더 sl-1116-2 가
+    `onKakao*` 를 넘기고 sender.id 를 hash 로 넘기지 않는다. 본체 버전 끝 `s2` = make_neon_auto 고친 횟수(`SL_REV`) —
+    `/오토업데이트` 는 버전이 같으면 본체를 안 바꾸므로 고칠 때마다 올릴 것. 시험 `오토봇로더.test.mjs` 43개
+    PC 시험: `node bot/starlight/test/오토봇.test.mjs`(24) ·`오토봇로더.test.mjs`(43) ·
     `카페봇.test.mjs`(24) ·`카페봇로더.test.mjs`(22)
     옛 메신저봇R 판 시험은 `node -r bot/starlight/test/neon_shim.js 시험.js …` 로 NeonJS 본체에 그대로 돌린다(본체를 strict 로 실행)
 - `bot/오토봇.js` + `bot/오토봇로더.js` + `bot/오토봇데이터.json` — "오토2프프"·"오토2"·"[오차율 계산봇]"·"공백기 근무표"·"멱살반2" 방 자동응답 봇.
