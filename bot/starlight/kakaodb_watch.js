@@ -23,6 +23,13 @@ var KW_DEL_MAX = 200;      // 지운 내용은 이만큼만 보여준다
 var kwStore = null;
 var kwLastEventAt = 0;
 var kwLastErr = "";
+var kwCounts = {};          // 받은 DB 이벤트 수 (종류별, 다시 컴파일하면 0)
+var kwOtherRooms = [];      // 이 봇 방이 아니라서 넘긴 방 이름 (최근 5개) — 방 이름이 안 맞는지 보려고
+
+function kwSaw(kind) {
+    kwLastEventAt = new Date().getTime();
+    kwCounts[kind] = (kwCounts[kind] || 0) + 1;
+}
 
 function kwLoad() {
     if (kwStore) return kwStore;
@@ -79,6 +86,11 @@ function kwRoomName(kroom) {
     for (var i = 0; i < names.length; i++) {
         if (names[i] && ROOMS.indexOf(names[i]) !== -1) return names[i];
     }
+    var label = names[0] && names[1] && names[0] !== names[1] ? names[0] + " / " + names[1] : (names[0] || names[1] || "?");
+    var at = kwOtherRooms.indexOf(label);
+    if (at !== -1) kwOtherRooms.splice(at, 1);
+    kwOtherRooms.unshift(label);
+    if (kwOtherRooms.length > 5) kwOtherRooms.length = 5;
     return null;
 }
 
@@ -127,7 +139,7 @@ function kwSeeName(rd, id, name, now) {
 }
 
 function kwJoined(event) {
-    kwLastEventAt = new Date().getTime();
+    kwSaw("입장");
     var room = kwRoomName(event.room);
     if (!room) return;
     var members = kwList(event.members);
@@ -159,7 +171,7 @@ function kwJoined(event) {
 }
 
 function kwLeft(event) {
-    kwLastEventAt = new Date().getTime();
+    kwSaw("퇴장");
     var room = kwRoomName(event.room);
     if (!room) return;
     var m = event.member;
@@ -181,7 +193,7 @@ function kwLeft(event) {
 }
 
 function kwMessage(event) {
-    kwLastEventAt = new Date().getTime();
+    kwSaw("메시지");
     var room = kwRoomName(event.room);
     if (!room) return;
     var msg = event.message;
@@ -202,7 +214,7 @@ var KW_TYPE_LABEL = { PHOTO: "사진", MULTIPHOTO: "사진 여러 장", VIDEO: "
     LOCATION: "위치", SEARCH: "샵검색" };
 
 function kwDeleted(event) {
-    kwLastEventAt = new Date().getTime();
+    kwSaw("삭제");
     var room = kwRoomName(event.room);
     if (!room || !kwOn(room, "del")) return;
     var msg = event.message;
@@ -242,8 +254,19 @@ function kwStatusText(room) {
     var parts = [];
     for (var ko in KW_KINDS) if (KW_KINDS.hasOwnProperty(ko)) parts.push(ko + " " + (kwOn(room, KW_KINDS[ko]) ? "켜짐" : "꺼짐"));
     var ago = kwLastEventAt ? Math.round((new Date().getTime() - kwLastEventAt) / 1000) + "초 전" : "아직 없음";
-    return ["👀 감지 상태", "카톡 DB: " + connected, parts.join(" · "), "기억하는 사람: " + n + "명",
-        "마지막 DB 이벤트: " + ago].concat(kwLastErr ? ["최근 문제: " + kwLastErr] : []).join("\n");
+    var cnt = [];
+    for (var c in kwCounts) if (kwCounts.hasOwnProperty(c)) cnt.push(c + " " + kwCounts[c]);
+    var lines = ["👀 감지 상태", "카톡 DB: " + connected, parts.join(" · "), "기억하는 사람: " + n + "명",
+        "마지막 DB 이벤트: " + ago + (cnt.length ? " (" + cnt.join(" · ") + ")" : "")];
+    if (kwOtherRooms.length) lines.push("이 방이 아니라서 넘긴 방: " + kwOtherRooms.join(", "));
+    if (!kwLastEventAt) {
+        lines.push("", "DB 이벤트가 하나도 안 왔어요. 확인할 것:",
+            "① /루나로더 의 로더가 sl-1116-3 인지 (아니면 로더를 다시 붙여넣기)",
+            "② 프로젝트 받을 이벤트에 kakaodb.member.join · leave · message.create · delete",
+            "③ 방에서 아무 말이나 하고 몇 초 뒤 /감지 다시");
+    }
+    if (kwLastErr) lines.push("최근 문제: " + kwLastErr);
+    return lines.join("\n");
 }
 
 /** 방 명령 — 처리했으면 true. /감지, /감지 입장 끄기, /닉변감지(카톡 DB 기록이 있을 때) */

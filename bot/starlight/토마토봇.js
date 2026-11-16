@@ -47,7 +47,7 @@
  */
 export default function tomatoBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "토마토봇";
-var BOT_VER = "1114-8s3";
+var BOT_VER = "1114-8s4";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["토마토"];
