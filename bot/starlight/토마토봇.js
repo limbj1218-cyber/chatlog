@@ -47,7 +47,7 @@
  */
 export default function tomatoBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "토마토봇";
-var BOT_VER = "1114-8s4";
+var BOT_VER = "1114-8s5";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["토마토"];
@@ -2561,7 +2561,6 @@ var kwStore = null;
 var kwLastEventAt = 0;
 var kwLastErr = "";
 var kwCounts = {};          // 받은 DB 이벤트 수 (종류별, 다시 컴파일하면 0)
-var kwOtherRooms = [];      // 이 봇 방이 아니라서 넘긴 방 이름 (최근 5개) — 방 이름이 안 맞는지 보려고
 
 function kwSaw(kind) {
     kwLastEventAt = new Date().getTime();
@@ -2629,11 +2628,6 @@ function kwRoomName(kroom) {
     for (var i = 0; i < names.length; i++) {
         if (names[i] && kwInRoom(names[i])) return names[i];
     }
-    var label = names[0] && names[1] && names[0] !== names[1] ? names[0] + " / " + names[1] : (names[0] || names[1] || "?");
-    var at = kwOtherRooms.indexOf(label);
-    if (at !== -1) kwOtherRooms.splice(at, 1);
-    kwOtherRooms.unshift(label);
-    if (kwOtherRooms.length > 5) kwOtherRooms.length = 5;
     return null;
 }
 
@@ -2801,7 +2795,6 @@ function kwStatusText(room) {
     for (var c in kwCounts) if (kwCounts.hasOwnProperty(c)) cnt.push(c + " " + kwCounts[c]);
     var lines = ["👀 감지 상태", "카톡 DB: " + connected, parts.join(" · "), "기억하는 사람: " + n + "명",
         "마지막 DB 이벤트: " + ago + (cnt.length ? " (" + cnt.join(" · ") + ")" : "")];
-    if (kwOtherRooms.length) lines.push("이 방이 아니라서 넘긴 방: " + kwOtherRooms.join(", "));
     if (!kwLastEventAt) {
         lines.push("", "DB 이벤트가 하나도 안 왔어요. 확인할 것:",
             "① /루나로더 의 로더가 sl-1116-3 인지 (아니면 로더를 다시 붙여넣기)",
