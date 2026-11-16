@@ -36,7 +36,7 @@
  */
 export default function autoBody(__ROOMS__, __PLAT__) {
 var scriptName = "오토봇";
-var BOT_VER = "1113-1";
+var BOT_VER = "1116-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -405,7 +405,7 @@ function sendReply(replier, value) {
 
 /** 쿨다운을 묶는 기준 — 목록이든 한 줄이든 같은 내용이면 같은 값이 나오게 */
 function replyKey(value) {
-    return isArray(value) ? value.join(" ") : String(value);
+    return isArray(value) ? value.join("\u0000") : String(value);
 }
 
 function triggersOf(table) {
