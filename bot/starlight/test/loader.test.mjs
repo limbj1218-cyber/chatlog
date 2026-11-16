@@ -1,18 +1,20 @@
 // StarLight(NeonJS) 로더 시험 — Projects·FileStream·BotManager·Chat·fetch 를 흉내 내고 로더를 진짜 ES 모듈로 불러온다.
-// 사용 (저장소 맨 위에서): node bot/starlight/test/loader.test.mjs bot/starlight
+// 사용 (저장소 맨 위에서): node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬]
 import fs from "fs";
 import os from "os";
 import path from "path";
 import { pathToFileURL } from "url";
 
 const SRC = process.argv[2];
-const HERE = fs.mkdtempSync(path.join(os.tmpdir(), "starlight-luna-"));
+const KIND = process.argv[3] || "루나";
+const KEY = { "루나": "luna", "토마토": "tomato", "레몬": "lemon" }[KIND];
+const HERE = fs.mkdtempSync(path.join(os.tmpdir(), "starlight-" + KEY + "-"));
 const PROJ = path.join(HERE, "proj");
 fs.rmSync(PROJ, { recursive: true, force: true });
 fs.mkdirSync(path.join(PROJ, "data"), { recursive: true });
 fs.writeFileSync(path.join(PROJ, "package.json"), '{"type":"module"}');
-fs.copyFileSync(path.join(SRC, "루나봇로더.js"), path.join(PROJ, "main.js"));
-const BODY = fs.readFileSync(path.join(SRC, "루나봇.js"), "utf8");
+fs.copyFileSync(path.join(SRC, KIND + "봇로더.js"), path.join(PROJ, "main.js"));
+const BODY = fs.readFileSync(path.join(SRC, KIND + "봇.js"), "utf8");
 
 let ok = 0, bad = 0;
 function t(n, c, i) { if (c) ok++; else { bad++; console.log("FAIL", n, i === undefined ? "" : JSON.stringify(i)); } }
@@ -52,24 +54,25 @@ function room(name) {
 }
 function say(sender, msg, id, rname) {
     sent = [];
-    main.onMessage({ room: room(rname || "루나"), message: msg, sender: { name: sender, id: id === undefined ? null : id } });
+    main.onMessage({ room: room(rname || KIND), message: msg, sender: { name: sender, id: id === undefined ? null : id } });
     return sent.join("\n");
 }
 const flush = () => new Promise((ok) => realSetTimeout(ok, 30));
 
 // ── 1. 처음 설치: 본체가 없으면 깃헙에서 받아 둔다 ──
 let main = await import(pathToFileURL(path.join(PROJ, "main.js")).href);
-t("처음: 깃헙에서 받음", fetchLog.some((x) => x.indexOf("raw.githubusercontent.com") !== -1) && fs.existsSync(path.join(PROJ, "luna_body.js")));
-let info = say("x", "/루나로더", "HX");
+t("처음: 깃헙에서 받음", fetchLog.some((x) => x.indexOf("raw.githubusercontent.com") !== -1) && fs.existsSync(path.join(PROJ, KEY + "_body.js")));
+let info = say("x", "/" + KIND + "로더", "HX");
 t("로더 상태: 본체 있음", /본체: \d{4}-\d+ ✅ \(깃헙에서 처음 받음\)/.test(info), info);
 
 // ── 2. 재련·저장 ──
+Math.random = () => 0;   // 재련은 늘 성공
 let r = say("철수", "재련가즈아", "H1");
 t("재련", r.indexOf("철수님, 1 → 2") !== -1, r);
-const db = JSON.parse(fs.readFileSync(path.join(PROJ, "data", "luna_Database.json"), "utf8"));
+const db = JSON.parse(fs.readFileSync(path.join(PROJ, "data", KEY + "_Database.json"), "utf8"));
 t("data 폴더에 저장 + hash 키", db.userData["#h:H1"] === 2, db.userData);
 t("다른 방 무시", say("철수", "재련가즈아", "H1", "다른방") === "");
-t("고정 응답", say("x", "퉤", "HX") === "루나|후룹");
+t("고정 응답 (루나만)", say("x", "퉤", "HX") === (KIND === "루나" ? "루나|후룹" : ""));
 
 // ── 3. /내정보 — hash 값은 안 보인다 ──
 r = say("영희", "/내정보", "SECRET-HASH-123");
@@ -77,37 +80,37 @@ t("내정보: 있음", r.indexOf("있음 ✅ (값은 비공개)") !== -1 && r.in
 t("내정보: 디버그 방처럼 id 없음", say("영희", "/내정보", null).indexOf("없음 ❌") !== -1);
 
 // ── 4. 업데이트 ──
-t("관리자 아니면 무시", say("철수", "/루나업데이트", "H1") === "");
+t("관리자 아니면 무시", say("철수", "/" + KIND + "업데이트", "H1") === "");
 remoteBody = BODY.replace(/var BOT_VER = "[^"]*";/, 'var BOT_VER = "9999-1";');
-say("멱살잡힌스쳐(후파)", "/루나업데이트", "HA");
+say("멱살잡힌스쳐(후파)", "/" + KIND + "업데이트", "HA");
 await flush(); await flush();
 t("업데이트: 안내", sent.join().indexOf("본체 9999-1") !== -1, sent);
-t("업데이트: 본체 파일 바뀜 + 옛 본체 남김", fs.readFileSync(path.join(PROJ, "luna_body.js"), "utf8").indexOf('"9999-1"') !== -1 &&
-    fs.existsSync(path.join(PROJ, "luna_body_prev.js")));
+t("업데이트: 본체 파일 바뀜 + 옛 본체 남김", fs.readFileSync(path.join(PROJ, KEY + "_body.js"), "utf8").indexOf('"9999-1"') !== -1 &&
+    fs.existsSync(path.join(PROJ, KEY + "_body_prev.js")));
 t("업데이트: 다시 컴파일 부름", compiled === 1, compiled);
 t("업데이트: 시험 파일 지움", fs.readdirSync(PROJ).filter((f) => f.indexOf("_test_") !== -1).length === 0);
 // 깨진 본체는 받지 않는다
 remoteBody = BODY.replace("function refine(", "function refine((") ;
-say("멱살잡힌스쳐(후파)", "/루나업데이트", "HA");
+say("멱살잡힌스쳐(후파)", "/" + KIND + "업데이트", "HA");
 await flush(); await flush();
 t("깨진 본체: 실패 안내", sent.join().indexOf("업데이트 실패") !== -1, sent);
-t("깨진 본체: 파일 그대로", fs.readFileSync(path.join(PROJ, "luna_body.js"), "utf8").indexOf('"9999-1"') !== -1);
+t("깨진 본체: 파일 그대로", fs.readFileSync(path.join(PROJ, KEY + "_body.js"), "utf8").indexOf('"9999-1"') !== -1);
 t("깨진 본체: 컴파일 안 부름", compiled === 1);
 remoteBody = null;
-say("멱살잡힌스쳐(후파)", "/루나업데이트", "HA");
+say("멱살잡힌스쳐(후파)", "/" + KIND + "업데이트", "HA");
 await flush(); await flush();
 t("깃헙 안 됨: 실패 안내", sent.join().indexOf("깃헙 응답 404") !== -1, sent);
 
 // ── 5. 옛 데이터 가져오기 ──
 const OLD = path.join(HERE, "old").replace(/\\/g, "/");
 fs.rmSync(OLD, { recursive: true, force: true }); fs.mkdirSync(OLD);
-fs.writeFileSync(OLD + "/luna_Database.json", JSON.stringify({ userData: { "#h:H9": 7 }, roomUsers: { "루나": ["#h:H9"] }, people: { "#h:H9": { name: "옛사람", last: "옛사람" } } }));
+fs.writeFileSync(OLD + "/" + KEY + "_Database.json", JSON.stringify({ userData: { "#h:H9": 7 }, roomUsers: { [KIND]: ["#h:H9"] }, people: { "#h:H9": { name: "옛사람", last: "옛사람" } } }));
 fs.writeFileSync(OLD + "/claude_token.txt", "ghp_test");
-t("가져오기: 관리자만", say("철수", "/루나가져오기 " + OLD, "H1") === "");
-r = say("멱살잡힌스쳐(후파)", "/루나가져오기 " + OLD, "HA");
+t("가져오기: 관리자만", say("철수", "/" + KIND + "가져오기 " + OLD, "H1") === "");
+r = say("멱살잡힌스쳐(후파)", "/" + KIND + "가져오기 " + OLD, "HA");
 await flush();
-t("가져오기: 두 파일", r.indexOf("luna_Database.json: 가져옴 ✅") !== -1 && r.indexOf("claude_token.txt: 가져옴 ✅") !== -1, r);
-t("가져오기: 지금 것 .bak", fs.existsSync(path.join(PROJ, "data", "luna_Database.json.bak")));
+t("가져오기: 두 파일", r.indexOf(KEY + "_Database.json: 가져옴 ✅") !== -1 && r.indexOf("claude_token.txt: 가져옴 ✅") !== -1, r);
+t("가져오기: 지금 것 .bak", fs.existsSync(path.join(PROJ, "data", KEY + "_Database.json.bak")));
 t("가져오기: 다시 컴파일", compiled === 2);
 // 다시 컴파일된 것처럼 새로 불러오면 옛 기록이 보인다
 main = await import(pathToFileURL(path.join(PROJ, "main.js")).href + "?v=2");

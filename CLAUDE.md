@@ -173,19 +173,20 @@
   데이터 `lemon_Database.json`, 관리자 "후파"(포함), 로더 명령 `/레몬업데이트`(후파만)·`/레몬로더`·`/내정보`, `LOADER_VER` 1113-1,
   `ONE_TIME_FIXES`·`FIXED_REPLIES` 는 비어 있다(루나 전용 고정 응답 퉤·ㅋ 은 넣지 않는다). 토마토봇 항목의 주의(루나봇을 고치면 따라가지 않음, 토큰 파일 공유)가 그대로 해당된다.
   PC 시험은 루나봇 시험을 `루나`→`레몬` 으로 바꿔 돌리고, 네 봇(사건·루나·토마토·레몬)을 같은 저장소에서 함께 돌려 안 섞이는지 본다
-- `bot/starlight/` — **StarLight(NeonJS) 이식판** (2026-11-16 시작, 지금은 루나봇만). 메신저봇R 에서 StarLight(github.com/mooner1022/StarLight)로
+- `bot/starlight/` — **StarLight(NeonJS) 이식판** (2026-11-16 시작 — 루나봇(폰에서 동작 확인)·토마토봇·레몬봇). 메신저봇R 에서 StarLight(github.com/mooner1022/StarLight)로
   옮기는 중이며, **옮기다 실패할 수 있어 메신저봇R 판 파일은 그대로 둔다**(사용자 요청). 설치는 `bot/starlight/설치가이드.md`.
-  - `bot/starlight/루나봇.js` 는 **손으로 고치지 않는다** — `python bot/starlight/make_neon.py 루나봇 luna` 가 `bot/루나봇.js` 에서 만든다.
+  - `bot/starlight/루나봇.js`·`토마토봇.js`·`레몬봇.js` 는 **손으로 고치지 않는다** — `python bot/starlight/make_neon.py 루나봇 luna`
+    (`토마토봇 tomato`·`레몬봇 lemon`) 가 `bot/` 의 메신저봇R 판에서 만든다.
     게임 로직은 그대로 두고 파일·스레드·java.net·타이머·앱 등록만 `__PLAT__`(로더가 넘김)으로 바꾸고, 전체를 `export default function lunaBody(방, 관리자, PLAT)` 로 감싼다.
-    그래서 **루나봇을 고치면 make_neon.py 를 다시 돌려 이 파일도 갱신**할 것
-  - `bot/starlight/루나봇로더.js` = StarLight 프로젝트의 메인 스크립트(NeonJS, API 방식 = StarLight 원본 + 메신저봇 API2, 이벤트 onMessage).
+    그래서 **메신저봇R 판을 고치면 make_neon.py 를 다시 돌려 이 파일들도 갱신**할 것
+  - `bot/starlight/루나봇로더.js` (토마토·레몬 로더는 이 파일에서 루나→토마토/레몬, luna→tomato/lemon 만 바꾼 것) = StarLight 프로젝트의 메인 스크립트(NeonJS, API 방식 = StarLight 원본 + 메신저봇 API2, 이벤트 onMessage).
     본체를 깃헙에서 받아 프로젝트 폴더 `luna_body.js` 로 두고 `import()`. `/루나업데이트` 는 새 본체를 다른 이름으로 저장해 먼저 import 해 보고
     성공할 때만 바꾼 뒤(옛 것은 `luna_body_prev.js`) `BotManager.getCurrentBot().compile()`. 데이터는 프로젝트 `data/` 에 메신저봇R 판과 같은 파일 이름.
     `/루나가져오기 [폴더]` 로 옛 `luna_Database.json`·`claude_token.txt` 를 가져온다(기본 Download 등). 로더 명령 `/루나로더`·`/내정보` 도 있다
   - NeonJS 차이: ES 모듈·strict, **한 번에 한 작업**(동시 실행 걱정 없음), 스레드 대신 `fetch`·`setTimeout`(클로드 답변 `askWork` 는 async),
     알림 시계는 `setInterval` 하나(다시 컴파일하면 옛 타이머가 저절로 꺼져 세대 장치가 없다). hash 는 `event.sender.id`(카톡 알림 Person.key) —
     **메신저봇R 의 author.hash 와 같은 값인지 폰에서 확인 전**
-  - PC 시험: `node bot/starlight/test/loader.test.mjs bot/starlight`(가짜 StarLight 로 설치·업데이트·가져오기·클로드까지 26개),
+  - PC 시험: `node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬]`(가짜 StarLight 로 설치·업데이트·가져오기·클로드까지 26개),
     옛 메신저봇R 판 시험은 `node -r bot/starlight/test/neon_shim.js 시험.js …` 로 NeonJS 본체에 그대로 돌린다(본체를 strict 로 실행)
 - `bot/오토봇.js` + `bot/오토봇로더.js` + `bot/오토봇데이터.json` — "오토2프프"·"오토2"·"[오차율 계산봇]"·"공백기 근무표"·"멱살반2" 방 자동응답 봇.
   방을 늘리려면 본체의 `EXTRA_ROOMS` 에 적는다 (로더의 `MY_ROOMS` 가 `ROOMS` 를 덮어쓰므로, 로더를 다시 붙여넣지 않아도 되는 쪽).
