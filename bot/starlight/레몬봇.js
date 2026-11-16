@@ -47,7 +47,7 @@
  */
 export default function lemonBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "레몬봇";
-var BOT_VER = "1114-7s2";
+var BOT_VER = "1114-7s3";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["레몬"];

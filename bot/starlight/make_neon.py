@@ -234,7 +234,7 @@ if (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;
 alarmStart();
 
 return {
-    response: response,
+    response: __RESPONSE__,
     version: BOT_VER,
     rooms: function () { return ROOMS.slice(); },
     alarmTick: alarmTick,
@@ -261,10 +261,35 @@ rep('''function keyByLastName(name) {
     }
     var best = null, bestAt = -1;
     for (var k in people) {''')
+# ── 입퇴장·닉변·삭제 감지 (KakaoDB 플러그인, 2026-11-16 — 루나봇부터) ──
+# bot/starlight/kakaodb_watch.js 를 본체 끝(return 앞)에 넣고, response 앞에서 /감지 명령을 먼저 본다.
+KAKAODB_BOTS = ['luna']
+HAS_KW = key in KAKAODB_BOTS
+if HAS_KW:
+    KW = io.open(os.path.join(ROOT, 'bot', 'starlight', 'kakaodb_watch.js'), encoding='utf-8').read()
+    rep('''    "/닉변감지 — 대화명을 바꾼 사람 보기 (처음 이름 → 지금 이름)",
+    "",''', '''    "/닉변감지 — 대화명을 바꾼 사람 보기 (처음 이름 → 지금 이름)",
+    "",
+    "👀 감지 (카톡 DB 플러그인이 연결됐을 때)",
+    "들어오면 환영 · 나가면 알림 · 대화명을 바꾸면 알림 · 메시지를 지우면 알림",
+    "/감지 — 지금 켜진 감지 보기",
+    "",''')
+
 # 본체 버전 뒤에 StarLight 판 고친 횟수를 붙인다 (/○○로더 에서 새 본체인지 보이게)
-SL_REV = 2
+SL_REV = 3
 m = re.search(r'var BOT_VER = "([^"]*)";', s)
 rep(m.group(0), 'var BOT_VER = "%ss%d";' % (m.group(1), SL_REV))
+
+if HAS_KW:
+    rep('// 알림 시계 켜기 (모든 정의가 끝난 뒤)\nalarmStart();\n', KW + '\n// 알림 시계 켜기 (모든 정의가 끝난 뒤)\nalarmStart();\n')
+    rep('    response: __RESPONSE__,',
+        '''    response: function (room, msg, sender, isGroupChat, replier, who) {
+        try { if (kwCommand(room, msg, sender, replier)) return; } catch (e) { kwLastErr = String(e); }
+        return response(room, msg, sender, isGroupChat, replier, who);
+    },
+    kakao: { joined: kwJoined, left: kwLeft, message: kwMessage, deleted: kwDeleted, status: kwStatusText },''')
+else:
+    rep('    response: __RESPONSE__,', '    response: response,')
 
 # 머리 주석이 끝난 바로 뒤에서 함수를 연다
 head_end = s.index(' */\n') + 4

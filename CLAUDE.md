@@ -184,9 +184,22 @@
     성공할 때만 바꾼 뒤(옛 것은 `luna_body_prev.js`) `BotManager.getCurrentBot().compile()`. 데이터는 프로젝트 `data/` 에 메신저봇R 판과 같은 파일 이름.
     `/루나가져오기 [폴더]` 로 옛 `luna_Database.json`·`claude_token.txt` 를 가져온다(기본 Download 등). 로더 명령 `/루나로더`·`/내정보` 도 있다
   - NeonJS 차이: ES 모듈·strict, **한 번에 한 작업**(동시 실행 걱정 없음), 스레드 대신 `fetch`·`setTimeout`(클로드 답변 `askWork` 는 async),
-    알림 시계는 `setInterval` 하나(다시 컴파일하면 옛 타이머가 저절로 꺼져 세대 장치가 없다). hash 는 `event.sender.id`(카톡 알림 Person.key) —
-    **메신저봇R 의 author.hash 와 같은 값인지 폰에서 확인 전**
-  - PC 시험: `node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬]`(가짜 StarLight 로 설치·업데이트·가져오기·클로드까지 26개),
+    알림 시계는 `setInterval` 하나(다시 컴파일하면 옛 타이머가 저절로 꺼져 세대 장치가 없다).
+  - **StarLight 의 `event.sender.id` 는 쓰지 않는다** (2026-11-16 토마토 방에서 겪음): StarLight 는 대화명·내용은 이번 메시지에서 읽지만
+    id 는 알림에 쌓인 메시지 중 **첫 번째(`messages[0]`)** 에서 읽는다(AndroidRParserSpec 등 세 스펙 모두). 그래서 후파의 재련가즈아가
+    바로 앞에 말한 엑시아 기록으로 처리됐다. make_neon.py 가 본체의 `userKeyOf` 에서 hash 를 버리고 `keyByLastName` 이 **최초 대화명을 먼저** 찾게 바꾸며,
+    로더(sl-1116-2 이상)도 hash 를 넘기지 않는다. 그래서 StarLight 판 게임봇은 대화명으로 사람을 구분한다(대화명을 바꾸면 새 사람). 본체 버전 끝 `s3` = make_neon 고친 횟수
+  - **입퇴장·닉변·삭제 감지** (2026-11-16, 루나봇만 — make_neon.py 의 `KAKAODB_BOTS`): `bot/starlight/kakaodb_watch.js` 를 make_neon.py 가 본체에 넣는다.
+    **카톡 DB 플러그인**(github.com/mooner1022/starlight-kakaodb — 카톡 DB 를 읽으므로 루트 또는 공유 UID 모드가 필요)이 주는
+    `onKakaoMemberJoined`·`onKakaoMemberLeft`·`onKakaoMessage`·`onKakaoMessageDeleted` 를 로더(sl-1116-3)가 `body.kakao.*` 로 넘긴다.
+    사람은 **카톡 회원 ID(문자열)** 로 구분한다(정확함). 처음 온 사람 "OO님 어서오세요", 전에 있던 사람 "OO님 돌아오신걸 환영해요",
+    대화명이 바뀌었으면 "OO님(구 XX님) 돌아오신걸 환영해요"(사용자가 정한 문구), 퇴장 "OO님이 나가셨어요"·"OO님이 내보내졌어요",
+    말할 때 대화명이 바뀌어 있으면 "🔄 대화명 변경: XX → OO", 삭제 "🗑️ OO님이 메시지를 지웠어요" + 내용(200자, 사진 등은 종류만).
+    처음 쓰는 방은 첫 이벤트 때 `room.getMembers()` 로 지금 멤버를 미리 적는다(원래 있던 사람이 나갔다 오면 "돌아오신걸").
+    기록은 data 폴더 `luna_kakao.json`. `/감지`(누구나, 상태), `/감지 입장|퇴장|닉변|삭제|전부 켜기|끄기`(관리자), `/닉변감지` 는 이 기록으로 보여준다.
+    프로젝트 받을 이벤트에 kakaodb.member.join·leave·message.create·delete 추가. 플러그인의 "onMessage 호환 이벤트" 는 꺼 둘 것(메시지가 두 번 온다).
+    PC 시험: `node bot/starlight/test/kakaodb.test.mjs`(33개)
+  - PC 시험: `node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬]`(가짜 StarLight 로 설치·업데이트·가져오기·클로드까지 29개),
   - **오토봇·카페봇도 옮겼다 (2026-11-16)** — 게임봇과 달리 변환기가 봇마다 따로다:
     `python bot/starlight/make_neon_auto.py`(bot/오토봇.js → bot/starlight/오토봇.js),
     `python bot/starlight/make_neon_cafe.py`(카페봇). 메신저봇R 판을 고치면 **다시 돌릴 것**.
@@ -258,7 +271,7 @@
   "공백기 근무표" 방에서 `/삭제내역`(이 방)·`/삭제내역1`(오토2)·`/삭제내역2`(오토2프프)로 되짚어본다.
   카톡은 삭제를 봇에게 알려주지 않으므로 "어느 게 삭제됐는지"는 알 수 없고, 시각으로 대조하는 용도다.
   ※ **소스에 진짜 NUL 바이트(0x00)를 넣지 말 것** — 2026-11-16 에 `replyKey` 에서 겪었다.
-  `" "` 이라고 써야 할 자리에 heredoc 이 글자 그대로의 NUL 을 박아, grep·git diff 가 그 파일을
+  `"\0"` 이라고 써야 할 자리에 heredoc 이 글자 그대로의 NUL 을 박아, grep·git diff 가 그 파일을
   **바이너리로 다뤄** 코드를 읽을 수 없었다(동작은 됐다). `node bot/test/nulbyte.test.js` 로 확인한다
   (파일 이름을 `nul.test.js` 로 두면 **윈도우가 NUL 을 예약 장치 이름으로 봐서 git 이 열지 못한다** — 겪어 봤다).
   같은 이유로 **`sed -i` 는 CRLF 를 LF 로 바꿔** 전체 줄이 바뀐 것처럼 보이게 하니, 이 저장소의 봇 소스에는
