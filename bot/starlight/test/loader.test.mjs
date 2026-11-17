@@ -53,8 +53,10 @@ globalThis.fetch = async (url, opt) => {
     return R(404, "");
 };
 
+let media = [], mediaResult = {};
 function room(name) {
-    return { name, isGroupChat: () => true, send: (m) => { sent.push(name + "|" + m); return true; } };
+    return { name, isGroupChat: () => true, send: (m) => { sent.push(name + "|" + m); return true; },
+        sendMedia: (p) => { media.push(name + "|" + p); return Promise.resolve(mediaResult); } };
 }
 function say(sender, msg, id, rname) {
     sent = [];
@@ -80,6 +82,24 @@ r = say("영희", "재련가즈아", "H1");   // 앞사람(철수)의 id 가 섞
 t("앞사람 id 가 와도 본인 기록", r.indexOf("영희님, 1 → 2") !== -1, r);
 t("다른 방 무시", say("철수", "재련가즈아", "H1", "다른방") === "");
 t("고정 응답 (루나만)", say("x", "퉤", "HX") === (KIND === "루나" ? "루나|후룹" : ""));
+// 고정 사진 응답 — 루나 방에서만 (2026-11-17)
+media = [];
+t("사진 응답: 글은 안 보냄", say("x", "퐁듀는", "HX") === "");
+t("사진 응답 (루나만)", media.join() === (KIND === "루나" ? "루나|/sdcard/Download/퐁듀는.jpg" : ""), media);
+media = [];
+say("x", " 퐁듀는 ", "HX");
+t("사진 응답: 앞뒤 공백 무시", media.length === (KIND === "루나" ? 1 : 0), media);
+media = [];
+say("x", "퐁듀는 귀엽다", "HX"); say("x", "퐁듀", "HX");
+t("사진 응답: 다른 말엔 안 보냄", media.length === 0, media);
+if (KIND === "루나") {
+    mediaResult = { error: "파일 없음" };
+    say("x", "퐁듀는", "HX"); await flush();
+    t("사진 실패: 안내", sent.join().indexOf("퐁듀는.jpg 를 못 보냈어요") !== -1, sent);
+    mediaResult = {};
+    r = say("x", "/등록 퐁듀는 아무말", "HX");
+    t("사진 이름은 등록 거절", r.indexOf("봇이 이미 쓰는 말이라 등록할 수 없습니다") !== -1, r);
+}
 
 // ── 3. /내정보 — hash 값은 안 보인다 ──
 r = say("영희", "/내정보", "SECRET-HASH-123");
