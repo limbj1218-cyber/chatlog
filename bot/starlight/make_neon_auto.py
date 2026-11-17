@@ -161,7 +161,7 @@ rep('''return {
     version: BOT_VER,
     rooms: function () { return ROOMS.concat(EXTRA_ROOMS); },''')
 # 본체 버전 뒤에 StarLight 판 고친 횟수 — /오토업데이트 는 버전이 같으면 본체를 바꾸지 않으므로 고칠 때마다 올린다
-SL_REV = 5
+SL_REV = 6
 m = re.search(r'var BOT_VER = "([^"]*)";', s)
 rep(m.group(0), 'var BOT_VER = "%ss%d";' % (m.group(1), SL_REV))
 

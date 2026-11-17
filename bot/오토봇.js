@@ -35,7 +35,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "오토봇";
-var BOT_VER = "1116-1";
+var BOT_VER = "1117-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -432,7 +432,40 @@ function tableFor(room, withRegs) {
  * 깃헙에서 관리하는 고정 트리거인지 (등록분은 빼고 본다).
  * kind 를 주면 그 갈래가 반응하는 방만 본다 — 다른 방의 고정 트리거까지 막을 이유는 없다.
  */
+// 고정 사진 응답 (2026-11-17 사용자 요청): 메시지 전체가 이 말이면 폰의 사진 파일을 보낸다.
+// 사진은 폰의 FIXED_MEDIA_DIR(Download 폴더)에 그 이름으로 넣어 둔다. StarLight 판에서만 보낼 수 있다
+// (메신저봇R 엔 사진 보내기가 없어 아무 말도 안 한다). 오토봇의 모든 방에서 반응하고, 같은 이름은 /등록_ 으로 못 넣는다.
+var FIXED_MEDIA_DIR = "/sdcard/Download";
+var FIXED_MEDIA = {
+    "확장업데이트": "이지워커업데이트.jpg"
+};
+var mediaLast = "";      // 마지막 사진 보내기 결과
+
+/** 고정 사진 응답 — 보냈으면(보내려 했으면) true */
+function handleFixedMedia(text, replier) {
+    if (!FIXED_MEDIA.hasOwnProperty(text)) return false;
+    var file = FIXED_MEDIA[text];
+    var path = FIXED_MEDIA_DIR + "/" + file;
+    if (!replier || typeof replier.sendMedia !== "function") { mediaLast = "이 앱에선 사진을 못 보내요"; return true; }
+    function fail(e) {
+        mediaLast = file + " 실패 — " + e;
+        try { replier.reply("⚠️ " + file + " 를 못 보냈어요. 폰 Download 폴더에 그 이름으로 있는지 봐 주세요."); } catch (e2) {}
+    }
+    try {
+        var p = replier.sendMedia(path);
+        mediaLast = file + " 보내는 중";
+        if (p && typeof p.then === "function") {
+            p.then(function (r) {
+                var err = r && r.error ? String(r.error) : "";
+                if (err) fail(err); else mediaLast = file + " 보냄 ✅";
+            }, fail);
+        }
+    } catch (e) { fail(e); }
+    return true;
+}
+
 function isFixed(trigger, kind) {
+    if (FIXED_MEDIA.hasOwnProperty(trigger)) return true;
     var rooms = [], seen = {}, i, j;
     if (kind) {
         rooms = kind.rooms;
@@ -1029,6 +1062,9 @@ function response(room, msg, sender, isGroupChat, replier, who) {
                 return;
             }
         }
+
+        // ⑤-3 고정 사진 응답 (확장업데이트 → 이지워커업데이트.jpg)
+        if (handleFixedMedia(text, replier)) return;
 
         // ⑥ 등록된 트리거 — 메시지 전체가 정확히 일치할 때
         var table = tableFor(room);

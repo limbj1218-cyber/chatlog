@@ -20,7 +20,7 @@
  */
 export default async function loaderCore(CFG) {
     CFG = CFG || {};
-    const LOADER_VER = "core-1117-1";
+    const LOADER_VER = "core-1117-2";
     const KEY = "auto";
     const BOT_NAME = "오토봇";
 
@@ -315,7 +315,8 @@ export default async function loaderCore(CFG) {
 
             if (!body) return;
             body.response(room, event.message, sender, isGroup(event.room),
-                { reply: (t) => event.room.send(String(t)) },
+                // sendMedia: 폰의 사진 파일 보내기 (StarLight room.sendMedia — 카톡 공유 화면을 거친다, 2026-11-17)
+                { reply: (t) => event.room.send(String(t)), sendMedia: (p) => event.room.sendMedia(String(p)) },
                 // ★ hash 는 넘기지 않는다 — StarLight 는 id 를 알림에 쌓인 첫 메시지(앞사람)에서 읽는다 (2026-11-16 겪음)
                 { name: sender, hash: null, profileKey: () => null });
         } catch (e) {

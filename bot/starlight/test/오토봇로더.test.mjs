@@ -56,8 +56,10 @@ globalThis.fetch = async (url) => {
     return R(404, "");
 };
 
+let roomMedia = [], mediaResult = { error: null };
 function room(name) {
-    return { name, isGroupChat: () => true, send: (m) => { sent.push(name + "|" + m); return true; } };
+    return { name, isGroupChat: () => true, send: (m) => { sent.push(name + "|" + m); return true; },
+        sendMedia: (p) => { roomMedia.push(name + "|" + p); return Promise.resolve(mediaResult); } };
 }
 function say(sender, msg, id, rname) {
     sent = [];
@@ -90,6 +92,23 @@ t("등록분 응답", say("철수", "출석", "H1", "멱살반2").indexOf("밤 1
 t("권한 없으면 조용히", say("철수", "/등록_장난_x", "H1", "멱살반2") === "");
 await flush();
 t("data 폴더에 등록 저장", fs.existsSync(path.join(PROJ, "data", "멱살응답.json")));
+
+// ── 3-2. 고정 사진 응답: 확장업데이트 → 이지워커업데이트.jpg (2026-11-17, 오토봇 모든 방) ──
+roomMedia = [];
+t("확장업데이트 → 사진", say("철수", "확장업데이트", "H1") === "" && roomMedia.join() === "오토2|/sdcard/Download/이지워커업데이트.jpg", roomMedia);
+roomMedia = [];
+say("철수", "  확장업데이트 ", "H1", "멱살반2");
+t("다른 오토봇 방·앞뒤 공백도", roomMedia.join() === "멱살반2|/sdcard/Download/이지워커업데이트.jpg", roomMedia);
+roomMedia = [];
+say("철수", "확장업데이트 언제 해요?", "H1"); say("철수", "확장업데이트", "H1", "아무방");
+t("섞인 말·다른 방은 무반응", roomMedia.length === 0, roomMedia);
+mediaResult = { error: "no file" };
+say("철수", "확장업데이트", "H1");
+await flush();
+t("못 보내면 안내", sent.join().indexOf("이지워커업데이트.jpg 를 못 보냈어요") !== -1, sent);
+mediaResult = { error: null };
+let rr = say("[조교] 아는아이", "/등록_확장업데이트_x", "HA", "멱살반2");
+t("같은 이름은 등록 거절", rr.indexOf("고정 명령어") !== -1, rr);
 
 // ── 4. 닉변 감지 — StarLight 의 sender.id 는 앞사람 것이 섞여 와서 안 쓴다. 카톡 DB(KakaoDB) 이벤트로 잡는다 ──
 say("미미르", "안녕", "H9");
