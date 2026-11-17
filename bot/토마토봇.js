@@ -46,7 +46,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "토마토봇";
-var BOT_VER = "1114-8";
+var BOT_VER = "1117-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["토마토"];
@@ -245,12 +245,39 @@ var REPAIR_KEYWORDS = [
     "버그도 실력입니다"
 ];
 
+// 방마다 따로 쓰는 수리 문구 (2026-11-17 사용자 요청 — 그 방에서만 나오게).
+// 방 이름: [문구들]. 여기 없는 방은 위 REPAIR_KEYWORDS 를 쓴다. 기본 문구에 더하려면 REPAIR_KEYWORDS.concat([...])
+var REPAIR_KEYWORDS_BY_ROOM = {
+};
+
+/** 이 방에서 쓰는 수리 문구 목록 */
+function repairWords(room) {
+    var w = REPAIR_KEYWORDS_BY_ROOM.hasOwnProperty(room) ? REPAIR_KEYWORDS_BY_ROOM[room] : null;
+    return w && w.length ? w : REPAIR_KEYWORDS;
+}
+
+/** 어느 방에서든 쓰는 수리 문구 전부 (저장된 안내 문구 확인·등록 거절용) */
+function allRepairWords() {
+    var all = REPAIR_KEYWORDS.slice(0);
+    for (var r in REPAIR_KEYWORDS_BY_ROOM) {
+        if (!REPAIR_KEYWORDS_BY_ROOM.hasOwnProperty(r)) continue;
+        var w = REPAIR_KEYWORDS_BY_ROOM[r] || [];
+        for (var i = 0; i < w.length; i++) if (all.indexOf(w[i]) === -1) all.push(w[i]);
+    }
+    return all;
+}
+
+function pickRepairWord(room) {
+    var w = repairWords(room);
+    return w[Math.floor(Math.random() * w.length)];
+}
+
 // 문구를 바꾸기 전에 안내받은 사람은 옛 문구가 저장돼 있다 → 지금 목록의 문구로 바꿔 준다
 (function refreshOldPrompts() {
     var changed = false;
     for (var who in repairPrompt) {
         if (!repairPrompt.hasOwnProperty(who)) continue;
-        if (REPAIR_KEYWORDS.indexOf(repairPrompt[who]) === -1) {
+        if (allRepairWords().indexOf(repairPrompt[who]) === -1) {
             repairPrompt[who] = REPAIR_KEYWORDS[Math.floor(Math.random() * REPAIR_KEYWORDS.length)];
             changed = true;
         }
@@ -541,8 +568,9 @@ function isReserved(trigger) {
         || t.charAt(0) === "." || t.indexOf("/클로드") === 0 || t === "/닉변감지" || t.indexOf("/카드") === 0
         || t.indexOf("/알림") === 0 || t.indexOf("/고정알림") === 0 || t === "닉네임" || t === "/닉네임" || t.indexOf("전생") === 0 || t.indexOf("/전생") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
-        for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
-            if (REPAIR_KEYWORDS[i].toLowerCase() === t) return true;
+        var rw = allRepairWords();
+        for (var i = 0; i < rw.length; i++) {
+            if (rw[i].toLowerCase() === t) return true;
         }
     }
     return false;
@@ -2490,8 +2518,8 @@ function response(room, msg, sender, isGroupChat, replier, who) {
         if (msg === "제련가즈아" || msg === "재련가즈아") {
             // 파괴된 장비는 수리 전까지 재련 불가 (횟수도 쓰지 않는다)
             if (broken[uKey]) {
-                if (!repairPrompt[uKey]) {
-                    repairPrompt[uKey] = REPAIR_KEYWORDS[Math.floor(Math.random() * REPAIR_KEYWORDS.length)];
+                if (!repairPrompt[uKey] || repairWords(room).indexOf(repairPrompt[uKey]) === -1) {
+                    repairPrompt[uKey] = pickRepairWord(room);
                     saveData();
                 }
                 return replier.reply(uName + "님, 장비가 파괴되어 재련을 할 수 없습니다. 수리를 원하시면 \"" +
@@ -2549,8 +2577,9 @@ function response(room, msg, sender, isGroupChat, replier, who) {
                 return replier.reply(uName + "님 장비가 수리되어 재련을 하실 수 있습니다\n🎁 수리 보너스! 오늘 재련 기회 +" +
                     REPAIR_BONUS + " (남은 기회 " + left + "번)");
             }
-            for (var k = 0; k < REPAIR_KEYWORDS.length; k++) {
-                if (msg === REPAIR_KEYWORDS[k].toLowerCase()) {
+            var roomWords = repairWords(room);
+            for (var k = 0; k < roomWords.length; k++) {
+                if (msg === roomWords[k].toLowerCase()) {
                     return replier.reply(uName + "님, 잘못된 키워드를 입력하셨습니다. 다시 \"" +
                         repairPrompt[uKey] + "\" 라고 외쳐주세요!");
                 }
