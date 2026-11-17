@@ -45,7 +45,7 @@
  */
 export default function lunaBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "루나봇";
-var BOT_VER = "1117-1s7";
+var BOT_VER = "1117-2s7";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -203,6 +203,8 @@ var REPAIR_KEYWORDS = [
 // 방마다 따로 쓰는 수리 문구 (2026-11-17 사용자 요청 — 그 방에서만 나오게).
 // 방 이름: [문구들]. 여기 없는 방은 위 REPAIR_KEYWORDS 를 쓴다. 기본 문구에 더하려면 REPAIR_KEYWORDS.concat([...])
 var REPAIR_KEYWORDS_BY_ROOM = {
+    // 루나 방만 (2026-11-17 사용자 요청)
+    "루나": REPAIR_KEYWORDS.concat(["퐁듀님은 엉덩이가 빨간색이다!!"])
 };
 
 /** 이 방에서 쓰는 수리 문구 목록 */
