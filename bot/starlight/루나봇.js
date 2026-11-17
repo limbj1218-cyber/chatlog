@@ -45,7 +45,7 @@
  */
 export default function lunaBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "루나봇";
-var BOT_VER = "1117-4s8";
+var BOT_VER = "1117-6s8";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["루나"];
@@ -109,6 +109,7 @@ function loadData() {
         broken: parsed.broken || {},              // { 이름: true } 장비 파괴 상태
         repairPrompt: parsed.repairPrompt || {},  // { 이름: 수리 문구 }
         custom: parsed.custom || {},              // { 방: { 명령어: 할말 } } 등록 명령어
+        shush: parsed.shush || {},                // { 방: { 사람키: 풀리는 시각(ms) } } 조용히해
         askOn: parsed.askOn || {},                // { 방: true } 클로드 답변 켜짐
         startLevel: parsed.startLevel || {},      // { 방: 숫자 } 기록 없는 사람의 시작 재련값 (/전부_)
         appliedFixes: parsed.appliedFixes || [],
@@ -126,6 +127,7 @@ var repairPrompt = store.repairPrompt;
 var roomUsers = store.roomUsers;
 var custom = store.custom;
 var askOn = store.askOn;
+var shush = store.shush;
 var startLevel = store.startLevel;
 var people = store.people;
 var appliedFixes = store.appliedFixes;
@@ -150,6 +152,7 @@ function saveData() {
     }
     out.custom = custom;
     out.askOn = askOn;
+    out.shush = shush;
     out.startLevel = startLevel;
     out.people = people;
     out.appliedFixes = appliedFixes;
@@ -546,15 +549,14 @@ var FIXED_REPLIES = {
 // 고정 사진 응답 (2026-11-17 사용자 요청 — 루나 방에서만): 메시지 전체가 이 말이면 폰의 사진 파일을 보낸다.
 // 사진은 폰의 FIXED_MEDIA_DIR(Download 폴더)에 그 이름으로 넣어 둔다. StarLight 판에서만 보낼 수 있다
 // (메신저봇R 엔 사진 보내기가 없어 아무 말도 안 한다). 같은 이름은 /등록_ 으로 못 넣는다.
-// 값이 목록이면 적힌 순서대로 한 장씩 — 앞 장이 다 보내진 뒤(카톡 공유 화면이 끝난 뒤) MEDIA_GAP_MS 쉬고 다음 장.
-// 중간에 한 장이라도 못 보내면 거기서 멈추고 안내한다. 여러 장을 보내는 동안 같은 방에서 또 치면 무시한다.
+// 값이 목록이면 한 번에 묶어 보낸다 — StarLight sendMedia 에 경로 목록을 넘기면 카톡 공유 한 번으로 여러 장이 간다
+// (2026-11-17 사용자 요청: 한 장씩 → 일괄). 보내는 동안 같은 방에서 또 치면 무시한다.
 var FIXED_MEDIA_ROOMS = ["루나"];
 var FIXED_MEDIA_DIR = "/sdcard/Download";
 var FIXED_MEDIA = {
     "퐁듀는": "퐁듀는.jpg",
     "물슈노스킬": mediaSeries("물슈", 1, 12, ".jpg")      // 물슈1.jpg ~ 물슈12.jpg
 };
-var MEDIA_GAP_MS = 1500;
 var mediaLast = "";      // 마지막 사진 보내기 결과
 var mediaBusy = {};      // 방 → 여러 장 보내는 중이면 true
 
@@ -574,38 +576,34 @@ function handleFixedMedia(room, raw, replier) {
     var many = files.length > 1;                   // 여러 장일 때만 "보내는 중" 잠금 (한 장짜리는 칠 때마다 보낸다)
     if (many && mediaBusy[room]) return true;      // 아직 앞의 사진들을 보내는 중
     if (many) mediaBusy[room] = true;
-    var idx = 0;
+    var label = many ? raw + " 사진 " + files.length + "장" : files[0];
+    var paths = [];
+    for (var i = 0; i < files.length; i++) paths.push(FIXED_MEDIA_DIR + "/" + files[i]);
 
-    function fail(file, e) {
+    function fail(e) {
         mediaBusy[room] = false;
-        mediaLast = file + " 실패 — " + e;
-        var more = files.length > 1 ? " (" + idx + "/" + files.length + "번째에서 멈췄어요)" : "";
-        try { replier.reply("⚠️ " + file + " 를 못 보냈어요" + more + ". 폰 Download 폴더에 그 이름으로 있는지 봐 주세요."); } catch (e2) {}
+        mediaLast = label + " 실패 — " + e;
+        try { replier.reply("⚠️ " + (many ? label + "을" : files[0] + " 를") + " 못 보냈어요. 폰 Download 폴더에 그 이름으로 있는지 봐 주세요."); } catch (e2) {}
     }
-    function next() {
-        if (idx >= files.length) {
+    var p;
+    try { p = replier.sendMedia(many ? paths : paths[0]); } catch (e) { fail(e); return true; }
+    mediaLast = label + " 보내는 중";
+    if (p && typeof p.then === "function") {
+        p.then(function (r) {
+            var err = r && r.error ? String(r.error) : "";
+            var bad = r && r.failed ? Number(r.failed) : 0;
+            if (err && !(r && r.sent > 0)) { fail(err); return; }
             mediaBusy[room] = false;
-            mediaLast = (files.length > 1 ? raw + " " + files.length + "장" : files[0]) + " 보냄 ✅";
-            return;
-        }
-        var file = files[idx++];
-        mediaLast = file + " 보내는 중 (" + idx + "/" + files.length + ")";
-        var p;
-        try { p = replier.sendMedia(FIXED_MEDIA_DIR + "/" + file); } catch (e) { fail(file, e); return; }
-        function after() {
-            if (idx >= files.length) { next(); return; }
-            if (typeof setTimeout === "function") setTimeout(next, MEDIA_GAP_MS); else next();
-        }
-        if (p && typeof p.then === "function") {
-            p.then(function (r) {
-                var err = r && r.error ? String(r.error) : "";
-                if (err) fail(file, err); else after();
-            }, function (e) { fail(file, e); });
-        } else {
-            after();
-        }
+            if (bad > 0) {
+                mediaLast = label + " 중 " + bad + "장 실패";
+                try { replier.reply("⚠️ " + label + " 중 " + bad + "장을 못 보냈어요. 폰 Download 폴더의 파일 이름을 봐 주세요."); } catch (e2) {}
+            } else {
+                mediaLast = label + " 보냄 ✅";
+            }
+        }, fail);
+    } else {
+        mediaBusy[room] = false;
     }
-    next();
     return true;
 }
 
@@ -614,7 +612,7 @@ function isReserved(trigger) {
     if (RESERVED.indexOf(t) !== -1) return true;
     if (typeof FIXED_REPLIES !== "undefined" && FIXED_REPLIES.hasOwnProperty(trigger)) return true;
     if (typeof FIXED_MEDIA !== "undefined" && FIXED_MEDIA.hasOwnProperty(trigger)) return true;
-    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/지정") === 0 || t.indexOf("/초기화") === 0 || t.indexOf("/전부") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
+    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/지정") === 0 || t.indexOf("/조용히해") === 0 || t.indexOf("/초기화") === 0 || t.indexOf("/전부") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
         || t.charAt(0) === "." || t.indexOf("/클로드") === 0 || t === "/닉변감지" || t.indexOf("/카드") === 0
         || t.indexOf("/알림") === 0 || t.indexOf("/고정알림") === 0 || t === "닉네임" || t === "/닉네임" || t.indexOf("전생") === 0 || t.indexOf("/전생") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
@@ -2431,6 +2429,122 @@ function alarmStart() {
 
 // ═══════════════ 메시지 처리 ═══════════════
 
+// ═══════════════ 조용히해 (관리자, 2026-11-17) ═══════════════
+// /조용히해 이름 → 그 사람이 말할 때마다 봇이 "조용히해" 라고 답한다. SHUSH_MIN 분 뒤 저절로 풀린다.
+// /조용히해제 이름 (또는 /조용히해제 전부) 로 먼저 풀 수 있고, 그냥 /조용히해 는 지금 걸린 사람 목록.
+// 밑줄도 된다(/조용히해_이름). 이름은 이 방에서 말한 적 있는 사람의 최초·최근 대화명으로 찾고, 일부만 써도 된다
+// (사용자 요청 — 정확히 같은 이름이 먼저, 조각이 든 사람이 여럿이면 후보를 보여 주고 다시 쓰게 한다).
+// 걸린 사람의 말은 평소처럼 처리한다(재련 등) — "조용히해" 만 한마디 덧붙인다. 데이터 파일 shush 에 저장(다시 켜도 유지).
+var SHUSH_MIN = 30;
+var SHUSH_SAY = "조용히해";
+
+function shushNow() { return new Date().getTime(); }
+
+/** 이 방에서 아직 안 풀린 사람들 (지난 건 지운다) → [키, …] */
+function shushActive(room) {
+    var m = shush[room], out = [], now = shushNow(), changed = false;
+    if (!m) return out;
+    for (var k in m) {
+        if (!m.hasOwnProperty(k)) continue;
+        if (m[k] > now) out.push(k); else { delete m[k]; changed = true; }
+    }
+    if (changed) saveData();
+    return out;
+}
+
+function shushLeft(until) {
+    var min = Math.ceil((until - shushNow()) / 60000);
+    return (min < 1 ? 1 : min) + "분";
+}
+
+/** 이름 조각으로 사람 찾기 — 정확히 같은 이름이 먼저, 없으면 최초·최근 대화명에 조각이 들어 있는 사람.
+ *  pool 이 있으면 그 키들 중에서만 찾는다. → { key } / { many: [이름…] } / null */
+function shushFind(room, name, pool) {
+    var exact = findUserKey(room, name);
+    if (exact !== null && (!pool || pool.indexOf(exact) !== -1)) return { key: exact };
+    var keys = pool || [], k, i;
+    if (!pool) for (k in (roomUsers[room] || {})) if (roomUsers[room].hasOwnProperty(k)) keys.push(k);
+    var want = String(name).toLowerCase(), hit = [];
+    for (i = 0; i < keys.length; i++) {
+        k = keys[i];
+        var first = String(displayName(k)), last = people[k] && people[k].last ? String(people[k].last) : first;
+        if (first === name || last === name) return { key: k };
+        if (first.toLowerCase().indexOf(want) !== -1 || last.toLowerCase().indexOf(want) !== -1) hit.push(k);
+    }
+    if (hit.length === 1) return { key: hit[0] };
+    if (hit.length === 0) return null;
+    var names = [];
+    for (i = 0; i < hit.length && i < 10; i++) names.push(displayName(hit[i]));
+    return { many: names, count: hit.length };
+}
+
+function shushMany(name, f) {
+    return "\"" + name + "\" 이(가) 들어간 사람이 " + f.count + "명이에요. 조금 더 길게 써 주세요.\n· " +
+        f.many.join("\n· ") + (f.count > f.many.length ? "\n…" : "");
+}
+
+/** /조용히해… 명령이면 답장 문구, 아니면 null */
+function handleShush(room, raw, sender) {
+    var off = false, rest;
+    if (raw === "/조용히해제" || raw.indexOf("/조용히해제 ") === 0 || raw.indexOf("/조용히해제_") === 0) {
+        off = true; rest = raw.substring(6);
+    } else if (raw === "/조용히해" || raw.indexOf("/조용히해 ") === 0 || raw.indexOf("/조용히해_") === 0) {
+        rest = raw.substring(5);
+    } else {
+        return null;
+    }
+    if (!isAdmin(sender)) return "해당 명령어를 사용할 수 있는 권한이 없습니다.";
+    var name = rest.replace(/^[\s_]+/, "").trim();
+    var keys = shushActive(room), i;
+
+    if (!name) {
+        if (off) return "형식: /조용히해제 이름 (모두 풀려면 /조용히해제 전부)";
+        if (keys.length === 0) return "🤫 지금 조용히해 걸린 사람이 없어요.\n걸기: /조용히해 이름 (" + SHUSH_MIN + "분)";
+        var lines = ["🤫 조용히해 걸린 사람"];
+        for (i = 0; i < keys.length; i++) lines.push("· " + displayName(keys[i]) + " — " + shushLeft(shush[room][keys[i]]) + " 남음");
+        lines.push("풀기: /조용히해제 이름");
+        return lines.join("\n");
+    }
+
+    if (off && name === "전부") {
+        if (keys.length === 0) return "🤫 지금 조용히해 걸린 사람이 없어요.";
+        delete shush[room];
+        saveData();
+        return "🔊 조용히해를 모두 풀었어요 (" + keys.length + "명).";
+    }
+
+    // 풀 때는 지금 걸린 사람 중에서 먼저 찾는다
+    var f = off && keys.length > 0 ? shushFind(room, name, keys) : null;
+    if (!f) f = shushFind(room, name, null);
+    if (f === null) {
+        return "\"" + name + "\" 이(가) 들어간 사람을 찾을 수 없어요.\n이 방에서 말한 적 있는 대화명으로 써 주세요.";
+    }
+    if (f.many) return shushMany(name, f);
+    var key = f.key;
+    if (off) {
+        if (!shush[room] || !(shush[room][key] > shushNow())) return "🔊 " + displayName(key) + "님은 조용히해가 걸려 있지 않아요.";
+        delete shush[room][key];
+        saveData();
+        return "🔊 " + displayName(key) + "님의 조용히해를 풀었어요.";
+    }
+    var again = !!(shush[room] && shush[room][key] > shushNow());
+    if (!shush[room]) shush[room] = {};
+    shush[room][key] = shushNow() + SHUSH_MIN * 60000;
+    saveData();
+    return "🤫 " + displayName(key) + "님이 말할 때마다 \"" + SHUSH_SAY + "\" 라고 할게요 (" + SHUSH_MIN + "분" +
+        (again ? ", 다시 처음부터" : "") + ").\n먼저 풀려면 /조용히해제 " + displayName(key);
+}
+
+/** 이 사람이 조용히해 걸려 있으면 true (시간이 지났으면 지운다) */
+function shushHit(room, key) {
+    var m = shush[room];
+    if (!m || !m.hasOwnProperty(key)) return false;
+    if (m[key] > shushNow()) return true;
+    delete m[key];
+    saveData();
+    return false;
+}
+
 function response(room, msg, sender, isGroupChat, replier, who) {
     try {
         if (ROOMS.indexOf(room) === -1) return;
@@ -2453,6 +2567,11 @@ function response(room, msg, sender, isGroupChat, replier, who) {
         // 이 방에서 말한 사람 기록 (랭킹 집계용)
         if (!roomUsers[room]) roomUsers[room] = {};
         roomUsers[room][uKey] = true;
+
+        // ── 조용히해 (관리자) — 걸린 사람이 말하면 "조용히해" 한마디 (그 말은 아래에서 평소처럼 처리) ──
+        var shushReply = handleShush(room, raw, sender);
+        if (shushReply !== null) return replier.reply(shushReply);
+        if (shushHit(room, uKey)) replier.reply(SHUSH_SAY);
 
         // ── 명령어 등록·삭제·목록 (누구나) ──
         var regReply = handleRegister(room, raw);

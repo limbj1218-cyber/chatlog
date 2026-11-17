@@ -99,34 +99,83 @@ if (KIND === "루나") {
     mediaResult = {};
     r = say("x", "/등록 퐁듀는 아무말", "HX");
     t("사진 이름은 등록 거절", r.indexOf("봇이 이미 쓰는 말이라 등록할 수 없습니다") !== -1, r);
-    // 여러 장을 순서대로 (물슈노스킬 → 물슈1~12.jpg, 2026-11-17)
-    media = [];
-    say("x", "물슈노스킬", "HX");
-    t("여러 장: 첫 장은 바로", media.join() === "루나|/sdcard/Download/물슈1.jpg", media);
-    say("x", "물슈노스킬", "HX");
-    t("여러 장: 보내는 중엔 다시 쳐도 무시", media.length === 1, media);
-    for (let i = 0; i < 20 && media.length < 12; i++) await flush();
-    const want = []; for (let i = 1; i <= 12; i++) want.push("루나|/sdcard/Download/물슈" + i + ".jpg");
-    t("여러 장: 1~12 순서대로", media.join() === want.join(), media);
-    await flush();
-    media = [];
-    say("x", "물슈노스킬", "HX");
-    t("여러 장: 다 보낸 뒤엔 다시 됨", media.length === 1, media);
-    for (let i = 0; i < 20 && media.length < 12; i++) await flush();
-    // 중간에 못 보내면 멈추고 안내
-    media = [];
-    let cnt = 0;
-    const keep = mediaResult;
+    // 여러 장을 한 번에 묶어서 (물슈노스킬 → 물슈1~12.jpg, 2026-11-17) — sendMedia 에 경로 목록 하나
+    const want = []; for (let i = 1; i <= 12; i++) want.push("/sdcard/Download/물슈" + i + ".jpg");
+    let calls = [], res = {}, hold = null;
     const rm = room("루나");
-    rm.sendMedia = (p) => { media.push(p); cnt++; return Promise.resolve(cnt === 3 ? { error: "없음" } : {}); };
-    sent = [];
-    main.onMessage({ room: rm, message: "물슈노스킬", sender: { name: "x", id: null } });
-    for (let i = 0; i < 10; i++) await flush();
-    t("여러 장: 실패하면 멈춤", media.length === 3, media);
-    t("여러 장: 실패 안내", sent.join().indexOf("물슈3.jpg 를 못 보냈어요 (3/12번째에서 멈췄어요)") !== -1, sent);
-    mediaResult = keep;
+    rm.sendMedia = (p) => { calls.push(p); return hold ? hold.p : Promise.resolve(res); };
+    const sayM = () => { sent = []; main.onMessage({ room: rm, message: "물슈노스킬", sender: { name: "x", id: null } }); };
+    sayM(); await flush();
+    t("일괄: sendMedia 한 번", calls.length === 1, calls);
+    t("일괄: 1~12 순서대로 목록", Array.isArray(calls[0]) && calls[0].join() === want.join(), calls[0]);
+    t("일괄: 글은 안 보냄", sent.length === 0, sent);
+    // 보내는 동안 또 치면 무시
+    calls = []; let done; hold = { p: new Promise((ok) => { done = ok; }) };
+    sayM(); sayM();
+    t("일괄: 보내는 중엔 다시 쳐도 무시", calls.length === 1, calls);
+    done({}); await flush(); hold = null;
+    calls = []; sayM(); await flush();
+    t("일괄: 다 보낸 뒤엔 다시 됨", calls.length === 1, calls);
+    // 몇 장만 실패 / 전부 실패
+    res = { sent: 10, failed: 2, error: "2 files failed" };
+    sayM(); await flush();
+    t("일괄: 일부 실패 안내", sent.join().indexOf("물슈노스킬 사진 12장 중 2장을 못 보냈어요") !== -1, sent);
+    res = { sent: 0, failed: 12, error: "None of the 12 files could be prepared" };
+    sayM(); await flush();
+    t("일괄: 전부 실패 안내", sent.join().indexOf("물슈노스킬 사진 12장을 못 보냈어요") !== -1, sent);
     r = say("x", "/등록 물슈노스킬 아무말", "HX");
     t("여러 장 이름도 등록 거절", r.indexOf("봇이 이미 쓰는 말이라 등록할 수 없습니다") !== -1, r);
+}
+
+// ── 2-3. 조용히해 (관리자, 30분 뒤 저절로 풀림, 2026-11-17) ──
+{
+    const ADM = "멱살잡힌스쳐(후파)";
+    r = say("철수", "/조용히해 영희", "H1");
+    t("조용히해: 관리자만", r.indexOf("권한이 없습니다") !== -1, r);
+    r = say(ADM, "/조용히해 영희", "HA");
+    t("조용히해: 걸기", r.indexOf("영희님이 말할 때마다 \"조용히해\"") !== -1 && r.indexOf("30분") !== -1, r);
+    r = say("영희", "안녕하세요", "H2");
+    t("조용히해: 걸린 사람이 말하면", r === KIND + "|조용히해", r);
+    r = say("영희", "재련가즈아", "H2");
+    t("조용히해: 말은 평소처럼 처리", r.indexOf(KIND + "|조용히해") === 0 && r.indexOf("영희님,") !== -1, r);
+    t("조용히해: 다른 사람은 그대로", say("철수", "안녕", "H1") === "");
+    t("조용히해: 다른 방은 그대로", say("영희", "안녕", "H2", "다른방") === "");
+    r = say(ADM, "/조용히해", "HA");
+    t("조용히해: 목록", r.indexOf("· 영희 — 30분 남음") !== -1, r);
+    r = say(ADM, "/조용히해 없는사람", "HA");
+    t("조용히해: 모르는 이름", r.indexOf("찾을 수 없어요") !== -1, r);
+    r = say(ADM, "/조용히해제_영희", "HA");
+    t("조용히해: 풀기 (밑줄)", r.indexOf("영희님의 조용히해를 풀었어요") !== -1, r);
+    t("조용히해: 풀린 뒤 조용", say("영희", "안녕", "H2") === "");
+    // 30분 뒤 저절로
+    say(ADM, "/조용히해_철수", "HA");
+    t("조용히해: 다시 걸기", say("철수", "안녕", "H1") === KIND + "|조용히해");
+    const realGetTime = Date.prototype.getTime;
+    Date.prototype.getTime = function () { return realGetTime.call(this) + 31 * 60000; };
+    t("조용히해: 30분 지나면 풀림", say("철수", "안녕", "H1") === "");
+    Date.prototype.getTime = realGetTime;
+    // 다시 켜도 유지 (데이터 파일)
+    say(ADM, "/조용히해 영희", "HA");
+    const db2 = JSON.parse(fs.readFileSync(path.join(PROJ, "data", DBFILE + ""), "utf8"));
+    t("조용히해: 파일에 저장", db2.shush && db2.shush[KIND] && Object.keys(db2.shush[KIND]).length === 1, db2.shush);
+    r = say(ADM, "/조용히해제 전부", "HA");
+    t("조용히해: 전부 풀기", r.indexOf("모두 풀었어요 (1명)") !== -1, r);
+    // 이름 일부만 써도 (2026-11-17 사용자 요청)
+    say("김사과님", "안녕", "HS1"); say("김포도님", "안녕", "HS2");
+    r = say(ADM, "/조용히해 사과", "HA");
+    t("조용히해: 이름 일부로 걸기", r.indexOf("김사과님님이 말할 때마다") !== -1 && r.indexOf("/조용히해제 김사과님") !== -1, r);
+    t("조용히해: 일부로 건 사람이 말하면", say("김사과님", "ㅎㅇ", "HS1") === KIND + "|조용히해");
+    t("조용히해: 비슷한 이름은 그대로", say("김포도님", "ㅎㅇ", "HS2") === "");
+    r = say(ADM, "/조용히해 김", "HA");
+    t("조용히해: 여럿이면 후보 안내", r.indexOf("2명이에요") !== -1 && r.indexOf("· 김사과님") !== -1 && r.indexOf("· 김포도님") !== -1, r);
+    t("조용히해: 여럿이면 안 걸림", say("김포도님", "ㅎㅇ", "HS2") === "");
+    r = say(ADM, "/조용히해제 김", "HA");
+    t("조용히해: 풀 때는 걸린 사람 중에서 찾음", r.indexOf("김사과님님의 조용히해를 풀었어요") !== -1, r);
+    r = say(ADM, "/조용히해 없는사람", "HA");
+    t("조용히해: 조각도 없으면", r.indexOf("찾을 수 없어요") !== -1, r);
+    r = say("x", "/등록_조용히해_아무말", "HX");
+    t("조용히해: 그냥 '조용히해' 는 등록 가능한 일반 말", r.indexOf("봇이 이미 쓰는 말") === -1, r);
+    say("x", "/삭제_조용히해", "HX");
 }
 
 // ── 3. /내정보 — hash 값은 안 보인다 ──
