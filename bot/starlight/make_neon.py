@@ -312,7 +312,7 @@ rep('''function keyByLastName(name) {
     for (var k in people) {''')
 # ── 입퇴장·닉변·삭제 감지 (KakaoDB 플러그인, 2026-11-16 — 루나봇부터) ──
 # bot/starlight/kakaodb_watch.js 를 본체 끝(return 앞)에 넣고, response 앞에서 /감지 명령을 먼저 본다.
-KAKAODB_BOTS = ['luna', 'tomato', 'lemon', 'turtle', 'sageon']
+KAKAODB_BOTS = ['luna', 'tomato', 'lemon', 'sky', 'sageon']
 HAS_KW = key in KAKAODB_BOTS
 if HAS_KW:
     KW = io.open(os.path.join(ROOT, 'bot', 'starlight', 'kakaodb_watch.js'), encoding='utf-8').read()

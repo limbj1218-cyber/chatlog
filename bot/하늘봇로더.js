@@ -1,26 +1,26 @@
 /**
  * ═══════════════════════════════════════════════════════════
- *  거북봇 로더 — 이 파일만 봇 앱(메신저봇R 등)에 붙여넣으면 됩니다.
+ *  하늘봇 로더 — 이 파일만 봇 앱(메신저봇R 등)에 붙여넣으면 됩니다.
  *
- *  동작: GitHub에 있는 본체 코드(bot/거북봇.js)를 읽어와 실행합니다.
+ *  동작: GitHub에 있는 본체 코드(bot/하늘봇.js)를 읽어와 실행합니다.
  *  - 방 목록과 관리자 목록은 이 로더(폰)에만 두어도 되고, 비워두면 본체 기본값을 씁니다
- *  - 본체가 갱신되면 방에서 /거북업데이트 (관리자만) 또는 재컴파일
+ *  - 본체가 갱신되면 방에서 /하늘업데이트 (관리자만) 또는 재컴파일
  *
  *  ◆ 지원: 메신저봇R 신버전(API2) / 구버전(API1) / 다크토네이도 챗봇
  *  ◆ 본체 로드: ① 동적 평가 → ② modules 폴더 + require (API2처럼 eval 막힌 앱)
  * ═══════════════════════════════════════════════════════════
  */
-var scriptName = "거북봇";
+var scriptName = "하늘봇";
 var LOADER_VER = "1113-1";   // 루나봇 로더 1112-3 과 같은 코드 (/내정보·hash 숨김·API2 우선 포함)
 var GLOBAL_SCOPE = this;
 
 // ── 폰에만 두는 설정 (비워두면 본체 기본값 사용) ────────────
-var MY_ROOMS = ["거북"];
+var MY_ROOMS = ["하늘"];
 var MY_ADMINS = ["후파"];   // 대화명에 이 낱말이 들어 있으면 관리자
 // ────────────────────────────────────────────────────────────
 
 var SRC_URL = "https://raw.githubusercontent.com/limbj1218-cyber/chatlog/main/bot/" +
-    encodeURIComponent("거북봇.js");
+    encodeURIComponent("하늘봇.js");
 
 var remoteResponse = null;
 var loadedAt = null;
@@ -47,7 +47,7 @@ function fetchText(url) {
         if (typeof org !== "undefined" && org.jsoup) {
             return String(org.jsoup.Jsoup.connect(url)
                 .ignoreContentType(true)
-                .userAgent("turtle-loader")
+                .userAgent("sky-loader")
                 .timeout(15000)
                 .maxBodySize(0)
                 .execute().body());
@@ -55,7 +55,7 @@ function fetchText(url) {
     } catch (e) {}
 
     var conn = new java.net.URL(url).openConnection();
-    conn.setRequestProperty("User-Agent", "turtle-loader");
+    conn.setRequestProperty("User-Agent", "sky-loader");
     conn.setConnectTimeout(15000);
     conn.setReadTimeout(20000);
     var br = new java.io.BufferedReader(
@@ -78,7 +78,7 @@ function evalCode(src) {
         var cx = Ctx.getCurrentContext();
         var entered = false;
         if (!cx) { cx = Ctx.enter(); entered = true; }
-        try { return cx.evaluateString(GLOBAL_SCOPE, src, "turtle", 1, null); }
+        try { return cx.evaluateString(GLOBAL_SCOPE, src, "sky", 1, null); }
         finally { if (entered) Ctx.exit(); }
     } catch (e) { err = "rhino: " + e; }
     throw err;
@@ -110,7 +110,7 @@ function cleanOldModules(dir, keep) {
         if (!files) return;
         for (var i = 0; i < files.length; i++) {
             var n = String(files[i].getName());
-            if (n.indexOf("turtle_core_") === 0 && n !== keep) files[i]["delete"]();
+            if (n.indexOf("sky_core_") === 0 && n !== keep) files[i]["delete"]();
         }
     } catch (e) {}
 }
@@ -121,7 +121,7 @@ function loadViaRequire(code) {
     var dir = botFolder() + "modules";
     try { new java.io.File(dir).mkdirs(); } catch (e) {}
 
-    var fname = "turtle_core_" + new Date().getTime();
+    var fname = "sky_core_" + new Date().getTime();
     var body = "module.exports = function (__ROOMS__, __ADMINS__) {\n" + code +
         "\nif (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;" +
         "\nif (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;" +
@@ -256,7 +256,7 @@ function makeWho(sender, extra) {
 
 /** /내정보 — 이 폰의 앱이 사람을 구분할 값을 주는지 확인 */
 function myInfoText(sender, extra) {
-    var lines = ["🪪 내 정보 (거북봇 로더 " + LOADER_VER + ")", "대화명: " + sender, "받은 방식: " + apiMode];
+    var lines = ["🪪 내 정보 (하늘봇 로더 " + LOADER_VER + ")", "대화명: " + sender, "받은 방식: " + apiMode];
     // ★ hash·지문은 사람을 구분하는 열쇠라 값은 절대 보여주지 않는다 — 있는지만 알려준다 (2026-11-12)
     var h = authorHash(extra);
     lines.push("보낸 사람 hash: " + (h ? "있음 ✅ (값은 비공개)" : "없음 ❌"));
@@ -287,10 +287,10 @@ function handle(room, msg, sender, isGroupChat, replier, extra) {
         lastSeen = key; lastSeenAt = now;
 
         // 로더 자체 명령
-        if (text === "/거북업데이트") {
+        if (text === "/하늘업데이트") {
             if (!isLoaderAdmin(sender)) return;
             loadRemote();
-            replier.reply("🔄 깃헙에서 최신 거북봇 코드를 불러왔어요! (" + loadMethod + ")");
+            replier.reply("🔄 깃헙에서 최신 하늘봇 코드를 불러왔어요! (" + loadMethod + ")");
             return;
         }
         if (text === "/내정보") {
@@ -298,8 +298,8 @@ function handle(room, msg, sender, isGroupChat, replier, extra) {
             replier.reply(myInfoText(sender, extra));
             return;
         }
-        if (text === "/거북로더") {
-            replier.reply("🧩 거북봇 로더 상태 (로더 " + LOADER_VER + ")\n" +
+        if (text === "/하늘로더") {
+            replier.reply("🧩 하늘봇 로더 상태 (로더 " + LOADER_VER + ")\n" +
                 "API 방식: " + apiMode + "\n" +
                 "API2 리스너: " + (api2Ready ? "등록됨 ✅" : "미등록 (API1 모드)") + "\n" +
                 "방 이름: [" + room + "]\n" +
@@ -322,7 +322,7 @@ function handle(room, msg, sender, isGroupChat, replier, extra) {
     } catch (e) {
         lastError = String(e);
         if (shouldReportError(text)) {
-            try { replier.reply("⚠️ 거북봇 로더 오류: " + e); } catch (e2) {}
+            try { replier.reply("⚠️ 하늘봇 로더 오류: " + e); } catch (e2) {}
         }
     }
 }

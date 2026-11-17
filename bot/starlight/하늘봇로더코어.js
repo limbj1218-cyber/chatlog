@@ -1,20 +1,20 @@
 /**
  * ═══════════════════════════════════════════════════════════
- *  거북봇 로더 코어 — StarLight(NeonJS) 판 (2026-11-17)
+ *  하늘봇 로더 코어 — StarLight(NeonJS) 판 (2026-11-17)
  *
- *  폰에 붙여넣는 건 거북봇로더.js(틀)이고, 로더 기능은 전부 여기 있다.
+ *  폰에 붙여넣는 건 하늘봇로더.js(틀)이고, 로더 기능은 전부 여기 있다.
  *  틀이 이 파일을 깃헙에서 받아 프로젝트 폴더에 두고 import 해서 메시지·카톡 DB 이벤트를 그대로 넘긴다.
- *  /거북업데이트 를 치면 본체와 함께 이 코어도 새로 받으므로, 로더를 고쳐도 폰에 다시 붙여넣지 않아도 된다.
+ *  /하늘업데이트 를 치면 본체와 함께 이 코어도 새로 받으므로, 로더를 고쳐도 폰에 다시 붙여넣지 않아도 된다.
  *  ★ 위쪽(모듈 맨 위)에는 아무 코드도 두지 말 것 — 업데이트 때 새 코어를 시험 삼아 import 해 보므로
  *    전부 loaderCore() 안에 있어야 한다.
  *
  *  ◆ 동작
- *    - 본체(bot/starlight/거북봇.js)를 깃헙에서 받아 프로젝트 폴더에 turtle_body.js 로 두고 import 한다.
- *    - /거북업데이트 (관리자) → 새 코어·새 본체를 받아 먼저 읽어 보고(깨진 것으로 바꾸지 않게), 바꾼 뒤 다시 컴파일한다.
- *      옛 것은 turtle_core_prev.js·turtle_body_prev.js 로 남긴다.
- *    - 데이터 파일(turtle_Database.json·claude_token.txt)은 프로젝트의 data 폴더에 둔다.
- *    - /거북로더 (상태), /내정보 (사람 구분 값이 오는지 — 값은 절대 안 보여 준다), /거북가져오기 (옛 데이터 파일, 관리자)
- *    - make_loaders.py 가 거북봇로더코어.js 에서 만든 파일이다 — 손으로 고치지 말 것
+ *    - 본체(bot/starlight/하늘봇.js)를 깃헙에서 받아 프로젝트 폴더에 sky_body.js 로 두고 import 한다.
+ *    - /하늘업데이트 (관리자) → 새 코어·새 본체를 받아 먼저 읽어 보고(깨진 것으로 바꾸지 않게), 바꾼 뒤 다시 컴파일한다.
+ *      옛 것은 sky_core_prev.js·sky_body_prev.js 로 남긴다.
+ *    - 데이터 파일(sky_Database.json·claude_token.txt)은 프로젝트의 data 폴더에 둔다.
+ *    - /하늘로더 (상태), /내정보 (사람 구분 값이 오는지 — 값은 절대 안 보여 준다), /하늘가져오기 (옛 데이터 파일, 관리자)
+ *    - make_loaders.py 가 하늘봇로더코어.js 에서 만든 파일이다 — 손으로 고치지 말 것
  *
  *  ※ 메시지 처리 중에는 네트워크를 기다리지 않는다 — fetch 는 await 하는 동안 다른 메시지를 처리한다.
  *  ※ onMessage 밖으로 오류가 나가면 StarLight 가 프로젝트를 꺼 버리므로(오류 발생시 비활성화) 전부 잡는다.
@@ -23,26 +23,26 @@
 export default async function loaderCore(CFG) {
     CFG = CFG || {};
     const LOADER_VER = "core-1117-2";
-    const KEY = "turtle";
-    const BOT_NAME = "거북봇";
+    const KEY = "sky";
+    const BOT_NAME = "하늘봇";
 
     // ── 기본 설정 — 폰의 틀(로더.js) SETTINGS 에 적은 값이 있으면 그게 먼저다 ────────────
-    const MY_ROOMS = CFG.MY_ROOMS !== undefined && CFG.MY_ROOMS !== null ? CFG.MY_ROOMS : ["거북"];
+    const MY_ROOMS = CFG.MY_ROOMS !== undefined && CFG.MY_ROOMS !== null ? CFG.MY_ROOMS : ["하늘"];
     const MY_ADMINS = CFG.MY_ADMINS !== undefined && CFG.MY_ADMINS !== null ? CFG.MY_ADMINS : ["후파"];   // 대화명에 이 낱말이 들어 있으면 관리자
     // ────────────────────────────────────────────────────────────
 
-    const CMD_UPDATE = "/거북업데이트";
-    const CMD_INFO = "/거북로더";
-    const CMD_IMPORT = "/거북가져오기";
+    const CMD_UPDATE = "/하늘업데이트";
+    const CMD_INFO = "/하늘로더";
+    const CMD_IMPORT = "/하늘가져오기";
     const SRC_URL = "https://raw.githubusercontent.com/limbj1218-cyber/chatlog/main/bot/starlight/" +
         encodeURIComponent(BOT_NAME + ".js");
 
     // 옛 메신저봇R 판이 데이터를 두던 곳 (가져오기에서 차례로 찾아본다)
     const OLD_DATA_PLACES = [
         "/sdcard/Download",
-        "/sdcard/거북",
+        "/sdcard/하늘",
         "/sdcard/Android/data/com.xfl.msgbot/files",
-        "/sdcard/Android/data/com.xfl.msgbot/files/turtle"
+        "/sdcard/Android/data/com.xfl.msgbot/files/sky"
     ];
     const DATA_FILES = [KEY + "_Database.json", "claude_token.txt"];
 
@@ -176,7 +176,7 @@ export default async function loaderCore(CFG) {
     }
     console.log("[" + BOT_NAME + "] 로더 " + LOADER_VER + " · 본체 " + (body ? body.version + " (" + bodyFrom + ")" : "없음 — " + loadErr));
 
-    // ─── /거북업데이트 ───
+    // ─── /하늘업데이트 ───
     async function doUpdate(room) {
         if (updating) { room.send("⏳ 이미 업데이트 중이에요."); return; }
         updating = true;
@@ -212,7 +212,7 @@ export default async function loaderCore(CFG) {
         }
     }
 
-    // ─── /거북가져오기 [폴더] — 옛 메신저봇R 판 데이터 파일을 data 폴더로 복사 ───
+    // ─── /하늘가져오기 [폴더] — 옛 메신저봇R 판 데이터 파일을 data 폴더로 복사 ───
     function importOldData(arg) {
         const places = arg ? [arg.replace(/\/+$/, "")] : OLD_DATA_PLACES;
         const lines = ["📦 옛 데이터 가져오기"];

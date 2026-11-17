@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════
- *  거북봇 — "거북" 방 전용 재련(강화) 미니게임
+ *  하늘봇 — "하늘" 방 전용 재련(강화) 미니게임
  *
  *  ◆ 명령어
  *    제련가즈아 / 재련가즈아 → 재련 시도 (하루 2회)
@@ -27,61 +27,105 @@
  *    /전부_값                 → 이 방 사람 모두의 재련값을 값으로 바꾼다 (관리자)
  *    /초기화 /삭제            → 관리자 전용 (대화명에 "후파"가 들어간 사람)
  *
- *  ◆ 루나봇(bot/루나봇.js)을 그대로 복사해 거북 방용으로 따로 만든 봇이다 (2026-11-17, 기능 동일 — 토마토·레몬과 같은 방식).
- *    - 방(거북)·데이터 파일(turtle_Database.json)이 루나·토마토·레몬·사건봇과 따로다. 관리자는 루나와 같이 "후파".
+ *  ◆ 루나봇(bot/루나봇.js)을 그대로 복사해 하늘 방용으로 따로 만든 봇이다 (2026-11-17, 기능 동일 — 토마토·레몬과 같은 방식).
+ *    - 방(하늘)·데이터 파일(sky_Database.json)이 루나·토마토·레몬·사건봇과 따로다. 관리자는 루나와 같이 "후파".
  *    - 루나 방 전용(고정 응답 퉤·ㅋ, 사진 응답, 루나 수리 문구)은 넣지 않았다.
+ *    - 처음엔 "거북봇"(거북 방)으로 만들었다가 같은 날 방 이름이 하늘로 바뀌어 하늘봇이 됐다 (사용자 요청).
  *    - 루나 방 전용 데이터 손질(ONE_TIME_FIXES)은 옮기지 않았다.
  *    - (아래는 루나봇에서 이어받은 설명)
  *    - 사건봇과 달리 파괴/수리가 있다 (제련봇 방식, 확률표도 제련봇과 같다).
  *      파괴되면 재련이 막히고, 그때 재련가즈아를 치면 수리 문구(REPAIR_KEYWORDS 7개 중 하나)를 알려준다. 수리하면 그날 재련 기회 +1.
  *      파괴·수리 문구는 파일에 저장하므로 봇을 다시 켜도 유지된다. 수리는 재련 횟수를 쓰지 않는다.
  *    - 사건봇과 같은 폰에서 함께 돌려도 기록이 섞이지 않는다.
- *    - 제련봇·사건봇·루나봇과 명령어(/랭킹 등)가 같으므로, 그 봇들 방 목록에 "거북"을 넣지 말 것.
+ *    - 제련봇·사건봇·루나봇과 명령어(/랭킹 등)가 같으므로, 그 봇들 방 목록에 "하늘"을 넣지 말 것.
  *
- *  ◆ StarLight(NeonJS) 판 (2026-11-16) — bot/거북봇.js(메신저봇R 판)를 그대로 두고 따로 만든 것
- *    - 이 파일은 ES 모듈이다. 내보낸 함수 하나(export default)에 본체 전체가 들어 있고,
- *      로더(bot/starlight/거북봇로더.js)가 (방 목록, 관리자, 폰 기능 __PLAT__) 을 넘겨 부른다.
- *    - 파일·보내기·네트워크·타이머는 전부 __PLAT__ 으로만 한다 (java·FileStream·Thread 없음).
- *    - 게임 로직은 메신저봇R 판과 같다. 메신저봇R 판을 고치면 bot/starlight/make_neon.py 로 다시 만든다.
- *    - NeonJS 는 한 번에 한 작업만 돌리므로 메시지가 동시에 처리될 일이 없다.
+ *  ◆ 호환성
+ *    - 메신저봇R 신버전(API2) / 구버전(API1) / 다크토네이도 챗봇 모두 동작
+ *    - FileStream(readJson/saveJson)이 없는 앱에서는 java.io + JSON 으로 자동 대체
+ *    - 저장 폴더는 쓰기 가능한 곳을 자동 선택 (권한 없어도 앱 전용 폴더 사용)
+ *
+ *  ※ 안드로이드 Rhino 엔진 호환을 위해 ES5 문법만 사용한다.
  * ═══════════════════════════════════════════════════════════
  */
-export default function turtleBody(__ROOMS__, __ADMINS__, __PLAT__) {
-var scriptName = "거북봇";
-var BOT_VER = "1117-1s8";
+var scriptName = "하늘봇";
+var BOT_VER = "1117-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
-var ROOMS = ["거북"];
+var ROOMS = ["하늘"];
 var ADMINS = ["후파"];                                   // 대화명에 이 낱말이 "들어 있기만" 하면 관리자
 var MAX_ATTEMPTS = 2;                                    // 하루 재련 횟수
 // ────────────────────────────────────────────────────────
 
-// ═══════════════ 앱 호환 계층 (StarLight NeonJS) ═══════════════
-// 파일은 로더가 정한 폴더(프로젝트의 data 폴더)에 이름으로만 읽고 쓴다.
-var PLAT = __PLAT__ || {};
+// ═══════════════ 앱 호환 계층 ═══════════════
 
-function fileRead(name) {
-    if (!name) return null;
+function fileRead(path) {
     try {
-        var r = PLAT.read ? PLAT.read(name) : null;
-        if (r === null || r === undefined || String(r) === "") return null;
-        return String(r);
-    } catch (e) { return null; }
+        if (typeof FileStream !== "undefined" && FileStream && FileStream.read) {
+            var r = FileStream.read(path);
+            if (r !== null && r !== undefined && String(r) !== "") return String(r);
+        }
+    } catch (e) {}
+    try {
+        var f = new java.io.File(path);
+        if (!f.exists()) return null;
+        var br = new java.io.BufferedReader(
+            new java.io.InputStreamReader(new java.io.FileInputStream(f), "UTF-8"));
+        var sb = new java.lang.StringBuilder(), line;
+        while ((line = br.readLine()) !== null) { sb.append(line); sb.append("\n"); }
+        br.close();
+        return String(sb.toString());
+    } catch (e) {}
+    return null;
 }
 
-function fileWrite(name, text) {
-    try { return PLAT.write ? !!PLAT.write(name, String(text)) : false; } catch (e) { return false; }
+function fileWrite(path, text) {
+    try {
+        if (typeof FileStream !== "undefined" && FileStream && FileStream.write) {
+            FileStream.write(path, text);
+            return true;
+        }
+    } catch (e) {}
+    try {
+        var f = new java.io.File(path);
+        var parent = f.getParentFile();
+        if (parent && !parent.exists()) parent.mkdirs();
+        var w = new java.io.OutputStreamWriter(new java.io.FileOutputStream(f, false), "UTF-8");
+        w.write(text);
+        w.close();
+        return true;
+    } catch (e) {}
+    return false;
 }
 
-var BASE_DIR = "";
-// ※ 메신저봇R 판과 같은 파일 이름 — 옛 폰의 파일을 프로젝트 data 폴더에 그대로 넣으면 기록이 이어진다
-var DATA_FILE = "turtle_Database.json";
+/** 쓰기 가능한 저장 폴더 자동 선택 (권한 없어도 앱 전용 폴더는 쓸 수 있다) */
+function pickBaseDir() {
+    var cands = [];
+    try {
+        var app = android.app.ActivityThread.currentApplication();
+        var ext = app.getExternalFilesDir(null);
+        if (ext) cands.push(String(ext.getAbsolutePath()));
+        cands.push(String(app.getFilesDir().getAbsolutePath()) + "/sky");
+    } catch (e) {}
+    cands.push("/sdcard/하늘");
+    for (var i = 0; i < cands.length; i++) {
+        try {
+            if (fileWrite(cands[i] + "/sky_write_test.txt", "ok") &&
+                String(fileRead(cands[i] + "/sky_write_test.txt")).indexOf("ok") === 0) return cands[i];
+        } catch (e) {}
+    }
+    return "/sdcard/하늘";
+}
+
+var BASE_DIR = pickBaseDir();
+// ※ 사건봇·루나봇과 같은 앱 폴더를 쓸 수 있으므로 파일 이름을 반드시 다르게 둔다
+//   (Database.json 은 사건봇, luna_Database.json 은 루나봇 것)
+var DATA_FILE = BASE_DIR + "/sky_Database.json";
 
 // ═══════════════ 데이터 ═══════════════
 // roomUsers 는 원본에서 Set 이었지만, Rhino 호환을 위해 { 이름: true } 객체로 다룬다.
 // 파일에는 원본과 같은 배열 형태로 저장하므로 기존 데이터와 호환된다.
 
-var __TURTLE_DATA__ = null;   // 파일 저장이 막혔을 때 메모리 사본
+if (typeof __SKY_DATA__ === "undefined") __SKY_DATA__ = null;
 
 function loadData() {
     var raw = fileRead(DATA_FILE);
@@ -90,7 +134,7 @@ function loadData() {
     if (raw) {
         try { parsed = JSON.parse(raw); } catch (e) {}
     }
-    if (!parsed && __TURTLE_DATA__) parsed = __TURTLE_DATA__;
+    if (!parsed && __SKY_DATA__) parsed = __SKY_DATA__;
     if (!parsed) parsed = {};
 
     var rooms = {};
@@ -160,7 +204,7 @@ function saveData() {
     out.people = people;
     out.appliedFixes = appliedFixes;
     out.alarms = alarms;
-    try { __TURTLE_DATA__ = out; } catch (e) {}       // 파일 저장이 막혀도 메모리에는 유지
+    try { __SKY_DATA__ = out; } catch (e) {}       // 파일 저장이 막혀도 메모리에는 유지
     fileWrite(DATA_FILE, JSON.stringify(out));
 }
 
@@ -324,23 +368,7 @@ function mergeNameInto(name, key) {
 }
 
 /** hash 없이 온 메시지 — 이 대화명을 가장 최근에 쓴 hash 사람의 키 (없으면 null) */
-/** 회원 ID 가 아닌 옛 사람 기록(#h:, k 없음) 중 이 대화명인 것 — 최초 대화명 먼저, 없으면 최근 대화명 */
-function oldRecordForName(name) {
-    var k, byLast = null;
-    for (k in people) {
-        if (!people.hasOwnProperty(k) || k.indexOf(HASH_PREFIX + "k") === 0) continue;
-        if (people[k].name === name) return k;
-        if (!byLast && people[k].last === name) byLast = k;
-    }
-    return byLast;
-}
-
 function keyByLastName(name) {
-    // StarLight 판: 최초 대화명이 같은 사람을 먼저 (먼저 생긴 기록부터).
-    // 잘못된 id 때문에 최근 대화명(last)이 엉뚱하게 바뀐 기록이 있어도 처음 이름은 그대로라서다.
-    for (var k0 in people) {
-        if (people.hasOwnProperty(k0) && people[k0].name === name) return k0;
-    }
     var best = null, bestAt = -1;
     for (var k in people) {
         if (!people.hasOwnProperty(k) || people[k].last !== name) continue;
@@ -354,22 +382,12 @@ function keyByLastName(name) {
 function userKeyOf(sender, who) {
     var name = String(sender);
     var h = "";
-    // StarLight 판: 알림의 sender.id(who.hash)는 앞사람 것이 섞여 와서 안 쓰고, 로더가 카톡 DB 에서 찾은 회원 ID 를 쓴다
-    try { h = who && who.kakaoId ? "k" + String(who.kakaoId) : ""; } catch (e) { h = ""; }
+    try { h = who && who.hash ? String(who.hash) : ""; } catch (e) { h = ""; }
     if (!h || h === "null" || h === "undefined") return keyByLastName(name) || name;
     var key = HASH_PREFIX + h;
     var p = people[key], changed = false;
     if (!p) {
-        // 처음 보는 회원 ID — 같은 대화명의 옛 기록(메신저봇R 때 #h: 기록)이 있으면 이어받는다 (재련값·횟수·파괴·방 기록·표시 이름)
-        var old = oldRecordForName(name);
-        if (old) {
-            p = people[key] = people[old];
-            delete people[old];
-            mergeNameInto(old, key);
-            if (p.last !== name) { addNickHistory(p, name); p.last = name; }
-        } else {
-            p = people[key] = { name: name, last: name };
-        }
+        p = people[key] = { name: name, last: name };
         changed = true;
     } else if (p.last !== name) {
         addNickHistory(p, name);
@@ -970,7 +988,7 @@ function handleExp(raw) {
 // /메뉴얼 → 이 봇의 사용법. 맞춤법이 헷갈리기 쉬워 /매뉴얼 도 받는다.
 // ※ 명령어를 늘리거나 바꾸면 여기도 같이 고칠 것. 관리자 명령(/초기화·/삭제)은 일부러 뺐다 (사용자 요청).
 var MANUAL_TEXT = [
-    "📖 거북봇 사용법",
+    "📖 하늘봇 사용법",
     "",
     "⚔️ 재련 (하루 2번)",
     "재련가즈아 — 장비 재련. 성공하면 +1, 실패하면 그대로거나 1 내려가요",
@@ -999,10 +1017,6 @@ var MANUAL_TEXT = [
     "/전생 이름 — 이름으로 보는 전생 (이름 빼면 내 이름)",
     "/닉네임 — 두 글자 닉네임 추천",
     "/닉변감지 — 대화명을 바꾼 사람 보기 (처음 이름 → 지금 이름)",
-    "",
-    "👀 감지 (카톡 DB 플러그인이 연결됐을 때)",
-    "들어오면 환영 · 나가면 알림 · 대화명을 바꾸면 알림 · 메시지를 지우면 알림",
-    "/감지 — 지금 켜진 감지 보기",
     "",
     "🗺️ ROX 정보 (누구나)",
     "/경험치 레벨 — 추천 사냥 몬스터 (예: /경험치 110)",
@@ -1039,7 +1053,7 @@ var ASK = {
     POLL_MS: 10000,
     GIVE_UP_MS: 300000     // 5분 넘으면 포기
 };
-var ASK_TOKEN_FILE = "claude_token.txt";
+var ASK_TOKEN_FILE = BASE_DIR + "/claude_token.txt";
 var askToken = "";
 var askBusy = 0;
 var askLastAt = {};        // "방|이름" → 마지막으로 물은 시각(ms)
@@ -1056,59 +1070,71 @@ var askReplier = {};       // 방 → 마지막 replier (먼저 말 걸기가 �
 })();
 
 function askSleep(ms) {
-    return new Promise(function (ok) { (PLAT.setTimeout || setTimeout)(ok, ms); });
+    try { java.lang.Thread.sleep(ms); } catch (e) {}
 }
 
-/** 백그라운드 실행 — NeonJS 는 fetch 를 기다리는 동안 다른 메시지를 처리하므로 스레드가 필요 없다 */
+/** 백그라운드 실행. 스레드를 못 만들면 false (그 자리에서 실행하지 않는다) */
 function askRunAsync(fn) {
+    var body = function () { try { fn(); } catch (e) { askLastErr = "스레드 오류: " + e; } };
     try {
-        Promise.resolve().then(fn).catch(function (e) { askLastErr = "오류: " + e; });
+        var t = new java.lang.Thread(body);
+        t.setDaemon(true); t.start();
         return true;
-    } catch (e) { return false; }
+    } catch (e) {}
+    try {
+        var t2 = new java.lang.Thread(new JavaAdapter(java.lang.Runnable, { run: body }));
+        t2.setDaemon(true); t2.start();
+        return true;
+    } catch (e) {}
+    return false;
 }
 
-/** 깃헙 API → Promise<{ code, body }> */
+/** 깃헙 API → { code, body } */
 function askHttp(method, url, bodyStr, accept) {
-    var headers = {
-        "Authorization": "Bearer " + askToken,
-        "Accept": accept || "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "chatbot-ask"
-    };
-    if (bodyStr) headers["Content-Type"] = "application/json; charset=utf-8";
-    var f = PLAT.fetch || fetch;
-    return f(url, { method: method, headers: headers, body: bodyStr || undefined }).then(function (res) {
-        return res.text().then(function (t) { return { code: Number(res.status), body: String(t) }; });
-    });
+    var conn = new java.net.URL(url).openConnection();
+    conn.setRequestMethod(method);
+    conn.setRequestProperty("Authorization", "Bearer " + askToken);
+    conn.setRequestProperty("Accept", accept || "application/vnd.github+json");
+    conn.setRequestProperty("X-GitHub-Api-Version", "2022-11-28");
+    conn.setRequestProperty("User-Agent", "chatbot-ask");
+    conn.setConnectTimeout(15000);
+    conn.setReadTimeout(20000);
+    if (bodyStr) {
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        var os = conn.getOutputStream();
+        os.write(new java.lang.String(bodyStr).getBytes("UTF-8"));
+        os.close();
+    }
+    var code = Number(conn.getResponseCode());
+    var is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+    var body = "";
+    if (is) {
+        var br = new java.io.BufferedReader(new java.io.InputStreamReader(is, "UTF-8"));
+        var line, first = true;
+        while ((line = br.readLine()) !== null) { body += (first ? "" : "\n") + line; first = false; }
+        br.close();
+    }
+    try { conn.disconnect(); } catch (e) {}
+    return { code: code, body: body };
 }
 
 var ASK_B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-/** 문자열 → UTF-8 바이트 */
-function utf8Bytes(str) {
-    var out = [];
-    for (var i = 0; i < str.length; i++) {
-        var c = str.charCodeAt(i);
-        if (c >= 0xd800 && c <= 0xdbff && i + 1 < str.length) {
-            var d = str.charCodeAt(i + 1);
-            if (d >= 0xdc00 && d <= 0xdfff) { c = 0x10000 + ((c - 0xd800) << 10) + (d - 0xdc00); i++; }
-        }
-        if (c < 0x80) out.push(c);
-        else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 63));
-        else if (c < 0x10000) out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
-        else out.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
-    }
-    return out;
-}
-
 /** UTF-8 → Base64 (깃헙 Contents API 는 내용을 Base64 로 받는다) */
 function askBase64(str) {
-    var bytes = utf8Bytes(String(str));
+    var bytes = new java.lang.String(str).getBytes("UTF-8");
+    try {
+        if (typeof android !== "undefined" && android.util && android.util.Base64) {
+            return String(android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP));
+        }
+    } catch (e) {}
+    try { return String(java.util.Base64.getEncoder().encodeToString(bytes)); } catch (e) {}
     var out = "", i = 0, n = bytes.length;
     while (i < n) {
-        var b0 = bytes[i++];
-        var b1 = i < n ? bytes[i++] : -1;
-        var b2 = i < n ? bytes[i++] : -1;
+        var b0 = bytes[i++] & 0xff;
+        var b1 = i < n ? bytes[i++] & 0xff : -1;
+        var b2 = i < n ? bytes[i++] & 0xff : -1;
         out += ASK_B64.charAt(b0 >> 2);
         out += ASK_B64.charAt(((b0 & 3) << 4) | (b1 < 0 ? 0 : b1 >> 4));
         out += b1 < 0 ? "=" : ASK_B64.charAt(((b1 & 15) << 2) | (b2 < 0 ? 0 : b2 >> 6));
@@ -1117,9 +1143,17 @@ function askBase64(str) {
     return out;
 }
 
-/** 방에 먼저 말 걸기 — 로더가 StarLight 방식(봇 send → Chat.findRoom)으로 보낸다 */
+/** 방에 먼저 말 걸기 — 이 앱에서는 BotManager.getCurrentBot().send 만 된다 (카페봇에서 확인) */
 function askSend(room, text) {
-    try { if (PLAT.send && PLAT.send(room, text)) return true; } catch (e) {}
+    try {
+        if (typeof BotManager !== "undefined" && BotManager && BotManager.getCurrentBot) {
+            var b = BotManager.getCurrentBot();
+            if (b && typeof b.send === "function") { b.send(room, text); return true; }
+        }
+    } catch (e) {}
+    try {
+        if (typeof Api !== "undefined" && Api && Api.replyRoom) { Api.replyRoom(room, text); return true; }
+    } catch (e) {}
     try {
         var r = askReplier[room];
         if (r && typeof r.reply === "function") { r.reply(text); return true; }
@@ -1132,10 +1166,10 @@ function askContentsUrl(name) {
     return "https://api.github.com/repos/" + ASK.REPO + "/contents/" + ASK.DIR + "/" + name;
 }
 
-/** 백그라운드: 질문 올리기 → 워크플로우 깨우기 → 답 기다렸다 보내기 (await 하는 동안 다른 메시지는 그대로 처리된다) */
-async function askWork(job) {
+/** 백그라운드: 질문 올리기 → 워크플로우 깨우기 → 답 기다렸다 보내기 */
+function askWork(job) {
     try {
-        var put = await askHttp("PUT", askContentsUrl("q-" + job.id + ".json"), JSON.stringify({
+        var put = askHttp("PUT", askContentsUrl("q-" + job.id + ".json"), JSON.stringify({
             message: "ask " + job.id,
             content: askBase64(JSON.stringify({
                 id: job.id, room: job.room, sender: job.sender, question: job.question, at: job.at
@@ -1146,7 +1180,7 @@ async function askWork(job) {
             askSend(job.room, "⚠️ 질문을 보내지 못했어요 (깃헙 " + put.code + ")\n관리자는 /클로드 로 상태를 확인해 주세요.");
             return;
         }
-        var wf = await askHttp("POST", "https://api.github.com/repos/" + ASK.WF_REPO +
+        var wf = askHttp("POST", "https://api.github.com/repos/" + ASK.WF_REPO +
             "/actions/workflows/" + ASK.WF_FILE + "/dispatches", JSON.stringify({ ref: ASK.WF_REF }));
         if (wf.code !== 204) {
             askLastErr = "워크플로우 깨우기 실패 (HTTP " + wf.code + ")";
@@ -1154,12 +1188,12 @@ async function askWork(job) {
             return;
         }
 
-        await askSleep(ASK.FIRST_WAIT_MS);
+        askSleep(ASK.FIRST_WAIT_MS);
         var started = new Date().getTime();
         while (new Date().getTime() - started < ASK.GIVE_UP_MS) {
             var got = null;
             try {
-                got = await askHttp("GET", askContentsUrl("a-" + job.id + ".json") + "?t=" + new Date().getTime(),
+                got = askHttp("GET", askContentsUrl("a-" + job.id + ".json") + "?t=" + new Date().getTime(),
                     null, "application/vnd.github.raw");
             } catch (ne) { got = null; }
             if (got && got.code === 200) {
@@ -1175,7 +1209,7 @@ async function askWork(job) {
                 }
                 return;
             }
-            await askSleep(ASK.POLL_MS);
+            askSleep(ASK.POLL_MS);
         }
         askLastErr = "답 기다리다 포기 (" + (ASK.GIVE_UP_MS / 60000) + "분)";
         askSend(job.room, "⌛ 답이 너무 늦어져서 그만 기다렸어요. 잠시 뒤에 다시 물어봐 주세요.");
@@ -1261,7 +1295,7 @@ function handleAsk(room, raw, sender, isGroupChat) {
         room: room, sender: String(CUR_USER_NAME || sender), question: question, at: d.toISOString()
     };
     askBusy++;
-    if (!askRunAsync(function () { return askWork(job); })) {
+    if (!askRunAsync(function () { askWork(job); })) {
         askBusy--;
         askLastErr = "이 앱에서는 백그라운드 스레드를 만들 수 없음";
         return "⚠️ 이 앱에서는 클로드 답변을 쓸 수 없어요 (백그라운드 실행 불가).";
@@ -1280,8 +1314,8 @@ function handleAsk(room, raw, sender, isGroupChat) {
 // ※ 오늘 쓴 재련 횟수(dailyLimit)는 건드리지 않는다 — 횟수가 갑자기 다시 생기면 사람들이 눈치챈다.
 var ONE_TIME_FIXES = [
     {
-        id: "turtle-ranking-2026-11-17",   // 2026-11-17: 거북봇 시작 — 거북 방 제련랭킹(78명)으로 세팅 (사용자가 준 랭킹 그대로)
-        room: "거북",
+        id: "sky-ranking-2026-11-17",   // 2026-11-17: 하늘봇 시작 — 하늘 방 제련랭킹(78명)으로 세팅 (사용자가 준 랭킹 그대로)
+        room: "하늘",
         wipe: true,
         levels: [
             ["몰랑/스나", 15],
@@ -1364,7 +1398,7 @@ var ONE_TIME_FIXES = [
             ["후야/이륜쟁이", 1]
         ]
     }
-    // 거북 방에서 또 조용히 손질할 일이 생기면 여기에 새 id 로 넣는다 (같은 id 는 다시 안 돈다)
+    // 하늘 방에서 또 조용히 손질할 일이 생기면 여기에 새 id 로 넣는다 (같은 id 는 다시 안 돈다)
 ];
 
 function fixKeyFor(name) {
@@ -1999,7 +2033,7 @@ function handlePastLife(raw, myName) {
 //   알림 객체: days(0=일~6=토, 한국 시간) · dur(그날 첫 알림부터 끝 시각까지 ms, 0 = 한 번) · occEnd(이번 차례 끝)
 //   그냥 /알림 도 마지막에 "요일마다 반복할까요?" 를 묻는다 (2026-11-14 사용자 요청) — 요일을 답하면 고정 알림으로 바뀌고,
 //   0 이거나 5분 안에 답이 없으면 그대로 일회성(끝나면 지워짐)이다.
-// ※ 시계는 NeonJS 의 setInterval 이다 (StarLight 판). 메시지 흐름에서는 대기하지 않는다.
+// ※ 시계는 백그라운드 타이머다(카페봇과 같은 방식: setInterval → java Timer → Thread). 메시지 흐름에서는 대기하지 않는다.
 // ※ /○○업데이트 로 본체를 다시 불러와도 옛 타이머가 남아 두 번 알리지 않게 세대(ALARM_GEN)를 둔다.
 // ※ 폰이 잠들었거나 봇이 꺼져 있다가 10분 넘게 늦어진 알림은 보내지 않고 건너뛴다 (뒤늦은 "공성시작" 방지).
 var ALARM = {
@@ -2214,7 +2248,19 @@ function alarmClockLine(now) {
 function alarmWatchdog(now) {
     if (now - (alarmLastTick || ALARM_STARTED_AT) <= 60000) return;
     try { alarmTick(now); } catch (e) { alarmLastErr = "시계 오류: " + e; }
-    // NeonJS 판은 예비 시계가 없다 — 다시 컴파일하면 시계도 새로 켜진다
+    if (alarmFallbackOn || ALARM_TIMER === "Thread") return;
+    alarmFallbackOn = true;
+    try {
+        var th = new java.lang.Thread(function () {
+            while (true) {
+                java.lang.Thread.sleep(ALARM.TICK_MS);
+                if (!alarmBeat()) return;
+            }
+        });
+        th.setDaemon(true);
+        th.start();
+        ALARM_TIMER += "+Thread";
+    } catch (e) {}
 }
 
 /** 알림 명령이면 답장 문구, 아니면 null. 등록한 사람의 "몇 분마다?" 숫자 답도 여기서 받는다 */
@@ -2411,19 +2457,46 @@ function alarmTick(now) {
 }
 
 function alarmBeat() {
+    try {
+        var v = java.lang.System.getProperty(ALARM_GEN_KEY);
+        if (v !== null && String(v) !== ALARM_GEN) return false;   // 새로 불러온 본체가 맡았다 — 이 타이머는 끝
+    } catch (e) {}
     try { alarmTick(new Date().getTime()); } catch (e) { alarmLastErr = "시계 오류: " + e; }
     return true;
 }
 
-/** NeonJS 는 다시 컴파일하면 옛 타이머가 저절로 꺼지므로 세대 장치가 필요 없다 */
 function alarmStart() {
+    try { java.lang.System.setProperty(ALARM_GEN_KEY, ALARM_GEN); } catch (e) {}
     try {
-        var si = PLAT.setInterval || (typeof setInterval === "function" ? setInterval : null);
-        if (si) {
-            si(alarmBeat, ALARM.TICK_MS);
+        if (typeof setInterval === "function") {
+            var h = setInterval(function () {
+                if (!alarmBeat() && typeof clearInterval === "function") clearInterval(h);
+            }, ALARM.TICK_MS);
             ALARM_TIMER = "setInterval";
+            return;
         }
-    } catch (e) { alarmLastErr = "시계 켜기 실패: " + e; }
+    } catch (e) {}
+    try {
+        if (typeof JavaAdapter !== "undefined") {
+            var timer = new java.util.Timer("alarm-" + scriptName, true);
+            timer.schedule(new JavaAdapter(java.util.TimerTask, {
+                run: function () { if (!alarmBeat()) { try { this.cancel(); } catch (e2) {} } }
+            }), ALARM.TICK_MS, ALARM.TICK_MS);
+            ALARM_TIMER = "JavaAdapter";
+            return;
+        }
+    } catch (e) {}
+    try {
+        var th = new java.lang.Thread(function () {
+            while (true) {
+                java.lang.Thread.sleep(ALARM.TICK_MS);
+                if (!alarmBeat()) return;
+            }
+        });
+        th.setDaemon(true);
+        th.start();
+        ALARM_TIMER = "Thread";
+    } catch (e) {}
 }
 
 // ═══════════════ 메시지 처리 ═══════════════
@@ -2764,380 +2837,38 @@ function response(room, msg, sender, isGroupChat, replier, who) {
     } catch (e) {
         // 일반 대화 중에는 조용히 넘어간다 (명령어일 때만 알림)
         try {
-            if (String(msg).indexOf("/") === 0) replier.reply("⚠️ 거북봇 오류: " + e);
+            if (String(msg).indexOf("/") === 0) replier.reply("⚠️ 하늘봇 오류: " + e);
         } catch (e2) {}
     }
 }
 
-// ═══════════════ 입퇴장·닉변·삭제 감지 (StarLight + KakaoDB 플러그인, 2026-11-16) ═══════════════
-// 이 조각은 make_neon.py 가 StarLight 판 본체(bot/starlight/○○봇.js) 안에 넣는다. 메신저봇R 판에는 없다
-// (메신저봇R 는 카톡 알림만 받아서 입퇴장·삭제를 알 수 없다).
+// ═══════════════ 앱 API 연결 (직접 붙여넣기용) ═══════════════
 //
-// KakaoDB 플러그인(github.com/mooner1022/starlight-kakaodb)이 카톡 DB 를 읽어 주는 이벤트를 로더가 넘겨 준다:
-//   onKakaoMemberJoined → kwJoined, onKakaoMemberLeft → kwLeft, onKakaoMessage → kwMessage, onKakaoMessageDeleted → kwDeleted
-// 사람은 카톡 회원 ID(문자열 — 숫자로 바꾸면 자릿수가 깨진다)로 구분한다. StarLight 알림의 sender.id 와 달리 정확하다.
-//
-//  - 입장: 처음 보는 사람 → "OO님 어서오세요"
-//          전에 있던 사람 → "OO님 돌아오신걸 환영해요", 대화명이 바뀌었으면 "OO님(구 XX님) 돌아오신걸 환영해요"
-//  - 퇴장: "OO님이 나가셨어요" / 내보내졌으면 "OO님이 내보내졌어요"
-//  - 닉변: 말할 때 대화명이 바뀌어 있으면 "🔄 대화명 변경: 처음 → … → 지금" (쓴 이름 누적). /닉변감지 는 이 기록으로 보여준다
-//          오픈채팅에서는 오픈채팅 프로필 이름(kind "open_member")만 본다 — 친구 이름이 섞여 오면 가짜 닉변이 된다
-//  - 삭제: "🗑️ OO님이 메시지를 지웠어요" + 지운 내용
-//  - 기록은 data 폴더의 ○○_kakao.json (방마다 사람 ID → 처음 이름·지금 이름·바뀐 이름들)
-//  - 처음 쓰는 방은 첫 이벤트 때 카톡 DB 의 멤버 목록으로 지금 있는 사람을 미리 적어 둔다
-//    (그래야 원래 있던 사람이 나갔다 오면 "돌아오신걸" 로 맞이한다)
-//  - 관리자(후파)가 /감지 입장 끄기 처럼 하나씩 끄고 켠다. /감지 로 상태를 본다
-
-var KW_FILE = "turtle_kakao.json";   // make_neon.py 가 봇마다 넣는다 (예: luna_kakao.json)
-var KW_KINDS = { "입장": "join", "퇴장": "leave", "닉변": "nick", "삭제": "del" };
-var KW_HIST_MAX = 10;
-var KW_DEL_MAX = 200;      // 지운 내용은 이만큼만 보여준다
-var kwStore = null;
-var kwLastEventAt = 0;
-var kwLastErr = "";
-var kwCounts = {};          // 받은 DB 이벤트 수 (종류별, 다시 컴파일하면 0)
-
-function kwSaw(kind) {
-    kwLastEventAt = new Date().getTime();
-    kwCounts[kind] = (kwCounts[kind] || 0) + 1;
-}
-
-function kwLoad() {
-    if (kwStore) return kwStore;
-    var raw = fileRead(KW_FILE);
-    try { kwStore = raw ? JSON.parse(raw) : null; } catch (e) { kwStore = null; }
-    if (!kwStore || typeof kwStore !== "object") kwStore = {};
-    if (!kwStore.rooms) kwStore.rooms = {};
-    if (!kwStore.off) kwStore.off = {};
-    // v2 (2026-11-16): 오픈채팅에서 친구 이름이 섞여 생긴 가짜 닉변 기록을 한 번 지운다.
-    // 지금 이름을 확실히 모르므로 다음에 말할 때 보이는 이름으로 조용히 맞춘다(quiet — 알림·기록 없이)
-    if (kwStore.v !== 2) {
-        for (var r in kwStore.rooms) {
-            if (!kwStore.rooms.hasOwnProperty(r)) continue;
-            var us = kwStore.rooms[r].users || {};
-            for (var id in us) {
-                if (!us.hasOwnProperty(id)) continue;
-                delete us[id].hist;
-                us[id].last = us[id].name;
-                us[id].quiet = true;
-            }
-        }
-        kwStore.v = 2;
-        try { kwSave(); } catch (e) {}
-    }
-    return kwStore;
-}
-
-/** 오픈채팅방이면 오픈채팅 프로필 이름만 믿는다 — 카톡 DB 플러그인이 오픈 프로필을 못 찾으면 친구 이름을 대신 줘서
- *  같은 사람이 "[조교]후파 → 횡횡 → [조교]후파" 처럼 말할 때마다 바뀌어 보였다 (2026-11-16 겪음) */
-function kwNameOk(kroom, user) {
-    var open = false;
-    try { open = !!kroom.isOpenChat; } catch (e) { open = false; }
-    if (!open || !user) return true;
-    var kind = "";
-    try { kind = kwStr(user.kind); } catch (e) { kind = ""; }
-    return !kind || kind === "open_member";
-}
-
-/** 이 봇이 맡은 방인지 — 오토봇은 EXTRA_ROOMS 까지 보는 inRooms() 가 있다 */
-function kwInRoom(name) {
-    if (typeof inRooms === "function") return !!inRooms(name);
-    return ROOMS.indexOf(name) !== -1;
-}
-
-function kwSave() { fileWrite(KW_FILE, JSON.stringify(kwStore)); }
-
-function kwRoomData(room) {
-    var s = kwLoad();
-    if (!s.rooms[room]) s.rooms[room] = { seeded: false, users: {} };
-    return s.rooms[room];
-}
-
-function kwOn(room, kind) {
-    var off = kwLoad().off[room];
-    return !(off && off[kind]);
-}
-
-function kwStr(v) {
-    if (v === null || v === undefined) return "";
-    return String(v);
-}
-
-// 자바 리스트 → 배열 (Array.from 이 안 되면 번호로)
-function kwList(list) {
-    var out = [];
-    if (!list) return out;
+// 이 파일을 봇 앱에 "직접" 붙여넣었을 때 메신저봇R 신버전(API2)에서도 동작하도록 등록한다.
+// ※ 로더를 통해 불러온 경우엔 로더가 이미 등록했으므로 건너뛴다.
+(function registerApi2Direct() {
+    if (typeof __ROOMS__ !== "undefined") return;   // 로더 경유 → 중복 등록 방지
     try {
-        if (typeof list.size === "function" && typeof list.get === "function") {
-            var n = list.size();
-            for (var i = 0; i < n; i++) out.push(list.get(i));
-            return out;
+        var b = null;
+        if (typeof BotManager !== "undefined" && BotManager && BotManager.getCurrentBot) {
+            b = BotManager.getCurrentBot();
+        } else if (typeof bot !== "undefined" && bot) {
+            b = bot;
         }
-    } catch (e) { out = []; }
-    try { out = Array.from(list); } catch (e2) { out = []; }
-    if (!out.length && list.length > 0) {
-        for (var j = 0; j < list.length; j++) out.push(list[j]);
-    }
-    return out;
-}
+        if (!b || typeof b.addListener !== "function") return;
 
-/** KakaoDB 방 → 이 봇의 방 이름 (ROOMS 에 없으면 null). 폰에서 방 이름을 바꿔 둔 경우(customName)도 본다 */
-function kwRoomName(kroom) {
-    if (!kroom) return null;
-    var names = [];
-    try { names.push(kwStr(kroom.customName)); } catch (e) {}
-    try { names.push(kwStr(kroom.name)); } catch (e) {}
-    for (var i = 0; i < names.length; i++) {
-        if (names[i] && kwInRoom(names[i])) { kwRooms[names[i]] = kroom; return names[i]; }
-    }
-    return null;
-}
-
-// 방 이름 → 마지막으로 이벤트가 온 KakaoDB 방 (명령에서 멤버 목록을 읽을 때 쓴다)
-var kwRooms = {};
-
-function kwSend(kroom, room, text) {
-    var ok = false;
-    try { ok = !!kroom.send(String(text)); } catch (e) { ok = false; }
-    if (!ok) {
-        try { ok = !!(PLAT.send && PLAT.send(room, String(text))); } catch (e2) { ok = false; }
-    }
-    return ok;
-}
-
-/** 처음 쓰는 방: 지금 멤버를 미리 적어 둔다 (방금 들어온 사람 skipIds 는 빼고) */
-function kwSeed(kroom, room, skipIds) {
-    var rd = kwRoomData(room);
-    if (rd.seeded) return;
-    rd.seeded = true;
-    var now = new Date().getTime();
-    try {
-        var members = kwList(kroom.getMembers());
-        for (var i = 0; i < members.length; i++) {
-            var m = members[i];
-            var id = kwStr(m.id), name = kwStr(m.name);
-            if (!id || !name || m.isMe || (skipIds && skipIds[id]) || rd.users[id] || !kwNameOk(kroom, m)) continue;
-            rd.users[id] = { name: name, last: name, at: now, seed: true };
-        }
-    } catch (e) { kwLastErr = "멤버 목록: " + e; }
-}
-
-function kwAddHist(rec, name) {
-    if (!rec.hist || !rec.hist.length) rec.hist = [rec.name];
-    if (rec.hist[rec.hist.length - 1] !== name) rec.hist.push(name);
-    while (rec.hist.length > KW_HIST_MAX) rec.hist.splice(1, 1);
-}
-
-/** 이 사람의 지금 대화명을 적는다. 바뀌었으면 예전 이름을 돌려준다 (안 바뀌었으면 null) */
-function kwSeeName(rd, id, name, now) {
-    var rec = rd.users[id];
-    if (!rec) { rd.users[id] = { name: name, last: name, at: now }; return null; }
-    if (rec.quiet) {   // 정리한 기록 — 처음 보는 이름을 지금 이름으로 조용히 맞춘다
-        delete rec.quiet;
-        if (rec.last !== name) { rec.name = name; rec.last = name; rec.at = now; }
-        return null;
-    }
-    if (rec.last === name) return null;
-    var old = rec.last;
-    kwAddHist(rec, name);
-    rec.last = name;
-    rec.at = now;
-    return old;
-}
-
-function kwJoined(event) {
-    kwSaw("입장");
-    var room = kwRoomName(event.room);
-    if (!room) return;
-    var members = kwList(event.members);
-    var skip = {};
-    for (var i = 0; i < members.length; i++) skip[kwStr(members[i].id)] = true;
-    kwSeed(event.room, room, skip);
-    var rd = kwRoomData(room), now = new Date().getTime(), lines = [];
-    for (var j = 0; j < members.length; j++) {
-        var m = members[j];
-        var id = kwStr(m.id), name = kwStr(m.name);
-        if (!id || m.isMe) continue;
-        if (!name) name = "새 멤버";
-        var rec = rd.users[id];
-        if (!rec) {
-            rd.users[id] = { name: name, last: name, at: now, joins: 1 };
-            lines.push(name + "님 어서오세요");
-        } else {
-            var old = rec.last && rec.last !== name && !rec.quiet ? rec.last : null;
-            if (rec.quiet) { delete rec.quiet; rec.name = name; }
-            if (old) kwAddHist(rec, name);
-            rec.last = name;
-            rec.at = now;
-            rec.left = false;
-            rec.joins = (rec.joins || 1) + 1;
-            lines.push(old ? name + "님(구 " + old + "님) 돌아오신걸 환영해요" : name + "님 돌아오신걸 환영해요");
-        }
-    }
-    kwSave();
-    if (lines.length && kwOn(room, "join")) kwSend(event.room, room, lines.join("\n"));
-    // 봇마다 덧붙인 입장 처리 (오토봇: 오픈프로필로 들어온 사람에게 안내)
-    if (typeof kwAfterJoin === "function") {
-        var joined = [];
-        for (var q = 0; q < members.length; q++) if (members[q] && !members[q].isMe && kwStr(members[q].id)) joined.push(members[q]);
-        try { if (joined.length) kwAfterJoin(event, room, joined); } catch (e) { kwLastErr = "입장 뒤 처리: " + e; }
-    }
-}
-
-function kwLeft(event) {
-    kwSaw("퇴장");
-    var room = kwRoomName(event.room);
-    if (!room) return;
-    var m = event.member;
-    if (!m || m.isMe) return;
-    var id = kwStr(m.id), name = kwStr(m.name);
-    kwSeed(event.room, room, null);
-    var rd = kwRoomData(room), now = new Date().getTime();
-    if (id) {
-        if (name) kwSeeName(rd, id, name, now);
-        else if (!rd.users[id]) rd.users[id] = { name: "?", last: "?", at: now };
-        rd.users[id].left = true;
-        rd.users[id].leftAt = now;
-        if (!name) name = rd.users[id].last;
-    }
-    kwSave();
-    if (name && kwOn(room, "leave")) {
-        kwSend(event.room, room, event.isKicked ? name + "님이 내보내졌어요" : name + "님이 나가셨어요");
-    }
-}
-
-function kwMessage(event) {
-    kwSaw("메시지");
-    var room = kwRoomName(event.room);
-    if (!room) return;
-    var msg = event.message;
-    if (!msg || msg.isMine) return;
-    var s = msg.sender;
-    var id = kwStr(msg.senderId || (s && s.id)), name = kwStr(s && s.name);
-    if (!id || !name || (s && s.isMe)) return;
-    if (!kwNameOk(event.room, s)) return;      // 오픈채팅인데 친구 이름이 온 것 — 대화명으로 치지 않는다
-    var rd = kwRoomData(room);
-    if (!rd.seeded) kwSeed(event.room, room, null);
-    var wasQuiet = rd.users[id] && rd.users[id].quiet;
-    var old = kwSeeName(rd, id, name, new Date().getTime());
-    var rec = rd.users[id];
-    if (rec.left) rec.left = false;
-    if (old !== null || wasQuiet || !rec.seenMsg) { rec.seenMsg = true; kwSave(); }
-    // 바로 앞 이름만이 아니라 지금까지 쓴 이름을 다 보여준다 (처음 → … → 지금, 최대 10개)
-    if (old !== null && kwOn(room, "nick")) {
-        var chain = rec.hist && rec.hist.length >= 2 ? rec.hist.join(" → ") : old + " → " + name;
-        kwSend(event.room, room, "🔄 대화명 변경: " + chain);
-    }
-}
-
-var KW_TYPE_LABEL = { PHOTO: "사진", MULTIPHOTO: "사진 여러 장", VIDEO: "동영상", AUDIO: "음성", FILE: "파일",
-    EMOTICON: "이모티콘", STICKER: "이모티콘", ANIMATED_EMOTICON: "이모티콘", LINK: "링크", CONTACT: "연락처",
-    LOCATION: "위치", SEARCH: "샵검색" };
-
-function kwDeleted(event) {
-    kwSaw("삭제");
-    var room = kwRoomName(event.room);
-    if (!room || !kwOn(room, "del")) return;
-    var msg = event.message;
-    if (!msg || msg.isMine) return;           // 지운 메시지가 DB 에 남아 있지 않으면 누가 무엇을 지웠는지 모른다
-    var name = kwStr(msg.sender && msg.sender.name) || "누군가";
-    var type = kwStr(msg.type), text = kwStr(msg.text);
-    var body;
-    if (text && (type === "TEXT" || type === "REPLY" || type === "UNKNOWN" || type === "")) {
-        body = text.length > KW_DEL_MAX ? text.substring(0, KW_DEL_MAX) + "…" : text;
-    } else {
-        body = "(" + (KW_TYPE_LABEL[type] || "메시지") + ")";
-    }
-    kwSend(event.room, room, "🗑️ " + name + "님이 메시지를 지웠어요\n" + body);
-}
-
-function kwNickText(room) {
-    var rd = kwLoad().rooms[room];
-    if (!rd) return null;
-    var rows = [];
-    for (var id in rd.users) {
-        if (!rd.users.hasOwnProperty(id)) continue;
-        var r = rd.users[id];
-        if (r.hist && r.hist.length >= 2) rows.push({ at: Number(r.at || 0), text: "• " + r.hist.join(" → ") });
-    }
-    if (!rows.length) return "🕵️ 닉변 감지\n아직 대화명을 바꾼 사람이 없어요.";
-    rows.sort(function (a, b) { return b.at - a.at; });
-    var lines = [];
-    for (var i = 0; i < rows.length && i < 30; i++) lines.push(rows[i].text);
-    return "🕵️ 닉변 감지 (" + rows.length + "명)\n" + lines.join("\n") + (rows.length > 30 ? "\n… 외 " + (rows.length - 30) + "명" : "");
-}
-
-function kwStatusText(room) {
-    var connected = "모름";
-    try { if (typeof KakaoDB !== "undefined") connected = KakaoDB.isConnected ? "연결됨 ✅" : "끊김 ❌"; else connected = "플러그인 없음 ❌"; } catch (e) {}
-    var rd = kwLoad().rooms[room], n = 0;
-    if (rd) for (var k in rd.users) if (rd.users.hasOwnProperty(k)) n++;
-    var parts = [];
-    for (var ko in KW_KINDS) if (KW_KINDS.hasOwnProperty(ko)) parts.push(ko + " " + (kwOn(room, KW_KINDS[ko]) ? "켜짐" : "꺼짐"));
-    var ago = kwLastEventAt ? Math.round((new Date().getTime() - kwLastEventAt) / 1000) + "초 전" : "아직 없음";
-    var cnt = [];
-    for (var c in kwCounts) if (kwCounts.hasOwnProperty(c)) cnt.push(c + " " + kwCounts[c]);
-    var lines = ["👀 감지 상태", "카톡 DB: " + connected, parts.join(" · "), "기억하는 사람: " + n + "명",
-        "마지막 DB 이벤트: " + ago + (cnt.length ? " (" + cnt.join(" · ") + ")" : "")];
-    if (!kwLastEventAt) {
-        lines.push("", "DB 이벤트가 하나도 안 왔어요. 확인할 것:",
-            "① /루나로더 의 로더가 sl-1116-3 인지 (아니면 로더를 다시 붙여넣기)",
-            "② 프로젝트 받을 이벤트에 kakaodb.member.join · leave · message.create · delete",
-            "③ 방에서 아무 말이나 하고 몇 초 뒤 /감지 다시");
-    }
-    if (typeof kwStatusExtra === "function") {
-        try { var ex = kwStatusExtra(room); if (ex) lines.push(ex); } catch (e) {}
-    }
-    if (kwLastErr) lines.push("최근 문제: " + kwLastErr);
-    return lines.join("\n");
-}
-
-/** 방 명령 — 처리했으면 true. /감지, /감지 입장 끄기, /닉변감지(카톡 DB 기록이 있을 때) */
-function kwCommand(room, msg, sender, replier) {
-    if (!kwInRoom(room)) return false;
-    var t = kwStr(msg).trim();
-    if (t === "/감지") { replier.reply(kwStatusText(room)); return true; }
-    // 봇마다 덧붙인 명령 (오토봇의 /내프로필·/프로필사진 등)
-    if (typeof kwExtraCommand === "function" && kwExtraCommand(room, t, sender, replier)) return true;
-    var m = /^\/감지\s+(\S+)\s+(켜기|끄기)$/.exec(t);
-    if (m && (m[1] === "전부" || KW_KINDS.hasOwnProperty(m[1]))) {
-        if (!isAdmin(sender)) return true;
-        var s = kwLoad();
-        if (!s.off[room]) s.off[room] = {};
-        var kinds = [];
-        if (m[1] === "전부") { for (var kk in KW_KINDS) if (KW_KINDS.hasOwnProperty(kk)) kinds.push(KW_KINDS[kk]); }
-        else kinds.push(KW_KINDS[m[1]]);
-        for (var i = 0; i < kinds.length; i++) s.off[room][kinds[i]] = m[2] === "끄기";
-        kwSave();
-        replier.reply("👀 " + m[1] + " 감지를 " + (m[2] === "끄기" ? "껐어요" : "켰어요") + "\n" + kwStatusText(room));
-        return true;
-    }
-    if (t === "/닉변감지") {
-        var txt = kwNickText(room);
-        if (txt) { replier.reply(txt); return true; }
-    }
-    return false;
-}
-
-// 로더가 준 방·관리자 (비어 있으면 본체 기본값)
-if (__ROOMS__ && __ROOMS__.length > 0) ROOMS = __ROOMS__;
-if (__ADMINS__ && __ADMINS__.length > 0) ADMINS = __ADMINS__;
+        var ev = (typeof Event !== "undefined" && Event && Event.MESSAGE) ? Event.MESSAGE : "message";
+        b.addListener(ev, function (m) {
+            response(
+                String(m.room),
+                String(m.content),
+                String(m.author ? m.author.name : ""),
+                !!m.isGroupChat,
+                { reply: function (t) { m.reply(t); } }
+            );
+        });
+    } catch (e) {}
+})();
 
 // 알림 시계 켜기 (모든 정의가 끝난 뒤)
 alarmStart();
-
-return {
-    response: function (room, msg, sender, isGroupChat, replier, who) {
-        try { if (kwCommand(room, msg, sender, replier)) return; } catch (e) { kwLastErr = String(e); }
-        return response(room, msg, sender, isGroupChat, replier, who);
-    },
-    kakao: { joined: kwJoined, left: kwLeft, message: kwMessage, deleted: kwDeleted, status: kwStatusText },
-    version: BOT_VER,
-    rooms: function () { return ROOMS.slice(); },
-    alarmTick: typeof alarmTick === "function" ? alarmTick : function () {},
-    status: function () {
-        return { dataFile: DATA_FILE, timer: typeof ALARM_TIMER !== "undefined" ? ALARM_TIMER : "없음 (이 봇엔 알림이 없다)",
-            alarmErr: typeof alarmLastErr !== "undefined" ? alarmLastErr : "", askErr: askLastErr };
-    }
-};
-}
