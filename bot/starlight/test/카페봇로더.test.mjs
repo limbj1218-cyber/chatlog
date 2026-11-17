@@ -39,10 +39,13 @@ const realSetTimeout = setTimeout;
 globalThis.setTimeout = (fn) => realSetTimeout(fn, 0);
 globalThis.setInterval = () => 0;   // 시계는 시험에서 직접 돌리지 않는다
 
+let remoteCore = fs.readFileSync(path.join(SRC, "카페봇로더코어.js"), "utf8");
 let remoteBody = BODY, feed = { updatedAt: "t0", articles: [] }, kickCode = 204;
 globalThis.fetch = async (url, opt) => {
     opt = opt || {};
     const R = (status, body) => ({ ok: status >= 200 && status < 300, status, text: async () => body });
+    // 로더 코어 (2026-11-17 — 폰의 틀이 받아 쓴다)
+    if (decodeURIComponent(url).indexOf("로더코어.js") !== -1) return remoteCore === null ? R(404, "") : R(200, remoteCore);
     if (url.indexOf("raw.githubusercontent.com") !== -1) return remoteBody === null ? R(404, "") : R(200, remoteBody);
     if (url.indexOf("/dispatches") !== -1) return R(kickCode, "");
     if (url.indexOf("api.github.com") !== -1) return R(200, JSON.stringify(feed));

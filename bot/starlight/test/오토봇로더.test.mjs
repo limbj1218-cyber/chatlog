@@ -40,6 +40,7 @@ globalThis.Chat = { findRoom: () => null };
 const realSetTimeout = setTimeout;
 globalThis.setTimeout = (fn) => realSetTimeout(fn, 0);
 let fetchLog = [], remoteBody = BODY, remoteData = DATA;
+let remoteCore = fs.readFileSync(path.join(SRC, "오토봇로더코어.js"), "utf8");
 globalThis.fetch = async (url) => {
     fetchLog.push(url.split("?")[0]);
     const R = (status, body) => ({ ok: status >= 200 && status < 300, status, text: async () => body });
@@ -47,6 +48,8 @@ globalThis.fetch = async (url) => {
     if (url.indexOf(encodeURIComponent("오토봇데이터.json")) !== -1) {
         return remoteData === null ? R(500, "") : R(200, remoteData);
     }
+    // 로더 코어 (2026-11-17 — 폰의 틀이 받아 쓴다)
+    if (decodeURIComponent(url).indexOf("로더코어.js") !== -1) return remoteCore === null ? R(404, "") : R(200, remoteCore);
     if (url.indexOf("raw.githubusercontent.com") !== -1) {
         return remoteBody === null ? R(404, "") : R(200, remoteBody);
     }

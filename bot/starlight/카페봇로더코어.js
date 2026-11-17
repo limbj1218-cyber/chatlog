@@ -1,0 +1,308 @@
+/**
+ * ═══════════════════════════════════════════════════════════
+ *  카페봇 로더 코어 — StarLight(NeonJS) 판 (2026-11-17)
+ *
+ *  폰에 붙여넣는 건 카페봇로더.js(틀)이고, 로더 기능은 전부 여기 있다.
+ *  틀이 이 파일을 깃헙에서 받아 프로젝트 폴더에 두고 import 해서 메시지·카톡 DB 이벤트를 그대로 넘긴다.
+ *  /카페업데이트 를 치면 본체와 함께 이 코어도 새로 받으므로, 로더를 고쳐도 폰에 다시 붙여넣지 않아도 된다.
+ *  ★ 위쪽(모듈 맨 위)에는 아무 코드도 두지 말 것 — 업데이트 때 새 코어를 시험 삼아 import 해 보므로
+ *    전부 loaderCore() 안에 있어야 한다.
+ *
+ *  ◆ 동작
+ *    - 본체(bot/starlight/카페봇.js)를 깃헙에서 받아 프로젝트 폴더에 cafe_body.js 로 두고 import 한다.
+ *    - /카페업데이트 (관리자) → 새 코어·새 본체를 받아 먼저 읽어 보고 바꾼 뒤 다시 컴파일한다.
+ *    - 데이터 파일(카페봇상태.json·gh_token.txt)은 data 폴더. /카페가져오기, /카페로더 (상태), /카페강제확인 (관리자)
+ *    - 새 글 알림(먼저 말 걸기)은 PLAT.send 로 맡는다 (봇 send → Chat.findRoom → 마지막으로 메시지가 온 방 객체 순).
+ *
+ *  ※ 메시지 처리 중에는 네트워크를 기다리지 않는다 — fetch 는 await 하는 동안 다른 메시지를 처리한다.
+ *  ※ onMessage 밖으로 오류가 나가면 StarLight 가 프로젝트를 꺼 버리므로(오류 발생시 비활성화) 전부 잡는다.
+ * ═══════════════════════════════════════════════════════════
+ */
+export default async function loaderCore(CFG) {
+    CFG = CFG || {};
+    const LOADER_VER = "core-1117-1";
+    const KEY = "cafe";
+    const BOT_NAME = "카페봇";
+
+    // ── 기본 설정 — 폰의 틀(로더.js) SETTINGS 에 적은 값이 있으면 그게 먼저다 ────────────
+    const MY_ROOMS = CFG.MY_ROOMS !== undefined && CFG.MY_ROOMS !== null ? CFG.MY_ROOMS : ["오토2프프", "오토2"];        // 새 글을 알릴 방
+    const MY_ADMINS = CFG.MY_ADMINS !== undefined && CFG.MY_ADMINS !== null ? CFG.MY_ADMINS : ["후파", "임병진"];            // 관리자 명령을 쓸 수 있는 사람
+    // 깃헙 토큰은 여기 두지 말고 방에서 /깃토큰 <토큰> 으로 넣는다 (data 폴더에 저장된다).
+    // ★ 토큰을 이 파일에 적으면 깃헙에 올라갈 수 있으니 비워 둘 것.
+    const MY_TOKEN = CFG.MY_TOKEN !== undefined && CFG.MY_TOKEN !== null ? CFG.MY_TOKEN : "";
+    // ────────────────────────────────────────────────────────────
+
+    const CMD_UPDATE = "/카페업데이트";
+    const CMD_INFO = "/카페로더";
+    const CMD_IMPORT = "/카페가져오기";
+    const CMD_CHECK = "/카페강제확인";
+    const SRC_URL = "https://raw.githubusercontent.com/limbj1218-cyber/chatlog/main/bot/starlight/" +
+        encodeURIComponent(BOT_NAME + ".js");
+
+    // 옛 메신저봇R 판이 데이터를 두던 곳 (가져오기에서 차례로 찾아본다)
+    const OLD_DATA_PLACES = [
+        "/sdcard/Download",
+        "/sdcard/카페봇",
+        "/sdcard/Android/data/com.xfl.msgbot/files",
+        "/sdcard/Android/data/com.xfl.msgbot/files/카페봇"
+    ];
+    const DATA_FILES = ["카페봇상태.json", "gh_token.txt"];
+
+    const self = Projects.getSelf();
+    const PROJECT_DIR = String(self.directory.absolutePath);
+    const DATA_DIR = String(self.getDataDirectory().absolutePath);
+    const BODY_REL = "./" + KEY + "_body.js";
+    const BODY_FILE = PROJECT_DIR + "/" + KEY + "_body.js";
+    const PREV_REL = "./" + KEY + "_body_prev.js";
+    const PREV_FILE = PROJECT_DIR + "/" + KEY + "_body_prev.js";
+
+    // ─── 로더 코어도 깃헙에서 받는다 (2026-11-17) — 폰에 붙여넣은 틀(main)은 거의 바뀌지 않는다 ───
+    const CORE_URL = "https://raw.githubusercontent.com/limbj1218-cyber/chatlog/main/bot/starlight/" +
+        encodeURIComponent(BOT_NAME + "로더코어.js");
+    const CORE_FILE = PROJECT_DIR + "/" + KEY + "_core.js";
+    const CORE_PREV = PROJECT_DIR + "/" + KEY + "_core_prev.js";
+    const STUB_VER = (CFG.STUB_VER || "옛 로더") + (CFG.CORE_FROM ? ", 코어: " + CFG.CORE_FROM : "");
+
+    /** 새 로더 코어를 받아 먼저 읽어 보고 바꾼다. 실패해도 본체 업데이트는 그대로 한다. → { changed, ver, err } */
+    async function updateCore() {
+        let testFile = "";
+        try {
+            const res = await fetch(CORE_URL + "?t=" + Date.now());
+            if (!res.ok) throw new Error("깃헙 응답 " + res.status);
+            const text = await res.text();
+            if (text.indexOf("export default async function") === -1) throw new Error("로더 코어 형식이 아니에요");
+            const ver = (/const LOADER_VER = "([^"]*)"/.exec(text) || [])[1] || "?";
+            const old = FileStream.exists(CORE_FILE) ? String(FileStream.read(CORE_FILE)) : "";
+            if (old === text) return { changed: false, ver };
+            // 깨진 코어로 바꾸면 틀이 이전 코어로 돌게 되므로, 먼저 다른 이름으로 저장해 읽어 본다
+            const testName = KEY + "_core_test_" + Date.now() + ".js";
+            testFile = PROJECT_DIR + "/" + testName;
+            FileStream.write(testFile, text);
+            const m = await import("./" + testName);
+            if (typeof m.default !== "function") throw new Error("로더 코어 형식이 아니에요");
+            if (old) FileStream.write(CORE_PREV, old);
+            FileStream.write(CORE_FILE, text);
+            return { changed: true, ver };
+        } catch (e) {
+            return { changed: false, err: String(e) };
+        } finally {
+            if (testFile) { try { FileStream.remove(testFile); } catch (e) {} }
+        }
+    }
+
+    function coreNote(c) {
+        if (!c) return "";
+        return c.err ? "\n(로더 코어는 못 받았어요 — " + c.err + ")" :
+            c.changed ? "\n(로더 코어도 " + c.ver + " 로 바꿨어요)" : "";
+    }
+
+    const rooms = {};          // 방 이름 → 마지막으로 메시지가 온 방 객체 (먼저 말 걸기 예비)
+    let body = null;           // 본체가 돌려준 { response, version, … }
+    let bodyFrom = "";
+    let loadErr = "";
+    let lastErr = "";
+    let updating = false;
+    let lastErrorReportAt = 0;
+
+    function isLoaderAdmin(sender) {
+        return MY_ADMINS.some((a) => a && String(sender).indexOf(a) !== -1);
+    }
+
+    function ensureDir(path) {
+        try { if (!FileStream.exists(path)) FileStream.createDir(path); } catch (e) {}
+    }
+
+    // ─── 본체에 넘기는 폰 기능 ───
+    const PLAT = {
+        read(name) {
+            try {
+                const p = DATA_DIR + "/" + name;
+                return FileStream.exists(p) ? FileStream.read(p) : null;
+            } catch (e) { return null; }
+        },
+        write(name, text) {
+            try {
+                ensureDir(DATA_DIR);
+                FileStream.write(DATA_DIR + "/" + name, String(text));
+                return true;
+            } catch (e) { lastErr = "저장 실패: " + e; return false; }
+        },
+        send(room, text) {
+            try { const b = BotManager.getCurrentBot(); if (b && b.send(room, String(text))) return true; } catch (e) {}
+            try { const r = Chat.findRoom(String(room)); if (r && r.send(String(text))) return true; } catch (e) {}
+            try { const r = rooms[room]; if (r && r.send(String(text))) return true; } catch (e) {}
+            return false;
+        },
+        fetch: (url, opt) => fetch(url, opt),
+        setTimeout: (fn, ms) => setTimeout(fn, ms),
+        setInterval: (fn, ms) => setInterval(fn, ms)
+    };
+
+    // ─── 본체 받기·읽기 ───
+    async function fetchBody() {
+        const res = await fetch(SRC_URL + "?t=" + Date.now());
+        if (!res.ok) throw new Error("깃헙 응답 " + res.status);
+        const text = await res.text();
+        if (text.indexOf("export default function") === -1) throw new Error("받아온 코드가 본체 형식이 아니에요");
+        return text;
+    }
+
+    async function importFactory(rel) {
+        const m = await import(rel);
+        if (typeof m.default !== "function") throw new Error("본체 형식이 아니에요 (" + rel + ")");
+        return m.default;
+    }
+
+    function start(factory, from) {
+        body = factory(MY_ROOMS, MY_TOKEN, MY_ADMINS, PLAT);
+        bodyFrom = from;
+    }
+
+    // 컴파일할 때 (최상위 await — 메시지 처리 중이 아니라 기다려도 된다)
+    try {
+        let from = "저장된 본체";
+        if (!FileStream.exists(BODY_FILE)) {
+            FileStream.write(BODY_FILE, await fetchBody());
+            from = "깃헙에서 처음 받음";
+        }
+        start(await importFactory(BODY_REL), from);
+    } catch (e) {
+        loadErr = String(e);
+        try {
+            if (FileStream.exists(PREV_FILE)) start(await importFactory(PREV_REL), "이전 본체 (새 본체 오류로)");
+        } catch (e2) { loadErr += " / 이전 본체도 실패: " + e2; }
+    }
+    console.log("[" + BOT_NAME + "] 로더 " + LOADER_VER + " · 본체 " +
+        (body ? body.version + " (" + bodyFrom + ")" : "없음 — " + loadErr));
+
+    // ─── /카페업데이트 — 본체 코드 + 자동응답 데이터 ───
+    async function doUpdate(room) {
+        if (updating) { room.send("⏳ 이미 업데이트 중이에요."); return; }
+        updating = true;
+        let testFile = "";
+        let core = null;
+        try {
+            core = await updateCore();   // 로더 코어 먼저 (실패해도 본체는 계속)
+            const text = await fetchBody();
+            const ver = (/var BOT_VER = "([^"]*)"/.exec(text) || [])[1] || "?";
+
+            // 깨진 본체로 바꾸면 다음 컴파일이 실패하므로, 먼저 다른 이름으로 저장해 읽어 본다
+            const testName = KEY + "_body_test_" + Date.now() + ".js";
+            testFile = PROJECT_DIR + "/" + testName;
+            FileStream.write(testFile, text);
+            await importFactory("./" + testName);
+            if (FileStream.exists(BODY_FILE)) FileStream.write(PREV_FILE, FileStream.read(BODY_FILE));
+            FileStream.write(BODY_FILE, text);
+            room.send("🔄 깃헙에서 최신 " + BOT_NAME + "(본체 " + ver + ")를 받았어요. 다시 불러올게요!" + coreNote(core));
+            updating = false;
+            setTimeout(() => {
+                try { BotManager.getCurrentBot().compile(); } catch (e) { lastErr = "다시 컴파일 실패: " + e; }
+            }, 300);
+        } catch (e) {
+            updating = false;
+            lastErr = "업데이트 실패: " + e;
+            room.send("⚠️ 업데이트 실패 — 지금 본체로 계속 돌아요.\n" + e + coreNote(core));
+            if (core && core.changed) {   // 본체는 못 받았어도 새 코어는 받았으면 그걸로 다시 불러온다
+                setTimeout(() => {
+                    try { BotManager.getCurrentBot().compile(); } catch (e2) { lastErr = "다시 컴파일 실패: " + e2; }
+                }, 300);
+            }
+        } finally {
+            if (testFile) { try { FileStream.remove(testFile); } catch (e) {} }
+        }
+    }
+
+    // ─── /카페가져오기 [폴더] — 옛 메신저봇R 판 데이터 파일을 data 폴더로 복사 ───
+    function importOldData(arg) {
+        const places = arg ? [arg.replace(/\/+$/, "")] : OLD_DATA_PLACES;
+        const lines = ["📦 옛 데이터 가져오기"];
+        let copied = 0;
+        ensureDir(DATA_DIR);
+        for (const name of DATA_FILES) {
+            let found = "";
+            for (const dir of places) {
+                try { if (FileStream.exists(dir + "/" + name)) { found = dir + "/" + name; break; } } catch (e) {}
+            }
+            if (!found) { lines.push("· " + name + ": 못 찾음"); continue; }
+            try {
+                const dst = DATA_DIR + "/" + name;
+                if (FileStream.exists(dst)) FileStream.write(dst + ".bak", FileStream.read(dst));
+                FileStream.write(dst, FileStream.read(found));
+                copied++;
+                lines.push("· " + name + ": 가져옴 ✅");
+            } catch (e) { lines.push("· " + name + ": 실패 — " + e); }
+        }
+        if (copied) {
+            lines.push("", "다시 불러올게요 — 잠시 뒤 /카페 로 확인해 주세요.");
+            setTimeout(() => {
+                try { BotManager.getCurrentBot().compile(); } catch (e) { lastErr = "다시 컴파일 실패: " + e; }
+            }, 300);
+        } else {
+            lines.push("", "옛 폰에서 파일을 Download 폴더에 넣거나", CMD_IMPORT + " 폴더경로 로 알려 주세요.");
+        }
+        return lines.join("\n");
+    }
+
+    function loaderInfo(room, sender) {
+        let st = {};
+        try { st = body ? body.status() : {}; } catch (e) {}
+        return "🧩 " + BOT_NAME + " 로더 상태 (StarLight · 로더 " + LOADER_VER + " · 틀 " + STUB_VER + ")\n" +
+            "본체: " + (body ? body.version + " ✅ (" + bodyFrom + ")" : "없음 ❌") + "\n" +
+            "방 이름: [" + room + "] · 보낸 사람: [" + sender + "]\n" +
+            "알림: " + (st.on ? "켜짐 ✅" : "꺼짐 ⏸️") + " · 마지막 글번호 " + (st.lastId || 0) +
+            " · 보낸 글 " + (st.sent || 0) + "\n" +
+            "깃헙 토큰: " + (st.hasToken ? "있음 ✅" : "없음 ❌ (/깃토큰 으로 등록)") + "\n" +
+            "시계: " + (st.timer || "없음") + " · 발송 방식: " + (st.sendKind || "(아직)") + "\n" +
+            "데이터 폴더: " + DATA_DIR +
+            (loadErr ? "\n불러오기 오류: " + loadErr : "") +
+            (st.err ? "\n카페 오류: " + st.err : "") +
+            (lastErr ? "\n최근 오류: " + lastErr : "");
+    }
+
+    function isGroup(room) {
+        try { return typeof room.isGroupChat === "function" ? !!room.isGroupChat() : !!room.groupChat; }
+        catch (e) { return true; }
+    }
+
+    // ─── 메시지 ───
+    function onMessage(event) {
+        let text = "";
+        try {
+            const room = String(event.room.name);
+            text = String(event.message).trim();
+            const sender = String(event.sender.name);
+            if (MY_ROOMS.indexOf(room) !== -1) rooms[room] = event.room;
+
+            if (text === CMD_UPDATE) {
+                if (!isLoaderAdmin(sender)) return;
+                doUpdate(event.room);
+                return;
+            }
+            if (text === CMD_INFO) { event.room.send(loaderInfo(room, sender)); return; }
+            if (text === CMD_CHECK) {
+                if (!isLoaderAdmin(sender) || !body) return;
+                event.room.send("🔎 지금 한 바퀴 돌릴게요 — 새 글이 있으면 곧 알립니다.");
+                Promise.resolve(body.checkNow()).catch((e) => { lastErr = String(e); });
+                return;
+            }
+            if (text === CMD_IMPORT || text.indexOf(CMD_IMPORT + " ") === 0) {
+                if (!isLoaderAdmin(sender)) return;
+                event.room.send(importOldData(text.substring(CMD_IMPORT.length).trim()));
+                return;
+            }
+
+            if (!body) return;
+            body.response(room, event.message, sender, isGroup(event.room),
+                { reply: (t) => event.room.send(String(t)) });
+        } catch (e) {
+            lastErr = String(e);
+            const now = Date.now();
+            if (text.indexOf("/") === 0 && now - lastErrorReportAt > 60000) {
+                lastErrorReportAt = now;
+                try { event.room.send("⚠️ " + BOT_NAME + " 로더 오류: " + e); } catch (e2) {}
+            }
+        }
+    }
+
+    return { onMessage };
+}

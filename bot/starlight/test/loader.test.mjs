@@ -39,10 +39,13 @@ globalThis.setInterval = () => 0;                       // 알림 시계는 시�
 const realSetTimeout = setTimeout;
 globalThis.setTimeout = (fn, ms) => realSetTimeout(fn, 0);   // 기다림은 바로
 let fetchLog = [], remoteBody = BODY, answer = null;
+let remoteCore = fs.readFileSync(path.join(SRC, KIND + "봇로더코어.js"), "utf8");
 globalThis.fetch = async (url, opt) => {
     opt = opt || {};
     fetchLog.push((opt.method || "GET") + " " + url.split("?")[0]);
     const R = (status, body) => ({ ok: status >= 200 && status < 300, status, text: async () => body });
+    // 로더 코어 (2026-11-17 — 폰의 틀이 받아 쓴다)
+    if (decodeURIComponent(url).indexOf("로더코어.js") !== -1) return remoteCore === null ? R(404, "") : R(200, remoteCore);
     if (url.indexOf("raw.githubusercontent.com") !== -1) return remoteBody === null ? R(404, "") : R(200, remoteBody);
     if (opt.method === "PUT") return R(201, "{}");
     if (opt.method === "POST") return R(204, "");
@@ -172,6 +175,83 @@ t("이상한 이벤트도 안 터짐", !threw);
     main.onMessage({ room: kroom, message: "/랭킹", sender: { name: "영수바꿈", id: "x" } });
     t("DB 에 없을 때도 랭킹은 그대로", sent.join().indexOf("영수: 3재련") !== -1, sent);
     delete globalThis.KakaoDB;
+}
+
+// ── 9. 틀 + 로더 코어 (2026-11-17) — 로더를 고쳐도 폰에 다시 붙여넣지 않게 ──
+{
+    const CORE = path.join(PROJ, KEY + "_core.js"), CPREV = path.join(PROJ, KEY + "_core_prev.js");
+    const ADMIN = "멱살잡힌스쳐(후파)";
+    const coreSrc = remoteCore;
+    remoteBody = BODY;
+    t("틀: 코어를 받아 둠", fs.existsSync(CORE) && fs.readFileSync(CORE, "utf8") === coreSrc);
+    let s1 = say("x", "/" + KIND + "로더", "HX");
+    t("로더 상태: 틀·코어 버전", s1.indexOf("로더 core-") !== -1 && s1.indexOf("틀 틀-") !== -1, s1);
+    // 코어가 그대로면 코어 안내 없음
+    let c0 = compiled;
+    say(ADMIN, "/" + KIND + "업데이트", "HA"); await flush(); await flush();
+    t("업데이트: 코어 그대로면 말 없음", sent.join().indexOf("로더 코어") === -1 && compiled === c0 + 1, sent);
+    // 새 코어 — 본체와 같이 바뀐다
+    remoteCore = coreSrc.replace(/const LOADER_VER = "[^"]*";/, 'const LOADER_VER = "core-9999-1";');
+    say(ADMIN, "/" + KIND + "업데이트", "HA"); await flush(); await flush();
+    t("새 코어: 안내", sent.join().indexOf("로더 코어도 core-9999-1 로 바꿨어요") !== -1, sent);
+    t("새 코어: 파일 바뀜 + 옛 코어 남김", fs.readFileSync(CORE, "utf8").indexOf("core-9999-1") !== -1 &&
+        fs.readFileSync(CPREV, "utf8") === coreSrc);
+    t("새 코어: 시험 파일 지움", fs.readdirSync(PROJ).filter((f) => f.indexOf("_test_") !== -1).length === 0);
+    // 깨진 코어는 받지 않고, 본체 업데이트는 그대로 한다
+    remoteCore = coreSrc.replace("function loaderInfo(", "function loaderInfo((");
+    c0 = compiled;
+    say(ADMIN, "/" + KIND + "업데이트", "HA"); await flush(); await flush();
+    t("깨진 코어: 못 받았다고 안내 + 본체는 받음", sent.join().indexOf("로더 코어는 못 받았어요") !== -1 &&
+        sent.join().indexOf("다시 불러올게요") !== -1 && compiled === c0 + 1, sent);
+    t("깨진 코어: 파일 그대로", fs.readFileSync(CORE, "utf8").indexOf("core-9999-1") !== -1);
+    // 본체는 못 받아도 새 코어는 받았으면 다시 컴파일한다
+    remoteCore = coreSrc; remoteBody = null; c0 = compiled;
+    say(ADMIN, "/" + KIND + "업데이트", "HA"); await flush(); await flush();
+    t("본체 실패 + 새 코어: 다시 컴파일", sent.join().indexOf("업데이트 실패") !== -1 && compiled === c0 + 1, sent);
+    remoteBody = BODY;
+
+    // 다시 컴파일된 것처럼 — node 는 같은 주소의 모듈을 다시 읽지 않으므로 프로젝트를 새 폴더로 옮겨 불러온다
+    let PJ = PROJ, gen = 0;
+    const fresh = async (mainName) => {
+        const next = path.join(HERE, "proj" + (++gen));
+        fs.cpSync(PJ, next, { recursive: true });
+        PJ = next;
+        globalThis.Projects = { getSelf: () => ({ directory: dirObj(PJ.replace(/\\/g, "/")), getDataDirectory: () => dirObj(path.join(PJ, "data").replace(/\\/g, "/")) }) };
+        return import(pathToFileURL(path.join(PJ, mainName || "main.js")).href);
+    };
+    const pj = (f) => path.join(PJ, f);
+    // 코어 파일이 깨지면 이전 코어로 돈다
+    fs.writeFileSync(CORE, "export default async function loaderCore(CFG) { throw new Error('고장'); }");
+    main = await fresh();
+    let s2 = say("x", "/" + KIND + "로더", "HX");
+    t("깨진 코어: 이전 코어로", s2.indexOf("이전 코어 (새 코어 오류로)") !== -1, s2);
+    Math.random = () => 0;
+    t("이전 코어로도 재련", say("새사람", "재련가즈아", "Z").indexOf("새사람님,") !== -1);
+
+    // 둘 다 깨지면 틀이 직접 상태·다시 받기만 한다
+    fs.writeFileSync(pj(KEY + "_core_prev.js"), "export default async function loaderCore(CFG) { throw new Error('고장2'); }");
+    main = await fresh();
+    let s3 = say("x", "/" + KIND + "로더", "HX");
+    t("코어 없음: 틀이 상태 안내", s3.indexOf("로더 코어: 없음") !== -1 && s3.indexOf("고장2") !== -1, s3);
+    t("코어 없음: 다른 말은 조용", say("x", "재련가즈아", "HX") === "");
+    t("코어 없음: 관리자 아니면 무시", say("철수", "/" + KIND + "업데이트", "H1") === "");
+    c0 = compiled;
+    say(ADMIN, "/" + KIND + "업데이트", "HA"); await flush(); await flush();
+    t("코어 없음: 관리자가 다시 받기", sent.join().indexOf("로더 코어를 다시 받았어요") !== -1 &&
+        fs.readFileSync(pj(KEY + "_core.js"), "utf8") === coreSrc && compiled === c0 + 1, sent);
+    main = await fresh();
+    t("다시 받은 코어로 동작", say("x", "/" + KIND + "로더", "HX").indexOf("본체: ") !== -1);
+    let threw2 = false;
+    try { main.onKakaoMessage(null); main.onKakaoMemberJoined(undefined); } catch (e) { threw2 = true; }
+    t("틀: 카톡 DB 이벤트 이상해도 안 터짐", !threw2);
+
+    // 틀의 SETTINGS 가 코어 기본값보다 먼저
+    const stub = fs.readFileSync(pj("main.js"), "utf8");
+    t("틀: SETTINGS 자리", stub.indexOf("const SETTINGS = {\n};") !== -1);
+    fs.writeFileSync(pj("main6.js"), stub.replace("const SETTINGS = {\n};", 'const SETTINGS = {\n    MY_ROOMS: ["다른방"],\n};'));
+    main = await fresh("main6.js");
+    t("틀 설정: 방을 바꾸면 그 방에서만", say("새사람2", "재련가즈아", "Z", "다른방").indexOf("새사람2님,") !== -1 &&
+        say("새사람3", "재련가즈아", "Z") === "");
 }
 
 console.log(ok + " 통과, " + bad + " 실패");
