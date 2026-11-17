@@ -24,7 +24,7 @@
  *  ※ onMessage 밖으로 오류가 나가면 StarLight 가 프로젝트를 꺼 버리므로(오류 발생시 비활성화) 전부 잡는다.
  * ═══════════════════════════════════════════════════════════
  */
-const LOADER_VER = "sl-1116-3";
+const LOADER_VER = "sl-1117-1";
 const KEY = "sageon";
 const BOT_NAME = "사건봇";
 
@@ -208,7 +208,7 @@ function loaderInfo(room, sender) {
         "방 이름: [" + room + "] · 보낸 사람: [" + sender + "]\n" +
         "데이터 폴더: " + DATA_DIR + "\n" +
         "알림 시계: " + (st.timer || "없음") + "\n" +
-        "카톡 DB 감지: " + kakaoDbState() +
+        "카톡 DB 감지: " + kakaoDbState() + " · 회원 ID 찾기 " + kakaoIdHits + "번 성공 / " + kakaoIdMiss + "번 못 찾음" +
         (loadErr ? "\n불러오기 오류: " + loadErr : "") +
         (lastErr ? "\n최근 오류: " + lastErr : "");
 }
@@ -221,16 +221,45 @@ function kakaoDbState() {
     } catch (e) { return "확인 실패: " + e; }
 }
 
-function myInfoText(sender, hash) {
+function myInfoText(sender, hash, kid) {
     return ["🪪 내 정보 (" + BOT_NAME + " 로더 " + LOADER_VER + ")", "대화명: " + sender, "받은 방식: StarLight onMessage",
         // ★ hash 는 사람을 구분하는 열쇠라 값은 절대 보여주지 않는다
         "보낸 사람 hash: " + (hash ? "받음 (값은 비공개) — 쓰지 않음" : "없음"),
-        "", "StarLight 는 이 값을 앞 메시지 사람 것으로 잘못 줄 때가 있어서",
-        "사람은 대화명으로 구분해요. (대화명을 바꾸면 새 사람으로 잡혀요)"].join("\n");
+        "카톡 DB 회원 ID: " + (kid ? "찾음 ✅ (값은 비공개)" : "못 찾음 ❌"),
+        "", "카톡 DB 회원 ID 를 찾으면 대화명을 바꿔도 같은 사람으로 기록돼요.",
+        "(못 찾으면 대화명으로 구분 — 카톡 DB 플러그인 연결을 확인)"].join("\n");
 }
 
 function isGroup(room) {
     try { return typeof room.isGroupChat === "function" ? !!room.isGroupChat() : !!room.groupChat; } catch (e) { return true; }
+}
+
+// ─── 카톡 DB(KakaoDB 플러그인)에서 이 메시지를 보낸 사람의 회원 ID 찾기 (2026-11-17) ───
+// 알림의 방 ID(event.room.id)는 카톡 방 번호와 같다(KakaoDB 의 ReplyActionStore 가 그렇게 맞춘다).
+// 그 방의 최근 메시지에서 내용이 같은 것을 찾아 senderId 를 쓴다 — chatLogId 는 JS 숫자로 오면 자릿수가 깨질 수 있어 안 쓴다.
+// 못 찾으면(플러그인 없음·끊김·DB 가 아직 안 적음) null → 본체가 대화명으로 찾는다. 오류는 밖으로 안 낸다.
+let kakaoIdHits = 0, kakaoIdMiss = 0;
+function kakaoSenderId(event, sender) {
+    try {
+        if (typeof KakaoDB === "undefined" || !KakaoDB.isConnected) return null;
+        const roomId = String(event.room.id || "");
+        if (!/^\d+$/.test(roomId)) { kakaoIdMiss++; return null; }
+        const text = String(event.message);
+        const list = KakaoDB.getMessages(roomId, 15);
+        const n = typeof list.size === "function" ? list.size() : list.length;
+        let byText = null;
+        for (let i = n - 1; i >= 0; i--) {                       // 최근 것부터
+            const m = typeof list.get === "function" ? list.get(i) : list[i];
+            if (!m || m.isMine || String(m.text) !== text) continue;
+            const id = String(m.senderId || "");
+            if (!id) continue;
+            if (m.sender && String(m.sender.name) === sender) { kakaoIdHits++; return id; }
+            if (!byText) byText = id;
+        }
+        if (byText) { kakaoIdHits++; return byText; }
+        kakaoIdMiss++;
+        return null;
+    } catch (e) { kakaoIdMiss++; return null; }
 }
 
 // ─── 메시지 ───
@@ -252,7 +281,7 @@ export function onMessage(event) {
         if (text === CMD_INFO) { event.room.send(loaderInfo(room, sender)); return; }
         if (text === "/내정보") {
             if (!inMyRooms(room)) return;
-            event.room.send(myInfoText(sender, hash));
+            event.room.send(myInfoText(sender, hash, kakaoSenderId(event, sender)));
             return;
         }
         if (text === CMD_IMPORT || text.indexOf(CMD_IMPORT + " ") === 0) {
@@ -265,7 +294,8 @@ export function onMessage(event) {
         body.response(room, event.message, sender, isGroup(event.room),
             { reply: (t) => event.room.send(String(t)) },
             // ★ hash 는 넘기지 않는다 — StarLight 는 id 를 알림에 쌓인 첫 메시지(앞사람)에서 읽는다 (2026-11-16 겪음)
-            { name: sender, hash: null, profileKey: () => null });
+            //   대신 카톡 DB 에서 이 메시지를 찾아 보낸 사람의 회원 ID(kakaoId)를 넘긴다 — 대화명을 바꿔도 같은 사람
+            { name: sender, hash: null, kakaoId: inMyRooms(room) ? kakaoSenderId(event, sender) : null, profileKey: () => null });
     } catch (e) {
         lastErr = String(e);
         const now = Date.now();

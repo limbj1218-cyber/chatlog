@@ -193,7 +193,13 @@
   - **StarLight 의 `event.sender.id` 는 쓰지 않는다** (2026-11-16 토마토 방에서 겪음): StarLight 는 대화명·내용은 이번 메시지에서 읽지만
     id 는 알림에 쌓인 메시지 중 **첫 번째(`messages[0]`)** 에서 읽는다(AndroidRParserSpec 등 세 스펙 모두). 그래서 후파의 재련가즈아가
     바로 앞에 말한 엑시아 기록으로 처리됐다. make_neon.py 가 본체의 `userKeyOf` 에서 hash 를 버리고 `keyByLastName` 이 **최초 대화명을 먼저** 찾게 바꾸며,
-    로더(sl-1116-2 이상)도 hash 를 넘기지 않는다. 그래서 StarLight 판 게임봇은 대화명으로 사람을 구분한다(대화명을 바꾸면 새 사람). 본체 버전 끝 `s3` = make_neon 고친 횟수
+    로더(sl-1116-2 이상)도 hash 를 넘기지 않는다. 본체 버전 끝 `sN` = make_neon 고친 횟수(`SL_REV`)
+  - **카톡 DB 회원 ID 로 사람 구분** (2026-11-17, 사용자: 닉변해도 같은 사람이어야): 로더(sl-1117-1)가 메시지마다 `KakaoDB.getMessages(event.room.id, 15)`
+    에서 내용이 같은 최근 메시지를 찾아 `senderId` 를 `who.kakaoId` 로 넘긴다(`kakaoSenderId()` — 알림의 room.id 는 카톡 방 번호와 같다.
+    chatLogId 는 JS 숫자로 오면 자릿수가 깨질 수 있어 안 쓴다). 본체 키는 `"#h:k" + 회원 ID`. 처음 보는 회원 ID 면 `oldRecordForName()` 으로
+    같은 대화명의 옛 `#h:` 기록(메신저봇R 때)을, `mergeNameInto` 로 대화명 기록을 이어받는다. 회원 ID 를 못 찾으면 예전처럼 대화명으로
+    (`keyByLastName` 이 그 대화명의 회원 ID 사람에게 붙인다). `/내정보` 에 "카톡 DB 회원 ID: 찾음/못 찾음", `/○○로더` 에 성공·실패 횟수.
+    이미 대화명이 바뀐 뒤 생긴 중복(옛 이름 기록)은 자동으로 못 잇는다 — 관리자가 `/초기화_옛이름` 으로 정리
   - **입퇴장·닉변·삭제 감지** (2026-11-16, 루나봇에서 폰 확인 뒤 토마토·레몬·사건에도 — make_neon.py 의 `KAKAODB_BOTS`): `bot/starlight/kakaodb_watch.js` 를 make_neon.py 가 본체에 넣는다.
     **카톡 DB 플러그인**(github.com/mooner1022/starlight-kakaodb — 카톡 DB 를 읽으므로 루트 또는 공유 UID 모드가 필요)이 주는
     `onKakaoMemberJoined`·`onKakaoMemberLeft`·`onKakaoMessage`·`onKakaoMessageDeleted` 를 로더(sl-1116-3)가 `body.kakao.*` 로 넘긴다.

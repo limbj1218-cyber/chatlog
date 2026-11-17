@@ -259,9 +259,46 @@ else:
 # ── 사람 구분: StarLight 의 sender.id 는 쓰지 않는다 (2026-11-16 토마토 방에서 겪음) ──
 # StarLight 는 대화명·내용은 이번 메시지에서 읽지만 id 는 알림에 쌓인 메시지 중 **첫 번째(messages[0])** 에서 읽는다
 # (AndroidRParserSpec·ConversationShortcutParserSpec·DefaultParserSpec 모두). 그래서 후파의 재련가즈아가
-# 바로 앞에 말한 엑시아의 기록으로 처리됐다. 맞는 id 를 얻을 방법이 없어 대화명으로만 사람을 찾는다.
+# 바로 앞에 말한 엑시아의 기록으로 처리됐다.
+# 2026-11-17: 대신 로더가 카톡 DB(KakaoDB 플러그인)에서 그 메시지를 찾아 보낸 사람의 회원 ID 를 who.kakaoId 로 준다.
+# 그 ID 로 사람을 구분하므로 대화명을 바꿔도 같은 사람이다. 키는 "#h:k" + 회원 ID (메신저봇R 때의 #h: 기록과 섞이지 않게 k 를 붙인다).
+# 처음 보는 회원 ID 면 같은 대화명의 옛 기록(대화명 기록·메신저봇R #h: 기록)을 이어받는다. 회원 ID 를 못 찾으면 대화명으로.
 rep('    try { h = who && who.hash ? String(who.hash) : ""; } catch (e) { h = ""; }',
-    '    // StarLight 의 id 는 앞 메시지 사람 것이 섞여 오므로 쓰지 않는다 (make_neon.py 참고)')
+    '''    // StarLight 판: 알림의 sender.id(who.hash)는 앞사람 것이 섞여 와서 안 쓰고, 로더가 카톡 DB 에서 찾은 회원 ID 를 쓴다
+    try { h = who && who.kakaoId ? "k" + String(who.kakaoId) : ""; } catch (e) { h = ""; }''')
+rep('''    var key = HASH_PREFIX + h;
+    var p = people[key], changed = false;
+    if (!p) {
+        p = people[key] = { name: name, last: name };
+        changed = true;
+    } else if (p.last !== name) {''',
+'''    var key = HASH_PREFIX + h;
+    var p = people[key], changed = false;
+    if (!p) {
+        // 처음 보는 회원 ID — 같은 대화명의 옛 기록(메신저봇R 때 #h: 기록)이 있으면 이어받는다 (재련값·횟수·파괴·방 기록·표시 이름)
+        var old = oldRecordForName(name);
+        if (old) {
+            p = people[key] = people[old];
+            delete people[old];
+            mergeNameInto(old, key);
+            if (p.last !== name) { addNickHistory(p, name); p.last = name; }
+        } else {
+            p = people[key] = { name: name, last: name };
+        }
+        changed = true;
+    } else if (p.last !== name) {''')
+rep('''function keyByLastName(name) {''', '''/** 회원 ID 가 아닌 옛 사람 기록(#h:, k 없음) 중 이 대화명인 것 — 최초 대화명 먼저, 없으면 최근 대화명 */
+function oldRecordForName(name) {
+    var k, byLast = null;
+    for (k in people) {
+        if (!people.hasOwnProperty(k) || k.indexOf(HASH_PREFIX + "k") === 0) continue;
+        if (people[k].name === name) return k;
+        if (!byLast && people[k].last === name) byLast = k;
+    }
+    return byLast;
+}
+
+function keyByLastName(name) {''')
 rep('''function keyByLastName(name) {
     var best = null, bestAt = -1;
     for (var k in people) {''',
@@ -289,7 +326,7 @@ if HAS_KW:
     "",''')
 
 # 본체 버전 뒤에 StarLight 판 고친 횟수를 붙인다 (/○○로더 에서 새 본체인지 보이게)
-SL_REV = 7
+SL_REV = 8
 m = re.search(r'var BOT_VER = "([^"]*)";', s)
 rep(m.group(0), 'var BOT_VER = "%ss%d";' % (m.group(1), SL_REV))
 

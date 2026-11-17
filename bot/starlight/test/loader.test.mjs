@@ -141,5 +141,38 @@ let threw = false;
 try { main.onMessage({ room: null, message: "/x", sender: null }); } catch (e) { threw = true; }
 t("이상한 이벤트도 안 터짐", !threw);
 
+// ── 8. 카톡 DB 회원 ID 로 사람 구분 — 대화명을 바꿔도 같은 사람 (2026-11-17) ──
+{
+    const dbMsgs = [];   // 카톡 DB 에 적힌 메시지 (가짜)
+    globalThis.KakaoDB = { isConnected: true, getMessages: (roomId) => roomId === "123" ? dbMsgs.slice(-15) : [] };
+    const kroom = { name: KIND, id: "123", isGroupChat: () => true, send: (m) => { sent.push(KIND + "|" + m); return true; } };
+    const ksay = (name, msg, kid, wrongId) => {
+        dbMsgs.push({ text: msg, senderId: kid, sender: { name }, isMine: false });
+        sent = [];
+        main.onMessage({ room: kroom, message: msg, sender: { name, id: wrongId || "앞사람" } });
+        return sent.join("\n");
+    };
+    Math.random = () => 0;
+    let r1 = ksay("영수", "재련가즈아", "5001");
+    t("회원 ID: 처음 재련", r1.indexOf("영수님, 1 → 2") !== -1, r1);
+    let r2 = ksay("영수바꿈", "재련가즈아", "5001");
+    t("회원 ID: 대화명 바꿔도 이어짐 (표시는 처음 이름)", r2.indexOf("영수님, 2 → 3") !== -1, r2);
+    let r3 = ksay("영수바꿈", "재련가즈아", "5001");
+    t("회원 ID: 하루 횟수도 같은 사람", r3.indexOf("모두 사용") !== -1, r3);
+    let r4 = ksay("옛사람", "재련가즈아", "5002");
+    t("회원 ID: 옛 기록(#h:) 이어받음", r4.indexOf("옛사람님, 7 → 8") !== -1, r4);
+    let r5 = ksay("영희", "재련가즈아", "5003", "5001");
+    t("회원 ID: 알림 id 가 앞사람 것이어도 본인", r5.indexOf("영희님,") !== -1 && r5.indexOf("영수") === -1, r5);
+    const saved = JSON.parse(fs.readFileSync(path.join(PROJ, "data", DBFILE), "utf8"));
+    t("회원 ID 키로 저장", saved.userData["#h:k5001"] === 3 && !saved.userData["#h:H9"] && saved.userData["#h:k5002"] === 8, saved.userData);
+    let info2 = say("영수바꿈", "/내정보", "X");
+    t("/내정보: 회원 ID 값은 안 보임", info2.indexOf("5001") === -1);
+    // 카톡 DB 가 아직 그 메시지를 못 적었으면 대화명으로 (같은 대화명의 회원 ID 사람에게 붙는다)
+    sent = [];
+    main.onMessage({ room: kroom, message: "/랭킹", sender: { name: "영수바꿈", id: "x" } });
+    t("DB 에 없을 때도 랭킹은 그대로", sent.join().indexOf("영수: 3재련") !== -1, sent);
+    delete globalThis.KakaoDB;
+}
+
 console.log(ok + " 통과, " + bad + " 실패");
 process.exit(0);

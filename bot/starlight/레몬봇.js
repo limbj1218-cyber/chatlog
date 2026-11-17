@@ -47,7 +47,7 @@
  */
 export default function lemonBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "레몬봇";
-var BOT_VER = "1117-1s7";
+var BOT_VER = "1117-1s8";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["레몬"];
@@ -320,6 +320,17 @@ function mergeNameInto(name, key) {
 }
 
 /** hash 없이 온 메시지 — 이 대화명을 가장 최근에 쓴 hash 사람의 키 (없으면 null) */
+/** 회원 ID 가 아닌 옛 사람 기록(#h:, k 없음) 중 이 대화명인 것 — 최초 대화명 먼저, 없으면 최근 대화명 */
+function oldRecordForName(name) {
+    var k, byLast = null;
+    for (k in people) {
+        if (!people.hasOwnProperty(k) || k.indexOf(HASH_PREFIX + "k") === 0) continue;
+        if (people[k].name === name) return k;
+        if (!byLast && people[k].last === name) byLast = k;
+    }
+    return byLast;
+}
+
 function keyByLastName(name) {
     // StarLight 판: 최초 대화명이 같은 사람을 먼저 (먼저 생긴 기록부터).
     // 잘못된 id 때문에 최근 대화명(last)이 엉뚱하게 바뀐 기록이 있어도 처음 이름은 그대로라서다.
@@ -339,12 +350,22 @@ function keyByLastName(name) {
 function userKeyOf(sender, who) {
     var name = String(sender);
     var h = "";
-    // StarLight 의 id 는 앞 메시지 사람 것이 섞여 오므로 쓰지 않는다 (make_neon.py 참고)
+    // StarLight 판: 알림의 sender.id(who.hash)는 앞사람 것이 섞여 와서 안 쓰고, 로더가 카톡 DB 에서 찾은 회원 ID 를 쓴다
+    try { h = who && who.kakaoId ? "k" + String(who.kakaoId) : ""; } catch (e) { h = ""; }
     if (!h || h === "null" || h === "undefined") return keyByLastName(name) || name;
     var key = HASH_PREFIX + h;
     var p = people[key], changed = false;
     if (!p) {
-        p = people[key] = { name: name, last: name };
+        // 처음 보는 회원 ID — 같은 대화명의 옛 기록(메신저봇R 때 #h: 기록)이 있으면 이어받는다 (재련값·횟수·파괴·방 기록·표시 이름)
+        var old = oldRecordForName(name);
+        if (old) {
+            p = people[key] = people[old];
+            delete people[old];
+            mergeNameInto(old, key);
+            if (p.last !== name) { addNickHistory(p, name); p.last = name; }
+        } else {
+            p = people[key] = { name: name, last: name };
+        }
         changed = true;
     } else if (p.last !== name) {
         addNickHistory(p, name);
