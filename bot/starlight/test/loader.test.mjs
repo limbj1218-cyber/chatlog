@@ -99,6 +99,34 @@ if (KIND === "루나") {
     mediaResult = {};
     r = say("x", "/등록 퐁듀는 아무말", "HX");
     t("사진 이름은 등록 거절", r.indexOf("봇이 이미 쓰는 말이라 등록할 수 없습니다") !== -1, r);
+    // 여러 장을 순서대로 (물슈노스킬 → 물슈1~12.jpg, 2026-11-17)
+    media = [];
+    say("x", "물슈노스킬", "HX");
+    t("여러 장: 첫 장은 바로", media.join() === "루나|/sdcard/Download/물슈1.jpg", media);
+    say("x", "물슈노스킬", "HX");
+    t("여러 장: 보내는 중엔 다시 쳐도 무시", media.length === 1, media);
+    for (let i = 0; i < 20 && media.length < 12; i++) await flush();
+    const want = []; for (let i = 1; i <= 12; i++) want.push("루나|/sdcard/Download/물슈" + i + ".jpg");
+    t("여러 장: 1~12 순서대로", media.join() === want.join(), media);
+    await flush();
+    media = [];
+    say("x", "물슈노스킬", "HX");
+    t("여러 장: 다 보낸 뒤엔 다시 됨", media.length === 1, media);
+    for (let i = 0; i < 20 && media.length < 12; i++) await flush();
+    // 중간에 못 보내면 멈추고 안내
+    media = [];
+    let cnt = 0;
+    const keep = mediaResult;
+    const rm = room("루나");
+    rm.sendMedia = (p) => { media.push(p); cnt++; return Promise.resolve(cnt === 3 ? { error: "없음" } : {}); };
+    sent = [];
+    main.onMessage({ room: rm, message: "물슈노스킬", sender: { name: "x", id: null } });
+    for (let i = 0; i < 10; i++) await flush();
+    t("여러 장: 실패하면 멈춤", media.length === 3, media);
+    t("여러 장: 실패 안내", sent.join().indexOf("물슈3.jpg 를 못 보냈어요 (3/12번째에서 멈췄어요)") !== -1, sent);
+    mediaResult = keep;
+    r = say("x", "/등록 물슈노스킬 아무말", "HX");
+    t("여러 장 이름도 등록 거절", r.indexOf("봇이 이미 쓰는 말이라 등록할 수 없습니다") !== -1, r);
 }
 
 // ── 3. /내정보 — hash 값은 안 보인다 ──
