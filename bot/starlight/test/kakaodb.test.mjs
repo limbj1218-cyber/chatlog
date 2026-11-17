@@ -1,12 +1,12 @@
 // 입퇴장·닉변·삭제 감지 시험 (KakaoDB 플러그인 이벤트를 흉내 낸다)
-// 사용 (저장소 맨 위에서): node bot/starlight/test/kakaodb.test.mjs [루나|토마토|레몬|사건]
+// 사용 (저장소 맨 위에서): node bot/starlight/test/kakaodb.test.mjs [루나|토마토|레몬|거북|사건]
 import fs from "fs";
 import os from "os";
 import path from "path";
 import { pathToFileURL } from "url";
 
 const KIND = process.argv[2] || "루나";
-const KEY = { "루나": "luna", "토마토": "tomato", "레몬": "lemon", "사건": "sageon" }[KIND];
+const KEY = { "루나": "luna", "토마토": "tomato", "레몬": "lemon", "거북": "turtle", "사건": "sageon" }[KIND];
 const SRC = path.resolve("bot/starlight/" + KIND + "봇.js");
 let ok = 0, bad = 0;
 function t(n, c, i) { if (c) ok++; else { bad++; console.log("FAIL", n, i === undefined ? "" : JSON.stringify(i)); } }

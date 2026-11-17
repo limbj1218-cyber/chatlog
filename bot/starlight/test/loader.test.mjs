@@ -1,5 +1,5 @@
 // StarLight(NeonJS) 로더 시험 — Projects·FileStream·BotManager·Chat·fetch 를 흉내 내고 로더를 진짜 ES 모듈로 불러온다.
-// 사용 (저장소 맨 위에서): node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬|사건]
+// 사용 (저장소 맨 위에서): node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬|거북|사건]
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -7,7 +7,7 @@ import { pathToFileURL } from "url";
 
 const SRC = process.argv[2];
 const KIND = process.argv[3] || "루나";
-const KEY = { "루나": "luna", "토마토": "tomato", "레몬": "lemon", "사건": "sageon" }[KIND];
+const KEY = { "루나": "luna", "토마토": "tomato", "레몬": "lemon", "거북": "turtle", "사건": "sageon" }[KIND];
 const DBFILE = KIND === "사건" ? "Database.json" : KEY + "_Database.json";   // 사건봇은 메신저봇R 때부터 이 이름
 const HERE = fs.mkdtempSync(path.join(os.tmpdir(), "starlight-" + KEY + "-"));
 const PROJ = path.join(HERE, "proj");
@@ -349,6 +349,24 @@ t("이상한 이벤트도 안 터짐", !threw);
     main = await fresh("main6.js");
     t("틀 설정: 방을 바꾸면 그 방에서만", say("새사람2", "재련가즈아", "Z", "다른방").indexOf("새사람2님,") !== -1 &&
         say("새사람3", "재련가즈아", "Z") === "");
+
+    // 거북봇: 시작 랭킹(78명) — 랭킹 이름 3명이 이 방에서 말하면 조용히 깔린다 (2026-11-17)
+    if (KIND === "거북") {
+        main = await fresh();
+        say("몰랑/스나", "안녕", "T1");
+        let rk = say("리/아", "ㅎㅇ", "T2");
+        // (앞 시험에서 "후파" 가 이미 말해서 여기선 두 명만 더 말해도 3명이 된다)
+        rk = say("날개구름", "ㅎㅇ", "T3");
+        t("거북 랭킹: 방에는 아무 말 안 함", rk === "", rk);
+        rk = say("x", "/랭킹", "HX");
+        t("거북 랭킹: 1등 몰랑/스나 15", /1\S*\s*몰랑\/스나: 15/.test(rk) || rk.indexOf("몰랑/스나: 15") !== -1, rk);
+        t("거북 랭킹: 10·8·7 단계도", rk.indexOf("무소유의김사장/상인: 10") !== -1 && rk.indexOf("날개구름: 8") !== -1 && rk.indexOf("꾸동/뀨동: 7") !== -1, rk);
+        t("거북 랭킹: 순서", rk.indexOf("몰랑/스나") < rk.indexOf("무소유의김사장/상인") && rk.indexOf("무소유의김사장/상인") < rk.indexOf("날개구름"), rk);
+        rk = say("몰랑/스나", "재련가즈아", "T1");
+        t("거북 랭킹: 15 는 최고 단계라 더 못 올림", rk.indexOf("15") !== -1, rk);
+        rk = say("날개구름", "재련가즈아", "T3");
+        t("거북 랭킹: 이어서 재련 (8 → 9)", rk.indexOf("8 → 9") !== -1, rk);
+    }
 }
 
 console.log(ok + " 통과, " + bad + " 실패");
