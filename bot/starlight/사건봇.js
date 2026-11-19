@@ -37,7 +37,7 @@
  */
 export default function sageonBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "사건봇";
-var BOT_VER = "1117-1s8";
+var BOT_VER = "1117-1s9";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["사건"];
@@ -2000,7 +2000,8 @@ function response(room, msg, sender, isGroupChat, replier, who) {
 // 사람은 카톡 회원 ID(문자열 — 숫자로 바꾸면 자릿수가 깨진다)로 구분한다. StarLight 알림의 sender.id 와 달리 정확하다.
 //
 //  - 입장: 처음 보는 사람 → "OO님 어서오세요"
-//          전에 있던 사람 → "OO님 돌아오신걸 환영해요", 대화명이 바뀌었으면 "OO님(구 XX님) 돌아오신걸 환영해요"
+//          전에 있던 사람 → "OO님 돌아오신걸 환영해요", 예전에 다른 이름을 썼으면 "OO님(구 XX·YY님) 돌아오신걸 환영해요"
+//          (예전 이름은 최근 것부터 3개까지 — 예전 이름 그대로 돌아와도 그 전에 바꾼 적이 있으면 보여준다)
 //  - 퇴장: "OO님이 나가셨어요" / 내보내졌으면 "OO님이 내보내졌어요"
 //  - 닉변: 말할 때 대화명이 바뀌어 있으면 "🔄 대화명 변경: 처음 → … → 지금" (쓴 이름 누적). /닉변감지 는 이 기록으로 보여준다
 //          오픈채팅에서는 오픈채팅 프로필 이름(kind "open_member")만 본다 — 친구 이름이 섞여 오면 가짜 닉변이 된다
@@ -2167,6 +2168,19 @@ function kwSeeName(rd, id, name, now) {
     return old;
 }
 
+/** 지금 이름(cur)이 아닌 예전 이름들 — 최근 것부터, 겹치지 않게 최대 3개.
+ *  예전 이름 그대로 돌아온 사람도 그 전에 다른 이름을 쓴 적이 있으면 알려 준다 */
+function kwOldNames(rec, cur) {
+    var src = rec.hist && rec.hist.length ? rec.hist : [rec.name, rec.last];
+    var out = [];
+    for (var i = src.length - 1; i >= 0 && out.length < 3; i--) {
+        var n = kwStr(src[i]);
+        if (!n || n === "?" || n === cur || out.indexOf(n) !== -1) continue;
+        out.push(n);
+    }
+    return out;
+}
+
 function kwJoined(event) {
     kwSaw("입장");
     var room = kwRoomName(event.room);
@@ -2186,14 +2200,16 @@ function kwJoined(event) {
             rd.users[id] = { name: name, last: name, at: now, joins: 1 };
             lines.push(name + "님 어서오세요");
         } else {
-            var old = rec.last && rec.last !== name && !rec.quiet ? rec.last : null;
-            if (rec.quiet) { delete rec.quiet; rec.name = name; }
-            if (old) kwAddHist(rec, name);
+            // 입장 피드의 이름은 카톡이 적은 그대로라 믿을 수 있다 — 정리 표시(quiet)가 있어도 바뀐 이름을 기록한다.
+            // (2026-11-19: 정리 표시가 남은 사람이 이름을 바꿔 돌아오면 "구 …" 도 닉변 기록도 없이 조용히 덮어썼다)
+            if (rec.quiet) delete rec.quiet;
+            if (rec.last && rec.last !== name) kwAddHist(rec, name);
+            var olds = kwOldNames(rec, name);
             rec.last = name;
             rec.at = now;
             rec.left = false;
             rec.joins = (rec.joins || 1) + 1;
-            lines.push(old ? name + "님(구 " + old + "님) 돌아오신걸 환영해요" : name + "님 돌아오신걸 환영해요");
+            lines.push(olds.length ? name + "님(구 " + olds.join("·") + "님) 돌아오신걸 환영해요" : name + "님 돌아오신걸 환영해요");
         }
     }
     kwSave();
@@ -2216,6 +2232,8 @@ function kwLeft(event) {
     kwSeed(event.room, room, null);
     var rd = kwRoomData(room), now = new Date().getTime();
     if (id) {
+        // 퇴장 피드의 이름도 믿을 수 있다 — 정리 표시가 있어도 바뀐 이름을 닉변 기록에 남긴다
+        if (name && rd.users[id]) delete rd.users[id].quiet;
         if (name) kwSeeName(rd, id, name, now);
         else if (!rd.users[id]) rd.users[id] = { name: "?", last: "?", at: now };
         rd.users[id].left = true;

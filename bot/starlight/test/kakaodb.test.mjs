@@ -133,7 +133,10 @@ t("메뉴얼에 감지 안내", r.indexOf("/감지") !== -1, r);
 body = mod.default([KIND], ["후파"], PLAT);
 ev("left", { member: U(4, "지수2") });
 r = ev("joined", { members: jlist([U(4, "지수3")]) });
-t("다시 불러와도 기억", r === "지수3님(구 지수2님) 돌아오신걸 환영해요", r);
+t("다시 불러와도 기억 — 예전 이름들(최근 것부터)", r === "지수3님(구 지수2·지수님) 돌아오신걸 환영해요", r);
+ev("left", { member: U(4, "지수3") });
+r = ev("joined", { members: jlist([U(4, "지수3")]) });
+t("같은 이름으로 돌아와도 예전 이름 알려 줌", r === "지수3님(구 지수2·지수님) 돌아오신걸 환영해요", r);
 t("파일 이름", KEY + "_kakao.json" in files);
 const saved = JSON.parse(files[KEY + "_kakao.json"]);
 t("ID 는 문자열로 저장", Object.keys(saved.rooms[KIND].users).indexOf("4") !== -1);
@@ -153,5 +156,21 @@ t("정리: 첫 말은 조용히 맞춤", ev("message", { message: M(77, "[조교
 r = ev("message", { message: M(77, "후파2", "y") });
 t("정리 뒤 진짜 닉변은 알림", r === "🔄 대화명 변경: [조교]후파 → 후파2", r);
 t("정리 표시(v2) 저장", JSON.parse(files[KEY + "_kakao.json"]).v === 2);
+
+// ── 정리 표시가 남은 사람이 이름을 바꿔 돌아옴 (2026-11-19: "구 …" 도 /닉변감지 도 안 나왔다) ──
+files[KEY + "_kakao.json"] = JSON.stringify({ rooms: { [KIND]: { seeded: true, users: {
+    "88": { name: "옛이름", last: "횡횡", hist: ["옛이름", "횡횡"] },
+    "89": { name: "나간이", last: "나간이" } } } }, off: {} });
+body = mod.default([KIND], ["후파"], PLAT);
+r = ev("joined", { members: jlist([U(88, "새이름")]) });
+t("정리 표시 사람 — 바꿔 돌아오면 구 이름", r === "새이름님(구 옛이름님) 돌아오신걸 환영해요", r);
+r = say("아무개", "/닉변감지");
+t("정리 표시 사람 — /닉변감지 에도 나옴", r.indexOf("옛이름 → 새이름") !== -1 && r.indexOf("횡횡") === -1, r);
+r = ev("left", { member: U(89, "나간이2") });
+t("정리 표시 사람 — 바뀐 이름으로 나감", r === "나간이2님이 나가셨어요", r);
+r = ev("joined", { members: jlist([U(89, "나간이2")]) });
+t("정리 표시 사람 — 나갈 때 바뀐 이름도 기록", r === "나간이2님(구 나간이님) 돌아오신걸 환영해요", r);
+r = say("아무개", "/닉변감지");
+t("정리 표시 사람 — 나갈 때 바뀐 것도 /닉변감지", r.indexOf("나간이 → 나간이2") !== -1, r);
 
 console.log(ok + " 통과, " + bad + " 실패");

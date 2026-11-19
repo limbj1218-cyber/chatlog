@@ -235,12 +235,12 @@
     **카톡 DB 플러그인**(github.com/mooner1022/starlight-kakaodb — 카톡 DB 를 읽으므로 루트 또는 공유 UID 모드가 필요)이 주는
     `onKakaoMemberJoined`·`onKakaoMemberLeft`·`onKakaoMessage`·`onKakaoMessageDeleted` 를 로더(sl-1116-3)가 `body.kakao.*` 로 넘긴다.
     사람은 **카톡 회원 ID(문자열)** 로 구분한다(정확함). 처음 온 사람 "OO님 어서오세요", 전에 있던 사람 "OO님 돌아오신걸 환영해요",
-    대화명이 바뀌었으면 "OO님(구 XX님) 돌아오신걸 환영해요"(사용자가 정한 문구), 퇴장 "OO님이 나가셨어요"·"OO님이 내보내졌어요",
+    대화명이 바뀌었으면 "OO님(구 XX님) 돌아오신걸 환영해요"(사용자가 정한 문구 — 2026-11-19 부터 예전 이름을 최근 것부터 3개까지 `구 XX·YY님`, 예전 이름 그대로 돌아와도 그 전에 바꾼 적이 있으면 보여준다. 입퇴장 피드의 이름은 믿을 수 있어 정리 표시(quiet)가 있어도 닉변으로 기록한다 — 그게 없어서 "구 …"·`/닉변감지` 가 빠졌었다), 퇴장 "OO님이 나가셨어요"·"OO님이 내보내졌어요",
     말할 때 대화명이 바뀌어 있으면 "🔄 대화명 변경: XX → OO", 삭제 "🗑️ OO님이 메시지를 지웠어요" + 내용(200자, 사진 등은 종류만).
     처음 쓰는 방은 첫 이벤트 때 `room.getMembers()` 로 지금 멤버를 미리 적는다(원래 있던 사람이 나갔다 오면 "돌아오신걸").
     기록은 data 폴더 `luna_kakao.json`(봇마다 `<key>_kakao.json` — 사건봇 데이터가 `Database.json` 이라 이름을 make_neon 이 따로 정한다). `/감지`(누구나, 상태), `/감지 입장|퇴장|닉변|삭제|전부 켜기|끄기`(관리자), `/닉변감지` 는 이 기록으로 보여준다.
     프로젝트 받을 이벤트에 kakaodb.member.join·leave·message.create·delete 추가. 플러그인의 "onMessage 호환 이벤트" 는 꺼 둘 것(메시지가 두 번 온다).
-    PC 시험: `node bot/starlight/test/kakaodb.test.mjs [루나|토마토|레몬|하늘|사건]`(43개)
+    PC 시험: `node bot/starlight/test/kakaodb.test.mjs [루나|토마토|레몬|하늘|사건]`(49개)
   - PC 시험: `node bot/starlight/test/loader.test.mjs bot/starlight [루나|토마토|레몬|하늘|사건]`(가짜 StarLight 로 설치·업데이트·가져오기·클로드까지 82~92개),
   - **오토봇·카페봇도 옮겼다 (2026-11-16)** — 게임봇과 달리 변환기가 봇마다 따로다:
     `python bot/starlight/make_neon_auto.py`(bot/오토봇.js → bot/starlight/오토봇.js),

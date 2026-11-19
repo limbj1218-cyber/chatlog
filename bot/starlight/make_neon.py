@@ -326,7 +326,7 @@ if HAS_KW:
     "",''')
 
 # 본체 버전 뒤에 StarLight 판 고친 횟수를 붙인다 (/○○로더 에서 새 본체인지 보이게)
-SL_REV = 8
+SL_REV = 9
 m = re.search(r'var BOT_VER = "([^"]*)";', s)
 rep(m.group(0), 'var BOT_VER = "%ss%d";' % (m.group(1), SL_REV))
 
