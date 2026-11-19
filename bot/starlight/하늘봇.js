@@ -49,7 +49,7 @@
  */
 export default function skyBody(__ROOMS__, __ADMINS__, __PLAT__) {
 var scriptName = "하늘봇";
-var BOT_VER = "1117-1s9";
+var BOT_VER = "1120-1s9";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["하늘"];
@@ -552,7 +552,7 @@ function isReserved(trigger) {
     var t = trigger.toLowerCase();
     if (RESERVED.indexOf(t) !== -1) return true;
     if (typeof FIXED_REPLIES !== "undefined" && FIXED_REPLIES.hasOwnProperty(trigger)) return true;
-    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/지정") === 0 || t.indexOf("/조용히해") === 0 || t.indexOf("/초기화") === 0 || t.indexOf("/전부") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
+    if (t.indexOf("/등록") === 0 || t.indexOf("/삭제") === 0 || t.indexOf("/탐지") === 0 || t.indexOf("/지정") === 0 || t.indexOf("/조용히해") === 0 || t.indexOf("/로또") === 0 || t.indexOf("/초기화") === 0 || t.indexOf("/전부") === 0 || t.indexOf("/경험치") === 0 || t === "/메뉴얼" || t === "/매뉴얼"
         || t.charAt(0) === "." || t.indexOf("/클로드") === 0 || t === "/닉변감지" || t.indexOf("/카드") === 0
         || t.indexOf("/알림") === 0 || t.indexOf("/고정알림") === 0 || t === "닉네임" || t === "/닉네임" || t.indexOf("전생") === 0 || t.indexOf("/전생") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
@@ -998,6 +998,7 @@ var MANUAL_TEXT = [
     "🎲 놀이 (누구나)",
     "/탐지 할말 — 거짓말 탐지기 (참·거짓·중립)",
     "/전생 이름 — 이름으로 보는 전생 (이름 빼면 내 이름)",
+    "/로또 — 로또 번호 추천 (몇 개인지 물어봐요, 최대 5개)",
     "/닉네임 — 두 글자 닉네임 추천",
     "/닉변감지 — 대화명을 바꾼 사람 보기 (처음 이름 → 지금 이름)",
     "",
@@ -2545,6 +2546,56 @@ function shushHit(room, key) {
     return false;
 }
 
+// ═══════════════ 로또 번호 추천 (2026-11-20) ═══════════════
+// "/로또" → "몇 개를 추천해 드릴까요?" 를 묻고, 그 사람이 5분 안에 숫자만(3 · 3개) 보내면 그만큼 보낸다 (한 줄 = 1~45 중 6개).
+// "/로또 3" 처럼 바로 써도 된다. 최대 LOTTO_MAX(5)개 — 0 이나 6 이상이면 다시 묻는다(사용자 요청: 최대 5개).
+// 기다리는 동안 그 사람이 다른 "/" 명령을 치면 묻기를 그만둔다 (알림의 "몇 분마다?" 숫자 답과 헷갈리지 않게).
+// 칠 때마다 무작위, 저장 없음(기다림도 메모리에만), 누구나.
+var LOTTO_MAX = 5;
+var LOTTO_WAIT_MIN = 5;
+var lottoWait = {};   // { 방: { 사람키: 기다림이 끝나는 ms } }
+
+/** 1~45 중 겹치지 않게 6개, 작은 수부터 두 자리로 */
+function lottoLine() {
+    var pool = [], pick = [], i;
+    for (i = 1; i <= 45; i++) pool.push(i);
+    for (i = 0; i < 6; i++) pick.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    pick.sort(function (a, b) { return a - b; });
+    for (i = 0; i < pick.length; i++) pick[i] = (pick[i] < 10 ? "0" : "") + pick[i];
+    return pick.join("  ");
+}
+
+function lottoCount(w, key, name, n, now) {
+    if (!(n >= 1 && n <= LOTTO_MAX)) {
+        w[key] = now + LOTTO_WAIT_MIN * 60000;
+        return "로또 번호는 최대 " + LOTTO_MAX + "개까지 추천할 수 있어요. 1~" + LOTTO_MAX + " 중에 숫자로 보내 주세요.";
+    }
+    delete w[key];
+    var lines = ["🎱 " + name + "님 추천 로또 번호 (" + n + "개)"];
+    for (var i = 0; i < n; i++) lines.push((i + 1) + ") " + lottoLine());
+    lines.push("행운을 빌어요 🍀");
+    return lines.join("\n");
+}
+
+/** /로또 명령이거나 기다리던 숫자 답이면 답장 문구, 아니면 null */
+function handleLotto(room, raw, key, name) {
+    var now = new Date().getTime();
+    var w = lottoWait[room] || (lottoWait[room] = {});
+    var m = /^\/로또\s*(\d*)\s*개?$/.exec(raw);
+    if (m) {
+        if (m[1] === "") {
+            w[key] = now + LOTTO_WAIT_MIN * 60000;
+            return "🎱 로또 번호를 몇 개 추천해 드릴까요? (1~" + LOTTO_MAX + "개, 숫자만 보내 주세요)";
+        }
+        return lottoCount(w, key, name, parseInt(m[1], 10), now);
+    }
+    if (!w.hasOwnProperty(key)) return null;
+    if (w[key] < now || raw.charAt(0) === "/") { delete w[key]; return null; }
+    var a = /^(\d+)\s*개?$/.exec(raw);
+    if (!a) return null;
+    return lottoCount(w, key, name, parseInt(a[1], 10), now);
+}
+
 function response(room, msg, sender, isGroupChat, replier, who) {
     try {
         if (ROOMS.indexOf(room) === -1) return;
@@ -2572,6 +2623,10 @@ function response(room, msg, sender, isGroupChat, replier, who) {
         var shushReply = handleShush(room, raw, sender);
         if (shushReply !== null) return replier.reply(shushReply);
         if (shushHit(room, uKey)) replier.reply(SHUSH_SAY);
+
+        // ── 로또 번호 추천 (누구나) — "/로또" 뒤 그 사람의 숫자 답도 여기서 ──
+        var lottoReply = handleLotto(room, raw, uKey, uName);
+        if (lottoReply !== null) return replier.reply(lottoReply);
 
         // ── 명령어 등록·삭제·목록 (누구나) ──
         var regReply = handleRegister(room, raw);

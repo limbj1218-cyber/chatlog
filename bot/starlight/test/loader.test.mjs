@@ -178,6 +178,38 @@ if (KIND === "루나") {
     say("x", "/삭제_조용히해", "HX");
 }
 
+// ── 2-4. 로또 번호 추천 (누구나, 최대 5개, 2026-11-20) ──
+{
+    const lines = (x) => x.split("\n").filter((l) => /^\S*\d\) /.test(l.replace(KIND + "|", "")));
+    r = say("철수", "/로또", "H1");
+    t("로또: 몇 개 묻기", r.indexOf("몇 개 추천해 드릴까요") !== -1 && r.indexOf("1~5") !== -1, r);
+    t("로또: 다른 사람 숫자는 무시", say("영희", "3", "H2") === "");
+    r = say("철수", "3", "H1");
+    t("로또: 숫자 답 → 그만큼", r.indexOf("철수님 추천 로또 번호 (3개)") !== -1 && lines(r).length === 3, r);
+    t("로또: 한 줄에 6개 (1~45, 두 자리)", /1\) \d\d  \d\d  \d\d  \d\d  \d\d  \d\d/.test(r), r);
+    t("로또: 다 답한 뒤 숫자는 그냥 말", say("철수", "2", "H1") === "");
+    say("철수", "/로또", "H1");
+    r = say("철수", "7개", "H1");
+    t("로또: 6 이상이면 다시 묻기", r.indexOf("최대 5개까지") !== -1, r);
+    r = say("철수", "5개", "H1");
+    t("로또: 다시 물은 뒤 5개", lines(r).length === 5, r);
+    r = say("영희", "/로또 2", "H2");
+    t("로또: 바로 개수 쓰기", r.indexOf("영희님 추천 로또 번호 (2개)") !== -1 && lines(r).length === 2, r);
+    t("로또: 바로 10개는 거절", say("영희", "/로또 10", "H2").indexOf("최대 5개까지") !== -1);
+    t("로또: 다른 / 명령 치면 묻기 끝", say("영희", "/랭킹", "H2") !== "" && say("영희", "1", "H2") === "");
+    say("영희", "/로또", "H2");
+    const realGetTime = Date.prototype.getTime;
+    Date.prototype.getTime = function () { return realGetTime.call(this) + 6 * 60000; };
+    t("로또: 5분 지나면 숫자는 그냥 말", say("영희", "1", "H2") === "");
+    Date.prototype.getTime = realGetTime;
+    Math.random = () => 0.999;
+    r = say("영희", "/로또 1", "H2");
+    t("로또: 큰 수 쪽도 1~45 안", r.indexOf("40  41  42  43  44  45") !== -1, r);
+    Math.random = () => 0;
+    t("로또: 등록 거절", say("x", "/등록 /로또 아무말", "HX").indexOf("등록할 수 없습니다") !== -1);
+    t("로또: 메뉴얼에 안내", say("x", "/메뉴얼", "HX").indexOf("/로또") !== -1);
+}
+
 // ── 3. /내정보 — hash 값은 안 보인다 ──
 r = say("영희", "/내정보", "SECRET-HASH-123");
 t("내정보: 받지만 안 씀", r.indexOf("받음 (값은 비공개) — 쓰지 않음") !== -1 && r.indexOf("SECRET") === -1, r);
