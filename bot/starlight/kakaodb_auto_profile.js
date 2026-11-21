@@ -1,16 +1,17 @@
 // ═══════════════ 오픈프로필 입장 안내 (오토봇만, 2026-11-16) ═══════════════
-// make_neon_auto.py 가 kakaodb_watch.js 다음에 넣는다. 들어온 사람이 카카오톡 기본 프로필이 아니면
+// make_neon_auto.py 가 kakaodb_watch.js 다음에 넣는다. 들어온 사람이 오픈프로필이면
 // 안내 글과 폰에 저장된 안내 사진을 그 방에 보낸다 (오토봇 방 전부 — 사용자 요청).
 //
 //  - 프로필 종류는 카톡 DB 오픈채팅 멤버의 profile_type. 뜻은 공식 문서가 없고, 알려진 값은
-//    1 = 카카오톡 기본 프로필, 2 = 닉네임 프로필, 16 = 오픈프로필 → 기본(KW_MAIN_PROFILE)이 아니면 안내한다.
+//    1 = 카카오톡 기본 프로필, 2 = 닉네임 프로필, 16 = 오픈프로필 → 오픈프로필(KW_OPEN_PROFILE)일 때만 안내한다
+//    (2026-11-21 사용자: 닉네임 프로필(2)은 괜찮다 — 예전엔 1 이 아니면 다 안내했다).
 //    값을 모를 때(DB 에 아직 없음)는 아무 말도 안 한다. /내프로필 로 실제 값을 확인할 수 있다
 //  - 사진은 StarLight 의 room.sendMedia(폰 경로) — 카톡 공유 화면을 거쳐 보낸다("다른 앱 위에 표시" 필요).
 //    경로는 /프로필사진 경로 (관리자)로 바꾸고, 사진을 못 보내도 안내 글은 간다
 //  - /감지 프로필 끄기·켜기 (관리자)로 방마다 끈다
 
 KW_KINDS["프로필"] = "profile";
-var KW_MAIN_PROFILE = [1];
+var KW_OPEN_PROFILE = [16];
 var KW_PROFILE_TEXT = "님, 오픈프로필로 들어오셨어요. 사진을 참고 하셔서 카카오톡 기본 프로필로 바꿔 주세요 🙏";
 var KW_PHOTO_DEFAULT = "/sdcard/Download/오픈프로필안내.jpg";
 var kwPhotoLast = "";      // 마지막 사진 보내기 결과 (/감지 에 보인다)
@@ -40,7 +41,7 @@ function kwProfileName(t) {
 }
 
 function kwNeedsMainProfile(t) {
-    return t !== null && !isNaN(t) && KW_MAIN_PROFILE.indexOf(t) === -1;
+    return t !== null && !isNaN(t) && KW_OPEN_PROFILE.indexOf(t) !== -1;
 }
 
 /** 방의 카톡 DB 멤버 목록에서 이 사람(id) 찾기 */

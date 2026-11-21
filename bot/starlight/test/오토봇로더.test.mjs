@@ -154,7 +154,9 @@ t("감지 기록 파일", fs.existsSync(path.join(PROJ, "data", "auto_kakao.json
     r = pj(PU(41, "기본님", 1));
     t("기본 프로필 → 안내 없음", r === "오토2프프|기본님님 어서오세요" && media.length === 0, r);
     r = pj(PU(42, "닉네임님", 2));
-    t("닉네임 프로필 → 안내", r.indexOf("닉네임님님, 오픈프로필로") !== -1 && media.length === 1, r);
+    t("닉네임 프로필 → 안내 없음", r === "오토2프프|닉네임님님 어서오세요" && media.length === 0, r);
+    r = pj(PU(46, "영번님", 0));
+    t("모르는 종류 값(0) → 안내 없음", r === "오토2프프|영번님님 어서오세요" && media.length === 0, r);
     // 들어온 직후 종류를 모르면 몇 초 뒤 멤버 목록에서 다시 본다
     members = [{ id: "43", name: "늦은님", isMe: false, kind: "open_member", toJson: () => JSON.stringify({ profileType: 16 }) }];
     pj({ id: "43", name: "늦은님", isMe: false, toJson: () => "{}" });
@@ -173,7 +175,7 @@ t("감지 기록 파일", fs.existsSync(path.join(PROJ, "data", "auto_kakao.json
     t("바꾼 사진으로 보냄", media.join() === "오토2프프|/sdcard/Pictures/안내2.png", media);
     members = [{ id: "50", name: "확인님", isMe: false, kind: "open_member", toJson: () => JSON.stringify({ profileType: 2 }) }];
     r = say("확인님", "/내프로필", "H5", "오토2프프");
-    t("/내프로필", r.indexOf("종류 값: 2 (닉네임 프로필)") !== -1 && r.indexOf("안내를 받는 종류") !== -1, r);
+    t("/내프로필", r.indexOf("종류 값: 2 (닉네임 프로필)") !== -1 && r.indexOf("안내 안 받는 종류") !== -1, r);
     t("/감지 에 사진 경로", say("x", "/감지", "HX", "오토2프프").indexOf("프로필 안내 사진: /sdcard/Pictures/안내2.png") !== -1);
 }
 

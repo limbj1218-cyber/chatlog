@@ -263,13 +263,13 @@
     **오토봇 StarLight 판에도 입퇴장·닉변·삭제 감지**(2026-11-16, 사용자: 그 방에 바로 알림): make_neon_auto.py 가 `kakaodb_watch.js` 를 넣고
     (`KW_ADMIN_PARTS` 후파·임병진·[조교] 가 `/감지` 켜고 끄기, 기록 `auto_kakao.json`, 방 판단은 `inRooms()`), 오토봇로더 sl-1116-2 가
     `onKakao*` 를 넘기고 sender.id 를 hash 로 넘기지 않는다. 본체 버전 끝 `s2` = make_neon_auto 고친 횟수(`SL_REV`) —
-    `/오토업데이트` 는 버전이 같으면 본체를 안 바꾸므로 고칠 때마다 올릴 것. 시험 `오토봇로더.test.mjs` 61개
+    `/오토업데이트` 는 버전이 같으면 본체를 안 바꾸므로 고칠 때마다 올릴 것. 시험 `오토봇로더.test.mjs` 62개
     **오픈프로필 입장 안내** (2026-11-16, 오토봇만 — `bot/starlight/kakaodb_auto_profile.js`, make_neon_auto 가 감지 조각 뒤에 넣는다):
-    들어온 사람의 카톡 DB `profile_type` 이 기본(1)이 아니면 "OO님, 오픈프로필로 들어오셨어요. 사진을 참고 하셔서 카카오톡 기본 프로필로 바꿔 주세요 🙏"(사용자 문구)
+    들어온 사람의 카톡 DB `profile_type` 이 오픈프로필(16)이면(`KW_OPEN_PROFILE` — 닉네임 프로필 2 는 괜찮다, 2026-11-21 사용자. 예전엔 1 이 아니면 다 안내해 모두 오픈프로필로 잡혔다) "OO님, 오픈프로필로 들어오셨어요. 사진을 참고 하셔서 카카오톡 기본 프로필로 바꿔 주세요 🙏"(사용자 문구)
     + 폰에 저장된 사진(기본 `/sdcard/Download/오픈프로필안내.jpg`, 관리자 `/프로필사진 경로`)을 `room.sendMedia` 로 보낸다(카톡 공유 화면 경유).
     값의 뜻은 공식 문서가 없다(알려진 값: 1 기본·2 닉네임·16 오픈프로필) — `/내프로필` 로 폰에서 확인할 것. 모르면(null) 3초 뒤 멤버 목록에서 다시 보고, 그래도 모르면 조용히.
     `/감지 프로필 끄기`. 감지 조각의 훅 `kwAfterJoin`·`kwExtraCommand`·`kwStatusExtra` 를 쓴다(게임봇엔 없어서 아무 일도 안 한다)
-    PC 시험: `node bot/starlight/test/오토봇.test.mjs`(24) ·`오토봇로더.test.mjs`(61) ·
+    PC 시험: `node bot/starlight/test/오토봇.test.mjs`(24) ·`오토봇로더.test.mjs`(62) ·
     `카페봇.test.mjs`(24) ·`카페봇로더.test.mjs`(22)
     옛 메신저봇R 판 시험은 `node -r bot/starlight/test/neon_shim.js 시험.js …` 로 NeonJS 본체에 그대로 돌린다(본체를 strict 로 실행)
 - `bot/오토봇.js` + `bot/오토봇로더.js` + `bot/오토봇데이터.json` — "오토2프프"·"오토2"·"[오차율 계산봇]"·"공백기 근무표"·"멱살반2" 방 자동응답 봇.
