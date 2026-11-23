@@ -74,12 +74,12 @@ t("로더 상태: 본체 있음", /본체: \d{4}-\d+\S* ✅ \(깃헙에서 처�
 // ── 2. 재련·저장 ──
 Math.random = () => 0;   // 재련은 늘 성공
 let r = say("철수", "재련가즈아", "H1");
-t("재련", r.indexOf("철수님, 1 → 2") !== -1, r);
+t("재련 (0 에서 시작, 2026-11-23)", r.indexOf("철수님, 0 → 1") !== -1, r);
 const db = JSON.parse(fs.readFileSync(path.join(PROJ, "data", DBFILE + ""), "utf8"));
-t("data 폴더에 저장 + 대화명 키 (StarLight id 는 안 씀)", db.userData["철수"] === 2 && !db.userData["#h:H1"], db.userData);
+t("data 폴더에 저장 + 대화명 키 (StarLight id 는 안 씀)", db.userData["철수"] === 1 && !db.userData["#h:H1"], db.userData);
 // 2026-11-16 토마토 방에서 겪은 것: StarLight 는 id 를 앞사람 메시지에서 읽는다 → 이름으로만 사람을 찾는다
 r = say("영희", "재련가즈아", "H1");   // 앞사람(철수)의 id 가 섞여 와도
-t("앞사람 id 가 와도 본인 기록", r.indexOf("영희님, 1 → 2") !== -1, r);
+t("앞사람 id 가 와도 본인 기록", r.indexOf("영희님, 0 → 1") !== -1, r);
 t("다른 방 무시", say("철수", "재련가즈아", "H1", "다른방") === "");
 t("고정 응답 (루나만)", say("x", "퉤", "HX") === (KIND === "루나" ? "루나|후룹" : ""));
 // 고정 사진 응답 — 루나 방에서만 (2026-11-17)
@@ -220,6 +220,29 @@ if (KIND === "루나") {
     t("경험치: 기벳 이름 안 보임", r.indexOf("기벳") === -1, r);
 }
 
+// ── 2-6. 확률표는 0 → 1 부터, 파괴·수리 (사건봇도 2026-11-23 부터) ──
+{
+    r = say("x", "/확률", "HX");
+    t("확률: 0 → 1 부터", r.indexOf("0 → 1: [100, 0, 0, 0]") !== -1 && r.indexOf("1 → 2: [50, 50, 0, 0]") !== -1, r);
+    t("확률: 14 → 15 까지, 15 는 최고 단계", r.indexOf("14 → 15: [15, 15, 35, 35]") !== -1 && r.indexOf("15 → 16") === -1 && r.indexOf("15재련이 최고 단계") !== -1, r);
+    say("민수", "안녕", "HX");
+    r = say("후파", "/지정_민수_0", "HX");
+    t("지정: 0 도 된다", r.indexOf("0(으)로 바꿨습니다") !== -1, r);
+    r = say("후파", "/지정_민수_4", "HX");
+    t("지정: 4", r.indexOf("0 → 4(으)로 바꿨습니다") !== -1, r);
+    Math.random = () => 0.95;    // 4 → 5 는 [25, 40, 25, 10] → 95 는 파괴
+    r = say("민수", "재련가즈아", "HX");
+    t("파괴", r.indexOf("장비가 파괴되었습니다") !== -1, r);
+    r = say("민수", "재련가즈아", "HX");
+    const m = /"([^"]+)" 라고 외쳐주세요/.exec(r);
+    t("파괴되면 수리 문구 안내", !!m, r);
+    r = say("민수", m ? m[1] : "?", "HX");
+    t("수리 + 기회 +1", r.indexOf("수리되어") !== -1 && r.indexOf("남은 기회 2번") !== -1, r);
+    Math.random = () => 0;
+    r = say("민수", "재련가즈아", "HX");
+    t("수리 뒤 재련 (값은 그대로)", r.indexOf("민수님, 4 → 5") !== -1, r);
+}
+
 // ── 3. /내정보 — hash 값은 안 보인다 ──
 r = say("영희", "/내정보", "SECRET-HASH-123");
 t("내정보: 받지만 안 씀", r.indexOf("받음 (값은 비공개) — 쓰지 않음") !== -1 && r.indexOf("SECRET") === -1, r);
@@ -296,9 +319,9 @@ t("이상한 이벤트도 안 터짐", !threw);
     };
     Math.random = () => 0;
     let r1 = ksay("영수", "재련가즈아", "5001");
-    t("회원 ID: 처음 재련", r1.indexOf("영수님, 1 → 2") !== -1, r1);
+    t("회원 ID: 처음 재련", r1.indexOf("영수님, 0 → 1") !== -1, r1);
     let r2 = ksay("영수바꿈", "재련가즈아", "5001");
-    t("회원 ID: 대화명 바꿔도 이어짐 (표시는 처음 이름)", r2.indexOf("영수님, 2 → 3") !== -1, r2);
+    t("회원 ID: 대화명 바꿔도 이어짐 (표시는 처음 이름)", r2.indexOf("영수님, 1 → 2") !== -1, r2);
     let r3 = ksay("영수바꿈", "재련가즈아", "5001");
     t("회원 ID: 하루 횟수도 같은 사람", r3.indexOf("모두 사용") !== -1, r3);
     let r4 = ksay("옛사람", "재련가즈아", "5002");
@@ -306,13 +329,13 @@ t("이상한 이벤트도 안 터짐", !threw);
     let r5 = ksay("영희", "재련가즈아", "5003", "5001");
     t("회원 ID: 알림 id 가 앞사람 것이어도 본인", r5.indexOf("영희님,") !== -1 && r5.indexOf("영수") === -1, r5);
     const saved = JSON.parse(fs.readFileSync(path.join(PROJ, "data", DBFILE), "utf8"));
-    t("회원 ID 키로 저장", saved.userData["#h:k5001"] === 3 && !saved.userData["#h:H9"] && saved.userData["#h:k5002"] === 8, saved.userData);
+    t("회원 ID 키로 저장", saved.userData["#h:k5001"] === 2 && !saved.userData["#h:H9"] && saved.userData["#h:k5002"] === 8, saved.userData);
     let info2 = say("영수바꿈", "/내정보", "X");
     t("/내정보: 회원 ID 값은 안 보임", info2.indexOf("5001") === -1);
     // 카톡 DB 가 아직 그 메시지를 못 적었으면 대화명으로 (같은 대화명의 회원 ID 사람에게 붙는다)
     sent = [];
     main.onMessage({ room: kroom, message: "/랭킹", sender: { name: "영수바꿈", id: "x" } });
-    t("DB 에 없을 때도 랭킹은 그대로", sent.join().indexOf("영수: 3재련") !== -1, sent);
+    t("DB 에 없을 때도 랭킹은 그대로", sent.join().indexOf("영수: 2재련") !== -1, sent);
     delete globalThis.KakaoDB;
 }
 

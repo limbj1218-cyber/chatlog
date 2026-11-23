@@ -48,7 +48,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "하늘봇";
-var BOT_VER = "1122-1";
+var BOT_VER = "1123-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["하늘"];
@@ -180,10 +180,10 @@ var people = store.people;
 var appliedFixes = store.appliedFixes;
 var alarms = store.alarms;
 
-/** 이 방에서 기록 없는 사람이 시작하는 재련값 (/전부_ 로 정한다, 기본 1) */
+/** 이 방에서 기록 없는 사람이 시작하는 재련값 (/전부_ 로 정한다, 기본 0 — 2026-11-23 전엔 1) */
 function roomStart(room) {
-    var v = Number(startLevel[room]);
-    return v >= 1 ? v : 1;
+    var v = startLevel.hasOwnProperty(room) ? Number(startLevel[room]) : NaN;
+    return v >= 0 ? v : 0;
 }
 
 function saveData() {
@@ -211,9 +211,10 @@ function saveData() {
 // ═══════════════ 게임 규칙 ═══════════════
 
 // [성공, 유지, 하락, 파괴] — 제련봇과 같은 표. 넷의 합이 100 이다.
-// (사건봇은 파괴 칸이 없어서 그 몫이 하락으로 들어간다)
-// 15단계는 전부 0 → 아무것도 안 걸려 "유지" (사실상 최고 단계)
+// (사건봇도 2026-11-23 부터 같은 표·같은 파괴/수리)
+// 칸 N 은 "N → N+1" 확률이다 (공식 안내의 일반 상황과 같다). 15단계는 전부 0 → 아무것도 안 걸려 "유지" (최고 단계)
 var chances = {
+    0: [100, 0, 0, 0],    // 0 → 1 은 늘 성공 (2026-11-23 부터 재련값은 0 에서 시작)
     1: [50, 50, 0, 0],
     2: [33, 67, 0, 0],
     3: [25, 75, 0, 0],
@@ -455,7 +456,7 @@ function findUserKey(room, name) {
 }
 
 // ═══════════════ 재련값 지정 (관리자, 2026-11-12) ═══════════════
-// /지정_유저명_값 → 그 사람의 재련 단계를 값으로 바꾼다. 값은 1 ~ 확률표의 마지막 단계.
+// /지정_유저명_값 → 그 사람의 재련 단계를 값으로 바꾼다. 값은 0 ~ 확률표의 마지막 단계.
 // 대화명에 "_" 가 들어 있을 수 있어 "마지막 _" 에서 값과 나눈다.
 // 오타로 없는 사람이 랭킹에 생기지 않게, 재련 기록이 있거나 이 방에서 말한 적 있는 대화명만 받는다 (정확히 일치).
 // 파괴 상태가 있는 봇(루나봇)이면 파괴도 풀어 준다 — 관리자가 단계를 정해 준 것이므로.
@@ -475,13 +476,13 @@ function handleSetLevel(room, raw, sender) {
     var valStr = cut === -1 ? "" : rest.substring(cut + 1).trim();
     if (!name || !/^\d+$/.test(valStr)) return "형식: /지정_유저명_값\n예) /지정_철수_7";
     var val = parseInt(valStr, 10), max = maxRefineLevel();
-    if (val < 1 || val > max) return "값은 1~" + max + " 사이로 넣어 주세요.";
+    if (val < 0 || val > max) return "값은 0~" + max + " 사이로 넣어 주세요.";
     var key = findUserKey(room, name);
     if (key === null) {
         return "\"" + name + "\" 님을 찾을 수 없어요.\n이 방에서 말한 적 있는 대화명을 정확히 써 주세요.";
     }
     var inRoom = roomUsers[room] || {};
-    var prev = userData[key] || roomStart(room);
+    var prev = userData.hasOwnProperty(key) ? userData[key] : roomStart(room);
     userData[key] = val;
     inRoom[key] = true;
     roomUsers[room] = inRoom;
@@ -497,7 +498,7 @@ function handleSetLevel(room, raw, sender) {
 }
 
 // ═══════════════ 한 사람 재련 기록 지우기 (관리자, 2026-11-12) ═══════════════
-// /초기화_유저명 → 그 사람의 재련값·오늘 횟수(·파괴 상태)를 모두 지운다. 랭킹에서 빠지고 다음 재련은 방 시작 값(기본 1)부터.
+// /초기화_유저명 → 그 사람의 재련값·오늘 횟수(·파괴 상태)를 모두 지운다. 랭킹에서 빠지고 다음 재련은 방 시작 값(기본 0)부터.
 // 전체 "/초기화"(모두의 오늘 횟수)와 헷갈리지 않게 반드시 "/초기화_" 로 받는다. 대화명은 정확히 일치해야 한다.
 
 /** /초기화_ 명령이면 답장 문구, 아니면 null */
@@ -516,7 +517,7 @@ function handleResetUser(room, raw, sender) {
     if (typeof broken !== "undefined") delete broken[key];
     if (typeof repairPrompt !== "undefined") delete repairPrompt[key];
     saveData();
-    return "🧹 " + displayName(key) + "님의 재련 기록을 지웠습니다." + (prev ? " (" + prev + "재련)" : "") +
+    return "🧹 " + displayName(key) + "님의 재련 기록을 지웠습니다." + (prev !== undefined ? " (" + prev + "재련)" : "") +
         "\n다음 재련은 " + roomStart(room) + "부터 시작해요.";
 }
 
@@ -534,7 +535,7 @@ function handleSetAll(room, raw, sender) {
     var valStr = raw.substring(4).trim();
     if (!/^\d+$/.test(valStr)) return "형식: /전부_값\n예) /전부_5";
     var val = parseInt(valStr, 10), max = maxRefineLevel();
-    if (val < 1 || val > max) return "값은 1~" + max + " 사이로 넣어 주세요.";
+    if (val < 0 || val > max) return "값은 0~" + max + " 사이로 넣어 주세요.";
     var inRoom = roomUsers[room] || {};
     var count = 0;
     for (var name in inRoom) {
@@ -2775,7 +2776,7 @@ function response(room, msg, sender, isGroupChat, replier, who) {
                 return replier.reply("오늘 할 수 있는 재련 기회를 모두 사용하셨습니다.");
             }
 
-            if (!userData[uKey]) userData[uKey] = roomStart(room);
+            if (!userData.hasOwnProperty(uKey)) userData[uKey] = roomStart(room);
 
             var level = userData[uKey];
             var prevLevel = level;
@@ -2788,7 +2789,7 @@ function response(room, msg, sender, isGroupChat, replier, who) {
             } else if (result === "유지") {
                 message += prevLevel + " → " + level + " 재련에 실패하셨네요ㅜㅜ";
             } else if (result === "하락") {
-                level = Math.max(1, level - 1);
+                level = Math.max(0, level - 1);
                 message += "재련에 실패하여 " + prevLevel + " → " + level + "로 하락되었습니다ㅠㅠ";
             } else {
                 broken[uKey] = true;
@@ -2847,11 +2848,15 @@ function response(room, msg, sender, isGroupChat, replier, who) {
 
         // ── 확률표 ──
         if (msg === "/확률") {
-            var rows = [];
-            for (var lv = 1; chances.hasOwnProperty(lv); lv++) {
-                rows.push(lv + ": [" + chances[lv].join(", ") + "]");
+            var rows = [], top = 0;
+            for (var lv = 0; chances.hasOwnProperty(lv); lv++) {
+                top = lv;
+                var c = chances[lv];
+                if (c[0] + c[1] + c[2] + c[3] === 0) continue;     // 최고 단계 (더 못 올린다)
+                rows.push(lv + " → " + (lv + 1) + ": [" + c.join(", ") + "]");
             }
-            return replier.reply("*[재련확률표]*\n[성공, 유지, 하락, 파괴]\n" + rows.join("\n"));
+            return replier.reply("*[재련확률표]*\n[성공, 유지, 하락, 파괴]\n" + rows.join("\n") +
+                "\n(" + top + "재련이 최고 단계예요)");
         }
 
         // ── 오늘 횟수 초기화 (관리자) ──
@@ -2870,13 +2875,13 @@ function response(room, msg, sender, isGroupChat, replier, who) {
         if (msg === "/삭제") {
             if (!isAdmin(sender)) return replier.reply("해당 명령어를 사용할 수 있는 권한이 없습니다.");
             for (user in userData) {
-                if (userData.hasOwnProperty(user)) userData[user] = 1;
+                if (userData.hasOwnProperty(user)) userData[user] = 0;
             }
-            broken = {};          // 재련값을 1로 돌리면 파괴 상태도 함께 푼다
+            broken = {};          // 재련값을 0으로 돌리면 파괴 상태도 함께 푼다
             repairPrompt = {};
-            delete startLevel[room];    // 방 시작 값도 1로
+            delete startLevel[room];    // 방 시작 값도 0으로
             saveData();
-            return replier.reply("모든 유저의 재련값이 1으로 초기화되었습니다.");
+            return replier.reply("모든 유저의 재련값이 0으로 초기화되었습니다.");
         }
 
         // ── 고정 응답 (코드에 있는 것 — 등록분보다 먼저) ──

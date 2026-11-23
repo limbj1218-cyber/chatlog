@@ -5,6 +5,8 @@
  *  ◆ 명령어
  *    제련가즈아 / 재련가즈아 → 재련 시도 (하루 2회)
  *    /랭킹                    → 이 방 참여자들의 재련 랭킹
+ *    /확률                    → 단계별 [성공, 유지, 하락, 파괴] 확률표 (누구나)
+ *    (수리 문구)              → 장비가 파괴되면 봇이 알려주는 문구를 그대로 외치면 복구 (그날 재련 기회 +1)
  *    /등록 명령어 할말        → 명령어 등록 (누구나, /등록_명령어_할말 도 된다)
  *    /삭제 명령어             → 등록한 명령어 삭제 (누구나, /삭제_명령어 도 된다)
  *    /리스트                  → 등록된 명령어 목록
@@ -25,7 +27,8 @@
  *    /초기화 /삭제            → 관리자 전용
  *
  *  ◆ 제련봇(bot/제련봇.js)과는 완전히 별개다.
- *    - 방이 다르고(사건), 데이터 파일도 따로 쓰며, 파괴/수리 개념이 없다.
+ *    - 방이 다르고(사건), 데이터 파일도 따로 쓴다.
+ *    - 2026-11-23 부터 파괴/수리가 있다 (루나봇과 같은 방식·같은 확률표·같은 수리 문구).
  *
  *  ◆ 호환성
  *    - 메신저봇R 신버전(API2) / 구버전(API1) / 다크토네이도 챗봇 모두 동작
@@ -37,7 +40,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "사건봇";
-var BOT_VER = "1122-1";
+var BOT_VER = "1123-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = ["사건"];
@@ -145,6 +148,8 @@ function loadData() {
     return {
         userData: parsed.userData || {},
         dailyLimit: parsed.dailyLimit || {},
+        broken: parsed.broken || {},              // { 이름: true } 장비 파괴 상태
+        repairPrompt: parsed.repairPrompt || {},  // { 이름: 수리 문구 }
         custom: parsed.custom || {},              // { 방: { 명령어: 할말 } } 등록 명령어
         shush: parsed.shush || {},                // { 방: { 사람키: 풀리는 시각(ms) } } 조용히해
         askOn: parsed.askOn || {},                // { 방: true } 클로드 답변 켜짐
@@ -157,6 +162,8 @@ function loadData() {
 var store = loadData();
 var userData = store.userData;
 var dailyLimit = store.dailyLimit;
+var broken = store.broken;
+var repairPrompt = store.repairPrompt;
 var roomUsers = store.roomUsers;
 var custom = store.custom;
 var askOn = store.askOn;
@@ -164,14 +171,15 @@ var shush = store.shush;
 var startLevel = store.startLevel;
 var people = store.people;
 
-/** 이 방에서 기록 없는 사람이 시작하는 재련값 (/전부_ 로 정한다, 기본 1) */
+/** 이 방에서 기록 없는 사람이 시작하는 재련값 (/전부_ 로 정한다, 기본 0 — 2026-11-23 전엔 1) */
 function roomStart(room) {
-    var v = Number(startLevel[room]);
-    return v >= 1 ? v : 1;
+    var v = startLevel.hasOwnProperty(room) ? Number(startLevel[room]) : NaN;
+    return v >= 0 ? v : 0;
 }
 
 function saveData() {
-    var out = { userData: userData, dailyLimit: dailyLimit, roomUsers: {} };
+    var out = { userData: userData, dailyLimit: dailyLimit,
+        broken: broken, repairPrompt: repairPrompt, roomUsers: {} };
     for (var room in roomUsers) {
         if (!roomUsers.hasOwnProperty(room)) continue;
         var arr = [];
@@ -191,31 +199,97 @@ function saveData() {
 
 // ═══════════════ 게임 규칙 ═══════════════
 
+// [성공, 유지, 하락, 파괴] — 루나봇과 같은 표. 넷의 합이 100 이다.
+// 2026-11-23 사용자 요청으로 파괴·수리를 넣었다 (전엔 파괴 칸이 없어 그 몫이 하락에 들어가 있었다).
+// 파괴·수리 코드는 루나봇(토마토봇)에서 그대로 옮겼다 — 수리 문구도 같은 기본 7개.
+// 칸 N 은 "N → N+1" 확률이다 (공식 안내의 일반 상황과 같다). 15단계는 전부 0 → 아무것도 안 걸려 "유지" (최고 단계)
 var chances = {
-    1: [50, 50, 0],
-    2: [33, 67, 0],
-    3: [25, 75, 0],
-    4: [25, 40, 25],
-    5: [25, 40, 25],
-    6: [20, 40, 25],
-    7: [20, 40, 25],
-    8: [20, 35, 30],
-    9: [20, 35, 30],
-    10: [20, 30, 30],
-    11: [20, 30, 30],
-    12: [20, 25, 30],
-    13: [15, 20, 35],
-    14: [15, 15, 35],
-    15: [0, 0, 0]
+    0: [100, 0, 0, 0],    // 0 → 1 은 늘 성공 (2026-11-23 부터 재련값은 0 에서 시작)
+    1: [50, 50, 0, 0],
+    2: [33, 67, 0, 0],
+    3: [25, 75, 0, 0],
+    4: [25, 40, 25, 10],
+    5: [25, 40, 25, 10],
+    6: [20, 40, 25, 15],
+    7: [20, 40, 25, 15],
+    8: [20, 35, 30, 15],
+    9: [20, 35, 30, 15],
+    10: [20, 30, 30, 20],
+    11: [20, 30, 30, 20],
+    12: [20, 25, 30, 25],
+    13: [15, 20, 35, 30],
+    14: [15, 15, 35, 35],
+    15: [0, 0, 0, 0]
+};
+var RESULTS = ["성공", "유지", "하락", "파괴"];
+
+// 파괴되면 이 중 하나를 골라 "이렇게 외쳐주세요" 라고 알려준다 (2026-11-12 루나 전용 문구로 교체)
+// 띄어쓰기까지 정확히 쳐야 수리된다. 루나 방 11/12 대화에서 나온 말로 골랐다 (주문 3개 + 반성문 4개).
+// "진상님 죄송해요" 는 2026-11-12 사용자 요청으로 뺐다 — 이미 안내받은 사람은 봇 시작 때 아래 문구로 바뀐다.
+// ※ 특정인을 겨냥하거나 성적 지향을 소재로 한 말은 넣지 않는다 — 파괴될 때마다 모두가 따라 외치게 되므로.
+// 수리하면 그날 재련 기회를 1번 더 준다 (REPAIR_BONUS).
+var REPAIR_BONUS = 1;
+var REPAIR_KEYWORDS = [
+    // 주문
+    "아수라발발타",
+    "오이시쿠나레 모에모에뀽",
+    "가만히 있으면 반은 간다",
+    // 반성문
+    "이쁜말 고운말 쓰겠습니다",
+    "이방에서는 체통을 지키겠습니다",
+    "저는 구라비티의 노예입니다",
+    "버그도 실력입니다"
+];
+
+// 방마다 따로 쓰는 수리 문구 (2026-11-17 사용자 요청 — 그 방에서만 나오게).
+// 방 이름: [문구들]. 여기 없는 방은 위 REPAIR_KEYWORDS 를 쓴다. 기본 문구에 더하려면 REPAIR_KEYWORDS.concat([...])
+var REPAIR_KEYWORDS_BY_ROOM = {
 };
 
+/** 이 방에서 쓰는 수리 문구 목록 */
+function repairWords(room) {
+    var w = REPAIR_KEYWORDS_BY_ROOM.hasOwnProperty(room) ? REPAIR_KEYWORDS_BY_ROOM[room] : null;
+    return w && w.length ? w : REPAIR_KEYWORDS;
+}
+
+/** 어느 방에서든 쓰는 수리 문구 전부 (저장된 안내 문구 확인·등록 거절용) */
+function allRepairWords() {
+    var all = REPAIR_KEYWORDS.slice(0);
+    for (var r in REPAIR_KEYWORDS_BY_ROOM) {
+        if (!REPAIR_KEYWORDS_BY_ROOM.hasOwnProperty(r)) continue;
+        var w = REPAIR_KEYWORDS_BY_ROOM[r] || [];
+        for (var i = 0; i < w.length; i++) if (all.indexOf(w[i]) === -1) all.push(w[i]);
+    }
+    return all;
+}
+
+function pickRepairWord(room) {
+    var w = repairWords(room);
+    return w[Math.floor(Math.random() * w.length)];
+}
+
+// 문구를 바꾸기 전에 안내받은 사람은 옛 문구가 저장돼 있다 → 지금 목록의 문구로 바꿔 준다
+(function refreshOldPrompts() {
+    var changed = false;
+    for (var who in repairPrompt) {
+        if (!repairPrompt.hasOwnProperty(who)) continue;
+        if (allRepairWords().indexOf(repairPrompt[who]) === -1) {
+            repairPrompt[who] = REPAIR_KEYWORDS[Math.floor(Math.random() * REPAIR_KEYWORDS.length)];
+            changed = true;
+        }
+    }
+    if (changed) saveData();
+})();
+
 function refine(level) {
-    var row = chances[level] || [0, 0, 0];
-    var success = row[0], keep = row[1];
+    var row = chances[level] || [0, 0, 0, 0];
     var rand = Math.random() * 100;
-    if (rand < success) return "성공";
-    if (rand < success + keep) return "유지";
-    return "하락";
+    var sum = 0;
+    for (var i = 0; i < row.length; i++) {
+        sum += row[i];
+        if (rand < sum) return RESULTS[i];
+    }
+    return "유지";
 }
 
 function isAdmin(sender) {
@@ -375,7 +449,7 @@ function findUserKey(room, name) {
 }
 
 // ═══════════════ 재련값 지정 (관리자, 2026-11-12) ═══════════════
-// /지정_유저명_값 → 그 사람의 재련 단계를 값으로 바꾼다. 값은 1 ~ 확률표의 마지막 단계.
+// /지정_유저명_값 → 그 사람의 재련 단계를 값으로 바꾼다. 값은 0 ~ 확률표의 마지막 단계.
 // 대화명에 "_" 가 들어 있을 수 있어 "마지막 _" 에서 값과 나눈다.
 // 오타로 없는 사람이 랭킹에 생기지 않게, 재련 기록이 있거나 이 방에서 말한 적 있는 대화명만 받는다 (정확히 일치).
 // 파괴 상태가 있는 봇(루나봇)이면 파괴도 풀어 준다 — 관리자가 단계를 정해 준 것이므로.
@@ -395,13 +469,13 @@ function handleSetLevel(room, raw, sender) {
     var valStr = cut === -1 ? "" : rest.substring(cut + 1).trim();
     if (!name || !/^\d+$/.test(valStr)) return "형식: /지정_유저명_값\n예) /지정_철수_7";
     var val = parseInt(valStr, 10), max = maxRefineLevel();
-    if (val < 1 || val > max) return "값은 1~" + max + " 사이로 넣어 주세요.";
+    if (val < 0 || val > max) return "값은 0~" + max + " 사이로 넣어 주세요.";
     var key = findUserKey(room, name);
     if (key === null) {
         return "\"" + name + "\" 님을 찾을 수 없어요.\n이 방에서 말한 적 있는 대화명을 정확히 써 주세요.";
     }
     var inRoom = roomUsers[room] || {};
-    var prev = userData[key] || roomStart(room);
+    var prev = userData.hasOwnProperty(key) ? userData[key] : roomStart(room);
     userData[key] = val;
     inRoom[key] = true;
     roomUsers[room] = inRoom;
@@ -417,7 +491,7 @@ function handleSetLevel(room, raw, sender) {
 }
 
 // ═══════════════ 한 사람 재련 기록 지우기 (관리자, 2026-11-12) ═══════════════
-// /초기화_유저명 → 그 사람의 재련값·오늘 횟수(·파괴 상태)를 모두 지운다. 랭킹에서 빠지고 다음 재련은 방 시작 값(기본 1)부터.
+// /초기화_유저명 → 그 사람의 재련값·오늘 횟수(·파괴 상태)를 모두 지운다. 랭킹에서 빠지고 다음 재련은 방 시작 값(기본 0)부터.
 // 전체 "/초기화"(모두의 오늘 횟수)와 헷갈리지 않게 반드시 "/초기화_" 로 받는다. 대화명은 정확히 일치해야 한다.
 
 /** /초기화_ 명령이면 답장 문구, 아니면 null */
@@ -436,7 +510,7 @@ function handleResetUser(room, raw, sender) {
     if (typeof broken !== "undefined") delete broken[key];
     if (typeof repairPrompt !== "undefined") delete repairPrompt[key];
     saveData();
-    return "🧹 " + displayName(key) + "님의 재련 기록을 지웠습니다." + (prev ? " (" + prev + "재련)" : "") +
+    return "🧹 " + displayName(key) + "님의 재련 기록을 지웠습니다." + (prev !== undefined ? " (" + prev + "재련)" : "") +
         "\n다음 재련은 " + roomStart(room) + "부터 시작해요.";
 }
 
@@ -454,7 +528,7 @@ function handleSetAll(room, raw, sender) {
     var valStr = raw.substring(4).trim();
     if (!/^\d+$/.test(valStr)) return "형식: /전부_값\n예) /전부_5";
     var val = parseInt(valStr, 10), max = maxRefineLevel();
-    if (val < 1 || val > max) return "값은 1~" + max + " 사이로 넣어 주세요.";
+    if (val < 0 || val > max) return "값은 0~" + max + " 사이로 넣어 주세요.";
     var inRoom = roomUsers[room] || {};
     var count = 0;
     for (var name in inRoom) {
@@ -485,8 +559,9 @@ function isReserved(trigger) {
         || t.charAt(0) === "." || t.indexOf("/클로드") === 0 || t === "/닉변감지" || t.indexOf("/카드") === 0
         || t === "닉네임" || t === "/닉네임" || t.indexOf("전생") === 0 || t.indexOf("/전생") === 0) return true;
     if (typeof REPAIR_KEYWORDS !== "undefined") {
-        for (var i = 0; i < REPAIR_KEYWORDS.length; i++) {
-            if (REPAIR_KEYWORDS[i].toLowerCase() === t) return true;
+        var rw = allRepairWords();
+        for (var i = 0; i < rw.length; i++) {
+            if (rw[i].toLowerCase() === t) return true;
         }
     }
     return false;
@@ -904,7 +979,13 @@ var MANUAL_TEXT = [
     "⚔️ 재련 (하루 2번)",
     "재련가즈아 — 장비 재련. 성공하면 +1, 실패하면 그대로거나 1 내려가요",
     "(제련가즈아 · /재련가즈아 로 쳐도 돼요)",
+    "4단계부터는 파괴될 수도 있어요 💥",
+    "/확률 — 단계별 성공·유지·하락·파괴 확률",
     "/랭킹 — 이 방 재련 순위",
+    "",
+    "🛠️ 파괴됐을 때",
+    "재련가즈아를 치면 수리 문구를 알려줘요. 그 문구를 그대로 외치면 복구!",
+    "수리하면 오늘 재련 기회 +1 🎁",
     "",
     "📝 명령어 등록 (누구나)",
     "/등록 명령어 할말 — 예) /등록 공지 오늘 8시에 모여요",
@@ -1990,6 +2071,16 @@ function response(room, msg, sender, isGroupChat, replier, who) {
 
         // ── 재련 시도 ──
         if (msg === "제련가즈아" || msg === "재련가즈아") {
+            // 파괴된 장비는 수리 전까지 재련 불가 (횟수도 쓰지 않는다)
+            if (broken[uKey]) {
+                if (!repairPrompt[uKey] || repairWords(room).indexOf(repairPrompt[uKey]) === -1) {
+                    repairPrompt[uKey] = pickRepairWord(room);
+                    saveData();
+                }
+                return replier.reply(uName + "님, 장비가 파괴되어 재련을 할 수 없습니다. 수리를 원하시면 \"" +
+                    repairPrompt[uKey] + "\" 라고 외쳐주세요!");
+            }
+
             if (!dailyLimit[uKey] || dailyLimit[uKey].date !== today) {
                 dailyLimit[uKey] = { count: 0, date: today };
             }
@@ -1998,7 +2089,7 @@ function response(room, msg, sender, isGroupChat, replier, who) {
                 return replier.reply("오늘 할 수 있는 재련 기회를 모두 사용하셨습니다.");
             }
 
-            if (!userData[uKey]) userData[uKey] = roomStart(room);
+            if (!userData.hasOwnProperty(uKey)) userData[uKey] = roomStart(room);
 
             var level = userData[uKey];
             var prevLevel = level;
@@ -2010,9 +2101,13 @@ function response(room, msg, sender, isGroupChat, replier, who) {
                 message += prevLevel + " → " + level + " 재련에 성공하셨습니다!";
             } else if (result === "유지") {
                 message += prevLevel + " → " + level + " 재련에 실패하셨네요ㅜㅜ";
-            } else {
-                level = Math.max(1, level - 1);
+            } else if (result === "하락") {
+                level = Math.max(0, level - 1);
                 message += "재련에 실패하여 " + prevLevel + " → " + level + "로 하락되었습니다ㅠㅠ";
+            } else {
+                broken[uKey] = true;
+                delete repairPrompt[uKey];
+                message += prevLevel + " → " + level + " 재련에 실패하여 장비가 파괴되었습니다💥";
             }
 
             userData[uKey] = level;
@@ -2020,6 +2115,30 @@ function response(room, msg, sender, isGroupChat, replier, who) {
 
             saveData();
             return replier.reply(message);
+        }
+
+        // ── 수리 ── (봇이 알려준 문구와 똑같이 외쳐야 한다)
+        if (broken[uKey] && repairPrompt[uKey]) {
+            if (msg === String(repairPrompt[uKey]).toLowerCase()) {
+                delete broken[uKey];
+                delete repairPrompt[uKey];
+                // 수리 보상: 오늘 재련 기회 +1 (쓴 횟수를 1 줄인다 — 아직 안 썼으면 오늘 3번이 된다)
+                if (!dailyLimit[uKey] || dailyLimit[uKey].date !== today) {
+                    dailyLimit[uKey] = { count: 0, date: today };
+                }
+                dailyLimit[uKey].count -= REPAIR_BONUS;
+                saveData();
+                var left = MAX_ATTEMPTS - dailyLimit[uKey].count;
+                return replier.reply(uName + "님 장비가 수리되어 재련을 하실 수 있습니다\n🎁 수리 보너스! 오늘 재련 기회 +" +
+                    REPAIR_BONUS + " (남은 기회 " + left + "번)");
+            }
+            var roomWords = repairWords(room);
+            for (var k = 0; k < roomWords.length; k++) {
+                if (msg === roomWords[k].toLowerCase()) {
+                    return replier.reply(uName + "님, 잘못된 키워드를 입력하셨습니다. 다시 \"" +
+                        repairPrompt[uKey] + "\" 라고 외쳐주세요!");
+                }
+            }
         }
 
         // ── 랭킹 ──
@@ -2040,6 +2159,19 @@ function response(room, msg, sender, isGroupChat, replier, who) {
                 : "현재 재련 기록이 없습니다.");
         }
 
+        // ── 확률표 ──
+        if (msg === "/확률") {
+            var rows = [], top = 0;
+            for (var lv = 0; chances.hasOwnProperty(lv); lv++) {
+                top = lv;
+                var c = chances[lv];
+                if (c[0] + c[1] + c[2] + c[3] === 0) continue;     // 최고 단계 (더 못 올린다)
+                rows.push(lv + " → " + (lv + 1) + ": [" + c.join(", ") + "]");
+            }
+            return replier.reply("*[재련확률표]*\n[성공, 유지, 하락, 파괴]\n" + rows.join("\n") +
+                "\n(" + top + "재련이 최고 단계예요)");
+        }
+
         // ── 오늘 횟수 초기화 (관리자) ──
         if (msg === "/초기화") {
             if (!isAdmin(sender)) return replier.reply("해당 명령어를 사용할 수 있는 권한이 없습니다.");
@@ -2056,11 +2188,13 @@ function response(room, msg, sender, isGroupChat, replier, who) {
         if (msg === "/삭제") {
             if (!isAdmin(sender)) return replier.reply("해당 명령어를 사용할 수 있는 권한이 없습니다.");
             for (user in userData) {
-                if (userData.hasOwnProperty(user)) userData[user] = 1;
+                if (userData.hasOwnProperty(user)) userData[user] = 0;
             }
-            delete startLevel[room];    // 방 시작 값도 1로
+            broken = {};          // 재련값을 0으로 돌리면 파괴 상태도 함께 푼다
+            repairPrompt = {};
+            delete startLevel[room];    // 방 시작 값도 0으로
             saveData();
-            return replier.reply("모든 유저의 재련값이 1으로 초기화되었습니다.");
+            return replier.reply("모든 유저의 재련값이 0으로 초기화되었습니다.");
         }
 
         // ── 등록된 명령어 응답 (메시지 전체가 일치할 때) ──
