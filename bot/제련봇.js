@@ -6,7 +6,8 @@
  *    제련가즈아 / 재련가즈아 → 제련 시도 (하루 2회)
  *    (파괴 시 지정된 수리 문구를 외치면 복구)
  *    /랭킹 /확률
- *    /로드 /초기화 /삭제 /삭제_이름 /복구_이름 /지정_이름_숫자 /확률업_배수_시간   (관리자)
+ *    /로드 /초기화 /삭제 /삭제_이름 /복구_이름 /지정_이름_숫자   (관리자)
+ *    /확률업 20  → "몇 시까지?" 를 묻고 그때까지 성공 확률을 원래의 20% 만큼 올린다 (관리자, 아래 "확률업 이벤트")
  *
  *  ◆ 호환성
  *    - 메신저봇R 신버전(API2) / 구버전(API1) / 다크토네이도 챗봇 모두 동작
@@ -18,7 +19,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 var scriptName = "제련봇";
-var BOT_VER = "1117-1";
+var BOT_VER = "1126-1";
 
 // ─────────────── 설정 (여기만 고치면 됨) ───────────────
 var ROOMS = [
@@ -145,12 +146,139 @@ var repairKeywords = [
     "존경하는 후파님", "비경보상 400개내놔", "앗살라무 알레이꿈"
 ];
 
-function pickResult(level, boost) {
+// ═══════════════ 확률업 이벤트 (2026-11-26 사용자 요청) ═══════════════
+// /확률업 20 → "몇 시까지 적용할까요?" 를 묻고, 그 관리자가 5분 안에 시각(23시 · 23시30분 · 23:30 · 오후 11시 · 24시)이나
+// "3시간" 을 보내면 그때까지 성공 확률을 **원래의 20% 만큼** 올린다 (25% → 30%, 20%p 가 아니다 — 사용자 선택).
+// 늘어난 만큼 실패(유지) 칸에서 빼고, 실패가 모자라면 하락 → 파괴 순으로 뺀다 (합은 늘 100). 성공은 100 을 넘지 않는다.
+// /확률업 20 23시 처럼 한 번에 써도 된다. /확률업 0 (끄기·종료) → 바로 끝. /확률업 → 지금 이벤트 보기.
+// 시각은 한국 시간(UTC+9)으로 직접 계산한다 — 폰의 getHours() 시간대가 어긋난 적이 있다(루나봇 알림, 2026-11-14).
+// 예전 /확률업_배수_시간 으로 저장된 이벤트({ multiplier })는 (배수-1)×100 % 로 읽는다.
+var BOOST_ASK_MS = 5 * 60000;   // 시각을 기다리는 시간
+var BOOST_MAX_PCT = 500;
+var KST_MS = 9 * 3600000, DAY_MS = 86400000;
+var boostPending = {};          // { 방: { who, pct, at } } — 메모리만
+
+/** 이 방에서 지금 적용 중인 확률업 % (없으면 null) */
+function boostPctOf(roomData, now) {
+    var b = roomData.boost;
+    if (!b || !(now < b.until)) return null;
+    if (typeof b.pct === "number") return b.pct;
+    if (typeof b.multiplier === "number") return (b.multiplier - 1) * 100;
+    return null;
+}
+
+/** 단계별 [성공, 실패, 하락, 파괴] — 확률업이면 성공을 원래의 pct% 만큼 올리고 그만큼 실패 → 하락 → 파괴 에서 뺀다 */
+function boostRates(level, pct) {
     var row = table[level] || [0, 0, 0, 0];
-    var succ = row[0], hold = row[1], down = row[2], destroy = row[3];
-    if (boost) succ *= boost;
+    var r = [row[0], row[1], row[2], row[3]];
+    if (!pct || pct <= 0) return r;
+    var up = Math.min(100, r[0] * (1 + pct / 100)) - r[0];
+    r[0] += up;
+    for (var i = 1; i < 4 && up > 0; i++) {
+        var take = Math.min(r[i], up);
+        r[i] -= take;
+        up -= take;
+    }
+    for (var j = 0; j < 4; j++) r[j] = Math.round(r[j] * 10000) / 10000;
+    return r;
+}
+
+function fmtPct(n) { return String(Math.round(n * 100) / 100); }
+
+function kstDayStart(ms) { return Math.floor((ms + KST_MS) / DAY_MS) * DAY_MS - KST_MS; }
+
+/** 한국 시간 "오후 11:00" (오늘이 아니면 앞에 "내일"·"M/D") */
+function kstLabel(ms, now) {
+    var d = new Date(ms + KST_MS);
+    var h = d.getUTCHours(), mi = d.getUTCMinutes();
+    var t = (h < 12 ? "오전 " : "오후 ") + (h % 12 === 0 ? 12 : h % 12) + ":" + (mi < 10 ? "0" : "") + mi;
+    var dd = Math.round((kstDayStart(ms) - kstDayStart(now)) / DAY_MS);
+    if (dd === 0) return t;
+    if (dd === 1) return "내일 " + t;
+    return (d.getUTCMonth() + 1) + "/" + d.getUTCDate() + " " + t;
+}
+
+/** "23시" · "23시30분" · "23:30" · "오후 11시" · "24시" · "3시간" → 끝나는 ms (못 알아들으면 null). 지난 시각이면 다음 날 */
+function parseBoostUntil(text, now) {
+    var t = String(text).replace(/\s+/g, "");
+    var m = /^(\d{1,2})시간$/.exec(t);
+    if (m) {
+        var hrs = parseInt(m[1], 10);
+        return hrs >= 1 && hrs <= 72 ? now + hrs * 3600000 : null;
+    }
+    m = /^(오전|오후)?(\d{1,2})(?:시(?:(\d{1,2})분?)?|:(\d{2}))$/.exec(t);
+    if (!m) return null;
+    var h = parseInt(m[2], 10);
+    var mi = m[3] !== undefined && m[3] !== "" ? parseInt(m[3], 10) : (m[4] !== undefined && m[4] !== "" ? parseInt(m[4], 10) : 0);
+    if (m[1] === "오후" && h < 12) h += 12;
+    if (m[1] === "오전" && h === 12) h = 0;
+    if (h > 24 || mi > 59 || (h === 24 && mi > 0)) return null;
+    var at = kstDayStart(now) + h * 3600000 + mi * 60000;
+    if (at <= now) at += DAY_MS;
+    return at;
+}
+
+function startBoost(roomData, pct, until, now) {
+    roomData.boost = { pct: pct, until: until };
+    save();
+    var ex = boostRates(4, pct);
+    return "🎉 제련확률이 원래의 " + fmtPct(pct) + "% 만큼 오르는 제련이벤트가 " + kstLabel(until, now) + "까지 진행됩니다!\n" +
+        "(예: 4 → 5 성공 " + fmtPct(table[4][0]) + "% → " + fmtPct(ex[0]) + "%, 실패 " + fmtPct(table[4][1]) + "% → " + fmtPct(ex[1]) + "%)";
+}
+
+/** 확률업 명령·시각 답이면 답장 문구, 아니면 null */
+function handleBoost(room, msg, sender, roomData, now) {
+    var t = String(msg).trim();
+    var pend = boostPending[room];
+    if (pend && (pend.who !== sender || now - pend.at > BOOST_ASK_MS)) {
+        if (now - pend.at > BOOST_ASK_MS) delete boostPending[room];
+        pend = null;
+    }
+    var isCmd = t === "/확률업" || t.indexOf("/확률업 ") === 0 || t.indexOf("/확률업_") === 0;
+    if (pend && !isCmd) {
+        if (t.charAt(0) === "/") { delete boostPending[room]; return null; }   // 다른 명령을 치면 묻기를 그만둔다
+        var until0 = parseBoostUntil(t, now);
+        if (until0 === null) return null;                                       // 시각이 아니면 평소 대화로
+        delete boostPending[room];
+        return startBoost(roomData, pend.pct, until0, now);
+    }
+    if (!isCmd) return null;
+    if (!isAdmin(sender)) return "권한이 없습니다";
+    var rest = t.substring(4).replace(/_/g, " ").trim();
+    if (!rest) {
+        var cur = boostPctOf(roomData, now);
+        return cur === null
+            ? "진행 중인 확률업 이벤트가 없어요.\n형식: /확률업 20 (원래 성공 확률의 20% 만큼 올려요)"
+            : "🎉 확률업 이벤트 중: 원래의 " + fmtPct(cur) + "% 만큼, " + kstLabel(roomData.boost.until, now) + "까지\n(끝내려면 /확률업 0)";
+    }
+    var sp = rest.indexOf(" ");
+    var first = sp === -1 ? rest : rest.substring(0, sp);
+    var when = sp === -1 ? "" : rest.substring(sp + 1).trim();
+    if (first === "0" || first === "끄기" || first === "종료") {
+        delete boostPending[room];
+        var had = boostPctOf(roomData, now) !== null;
+        roomData.boost = null;
+        save();
+        return had ? "제련이벤트가 종료되었습니다" : "진행 중인 확률업 이벤트가 없어요.";
+    }
+    var pm = /^(\d+(?:\.\d+)?)%?$/.exec(first);
+    var pct = pm ? parseFloat(pm[1]) : NaN;
+    if (!(pct > 0 && pct <= BOOST_MAX_PCT)) {
+        return "형식: /확률업 20\n원래 성공 확률의 몇 % 만큼 올릴지 1~" + BOOST_MAX_PCT + " 사이 숫자로 써 주세요. (끝내기: /확률업 0)";
+    }
+    if (when) {
+        var until1 = parseBoostUntil(when, now);
+        if (until1 === null) return "시각을 못 알아들었어요.\n예) /확률업 " + fmtPct(pct) + " 23시 · 23시30분 · 23:30 · 오후 11시 · 3시간";
+        delete boostPending[room];
+        return startBoost(roomData, pct, until1, now);
+    }
+    boostPending[room] = { who: sender, pct: pct, at: now };
+    return "⏰ 확률업 " + fmtPct(pct) + "% — 몇 시까지 적용할까요?\n예) 23시 · 23시30분 · 23:30 · 오후 11시 · 3시간 (5분 안에 보내 주세요)";
+}
+
+function pickResult(level, boostPct) {
+    var rates = boostRates(level, boostPct);
     var rand = Math.random() * 100;
-    var rates = [succ, hold, down, destroy];
     var sum = 0;
     for (var i = 0; i < rates.length; i++) {
         sum += rates[i];
@@ -218,6 +346,10 @@ function response(room, msg, sender, isGroupChat, replier) {
 
         var key = room + "_" + sender;
 
+        // ── 확률업 이벤트 (관리자 명령 + 시각 묻기) ──
+        var boostReply = handleBoost(room, msg, sender, roomData, now);
+        if (boostReply !== null) return replier.reply(boostReply);
+
         // ── 제련 시도 ──
         if (msg === "제련가즈아" || msg === "재련가즈아") {
             if (user.broken) {
@@ -236,8 +368,7 @@ function response(room, msg, sender, isGroupChat, replier) {
                 return replier.reply(sender + "님, 오늘 사용할 수 있는 제련횟수를 모두 사용하셨어요(일 2회)");
             }
 
-            var boost = (roomData.boost && now < roomData.boost.until) ? roomData.boost.multiplier : null;
-            var result = pickResult(user.level, boost);
+            var result = pickResult(user.level, boostPctOf(roomData, now));
             var before = user.level;
             var message = sender + "님 ";
 
@@ -304,11 +435,18 @@ function response(room, msg, sender, isGroupChat, replier) {
         }
 
         if (msg === "/확률") {
+            var bp = boostPctOf(roomData, now);
             var rows = [];
             for (var lv in table) {
-                if (table.hasOwnProperty(lv)) rows.push(lv + ": [" + table[lv].join(", ") + "]");
+                if (!table.hasOwnProperty(lv)) continue;
+                var rr = bp === null ? table[lv] : boostRates(Number(lv), bp);
+                var cells = [];
+                for (var ci = 0; ci < rr.length; ci++) cells.push(bp === null ? rr[ci] : fmtPct(rr[ci]));
+                rows.push(lv + ": [" + cells.join(", ") + "]");
             }
-            return replier.reply("*[제련확률표]*\n[성공,실패,하락,파괴]\n" + rows.join("\n"));
+            return replier.reply("*[제련확률표]*\n" +
+                (bp === null ? "" : "🎉 확률업 이벤트 중 (원래의 +" + fmtPct(bp) + "%, " + kstLabel(roomData.boost.until, now) + "까지)\n") +
+                "[성공,실패,하락,파괴]\n" + rows.join("\n"));
         }
 
         if (msg === "/초기화") {
@@ -365,17 +503,6 @@ function response(room, msg, sender, isGroupChat, replier) {
             users[setTarget].level = level;
             save();
             return replier.reply(setTarget + "님의 제련값이 " + level + "으로 설정되었습니다.");
-        }
-
-        if (msg.indexOf("/확률업_") === 0) {
-            if (!isAdmin(sender)) return replier.reply("권한이 없습니다");
-            var bp = msg.split("_");
-            var mult = parseFloat(bp[1]);
-            var hour = parseFloat(bp[2]);
-            if (isNaN(mult) || isNaN(hour)) return replier.reply("형식: /확률업_배수_시간");
-            roomData.boost = { multiplier: mult, until: now + hour * 3600000 };
-            save();
-            return replier.reply("제련확률이 " + mult + "배 만큼 증가하는 제련이벤트가 " + hour + "시간 동안 진행됩니다");
         }
 
         // ── 이벤트 종료 안내 ──
